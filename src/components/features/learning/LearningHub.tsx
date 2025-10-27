@@ -103,17 +103,17 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={onLogout} />
 
       {/* Main Content Area */}
-      <div className="ml-64 p-8">
+      <div className="p-4 md:p-6 lg:p-8">
         <div className="max-w-[1600px] mx-auto">
-          <div className="grid grid-cols-12 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
             {/* Main Content - Left Side */}
-            <div className="col-span-9 space-y-10">
+            <div className="lg:col-span-9 space-y-6 md:space-y-8 lg:space-y-10">
               {/* Page Header */}
               <div>
-                <h1 className="text-3xl mb-2" style={{ color: "#1C3B5E" }}>
+                <h1 className="text-2xl md:text-3xl mb-2" style={{ color: "#1C3B5E" }}>
                   Learning Hub
                 </h1>
-                <p style={{ color: "#333333" }}>
+                <p className="text-sm md:text-base" style={{ color: "#333333" }}>
                   Choose your preferred learning style and explore content designed to support your journey
                 </p>
               </div>
@@ -147,7 +147,7 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
             </div>
 
             {/* Right Sidebar - Recommendations */}
-            <div className="col-span-3">
+            <div className="lg:col-span-3">
               <RecommendedSidebar />
             </div>
           </div>

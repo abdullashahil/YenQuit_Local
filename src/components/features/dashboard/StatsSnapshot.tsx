@@ -34,13 +34,13 @@ export function StatsSnapshot() {
   ];
 
   return (
-    <div className="grid grid-cols-4 gap-6">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
       {stats.map((stat, index) => {
         const Icon = stat.icon;
         
         return (
-          <Card key={index} className="p-6 rounded-3xl shadow-lg border-0 hover:shadow-xl transition-all">
-            <div className="flex items-start justify-between mb-4">
+          <Card key={index} className="p-4 md:p-5 lg:p-6 rounded-2xl md:rounded-3xl shadow-lg border-0 hover:shadow-xl transition-all">
+            <div className="flex items-start justify-between mb-3 md:mb-4">
               <div className="p-3 rounded-2xl" style={{ backgroundColor: `${stat.color}20` }}>
                 <Icon className="w-6 h-6" style={{ color: stat.color }} />
               </div>
@@ -48,7 +48,7 @@ export function StatsSnapshot() {
             
             <div className="space-y-1">
               <div className="flex items-baseline gap-1">
-                <span className="text-3xl" style={{ color: stat.color }}>
+                <span className="text-2xl md:text-3xl" style={{ color: stat.color }}>
                   {stat.value}
                 </span>
                 <span className="text-sm" style={{ color: "#333333" }}>
