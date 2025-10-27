@@ -48,7 +48,7 @@ export function FiveA_Assist({ onNext }: FiveA_AssistProps) {
   };
 
   return (
-    <div className="min-h-screen bg-white p-8">
+    <div className="min-h-screen p-4 md:p-6 lg:p-8" style={{ backgroundColor: '#FFFFFF' }}>
       <div className="max-w-4xl mx-auto">
         <OnboardingProgressBar
           steps={['ASK', 'ADVISE', 'ASSESS', 'ASSIST', 'ARRANGE']}
@@ -131,7 +131,7 @@ export function FiveA_Assist({ onNext }: FiveA_AssistProps) {
             </p>
             <Button
               variant="outline"
-              className="rounded-xl brand-btn-outline-accent hover:opacity-90"
+              className="rounded-2xl md:rounded-3xl p-6 md:p-8 lg:p-10 brand-btn-outline-accent hover:opacity-90"
             >
               Connect with a Counselor
             </Button>

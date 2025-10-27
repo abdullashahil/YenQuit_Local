@@ -21,16 +21,16 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
   };
 
   return (
-    <div className="min-h-screen bg-white p-8">
+    <div className="min-h-screen p-4 md:p-6 lg:p-8" style={{ backgroundColor: '#FFFFFF' }}>
       <div className="max-w-4xl mx-auto">
         <OnboardingProgressBar
           steps={['ASK', 'ADVISE', 'ASSESS', 'ASSIST', 'ARRANGE']}
           currentStep={2}
         />
 
-        <div className="bg-white rounded-3xl shadow-lg p-8 border border-gray-100">
-          <h1 className="text-[#1C3B5E] mb-2">Step 3: ASSESS</h1>
-          <p className="text-[#333333] mb-8">
+        <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg p-6 md:p-8 lg:p-10 border border-gray-100">
+          <h1 className="text-2xl md:text-3xl lg:text-4xl text-[#1C3B5E] mb-2">Step 3: ASSESS</h1>
+          <p className="text-sm md:text-base text-[#333333] mb-6 md:mb-8">
             Let's determine your readiness to quit tobacco
           </p>
 
@@ -63,13 +63,13 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
 
           {/* Quit Timeline */}
           <div className="mb-8">
-            <Label className="text-[#333333] block mb-4">
+            <Label className="text-sm md:text-base mb-6 md:mb-8 lg:mb-10">
               When do you plan to quit?
             </Label>
             <RadioGroup
               value={quitTimeline}
               onValueChange={setQuitTimeline}
-              className="space-y-3"
+              className="rounded-2xl md:rounded-3xl p-6 md:p-8 lg:p-10"
             >
               <div className="flex items-center space-x-2 bg-gray-50 p-4 rounded-xl">
                 <RadioGroupItem value="7days" id="7days" />
@@ -106,7 +106,7 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
             <Button
               onClick={handleNext}
               disabled={!quitTimeline}
-              className="px-8 py-6 rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 disabled:opacity-50"
+              className="text-2xl md:text-3xl lg:text-4xl mb-2 px-8 py-6 rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 disabled:opacity-50"
             >
               Next: Build Your Quit Plan
             </Button>

@@ -34,7 +34,7 @@ export function FiveA_Arrange({ onComplete, quitDate }: FiveA_ArrangeProps) {
   };
 
   return (
-    <div className="min-h-screen bg-white p-8">
+    <div className="min-h-screen p-4 md:p-6 lg:p-8" style={{ backgroundColor: '#FFFFFF' }}>
       <div className="max-w-4xl mx-auto">
         <OnboardingProgressBar
           steps={['ASK', 'ADVISE', 'ASSESS', 'ASSIST', 'ARRANGE']}
@@ -151,7 +151,7 @@ export function FiveA_Arrange({ onComplete, quitDate }: FiveA_ArrangeProps) {
                 </p>
                 <Button
                   variant="outline"
-                  className="rounded-xl border-[#20B2AA] text-[#20B2AA] hover:bg-[#20B2AA]/10"
+                  className="rounded-2xl md:rounded-3xl p-6 md:p-8 lg:p-10 border-[#20B2AA] text-[#20B2AA] hover:bg-[#20B2AA]/10"
                 >
                   Explore Community
                 </Button>

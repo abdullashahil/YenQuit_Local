@@ -10,7 +10,7 @@ interface FiveA_AdviseProps {
 
 export function FiveA_Advise({ onNext, userData }: FiveA_AdviseProps) {
   return (
-    <div className="min-h-screen p-8" style={{ backgroundColor: '#FFFFFF' }}>
+    <div className="min-h-screen p-4 md:p-6 lg:p-8" style={{ backgroundColor: '#FFFFFF' }}>
       <div className="max-w-4xl mx-auto">
         <OnboardingProgressBar
           steps={['ASK', 'ADVISE', 'ASSESS', 'ASSIST', 'ARRANGE']}
@@ -18,20 +18,20 @@ export function FiveA_Advise({ onNext, userData }: FiveA_AdviseProps) {
         />
 
         <div 
-          className="rounded-3xl p-10"
+          className="rounded-2xl md:rounded-3xl p-6 md:p-8 lg:p-10"
           style={{ 
             backgroundColor: '#FFFFFF',
             boxShadow: '0 10px 40px rgba(28, 59, 94, 0.12)'
           }}
         >
           <h1 
-            className="mb-2"
+            className="text-2xl md:text-3xl lg:text-4xl mb-2"
             style={{ color: '#1C3B5E' }}
           >
             Step 2: Personalized Advice to Quit
           </h1>
           <p 
-            className="mb-10"
+            className="text-sm md:text-base mb-6 md:mb-8 lg:mb-10"
             style={{ color: '#333333', opacity: 0.7 }}
           >
             Receive expert guidance and personalized insights for your journey

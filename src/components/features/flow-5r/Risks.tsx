@@ -63,14 +63,14 @@ export function FiveR_Risks({ onNext, onBack }: FiveR_RisksProps) {
   };
 
   return (
-    <div className="min-h-screen bg-white p-8">
+    <div className="min-h-screen bg-white p-4 md:p-6 lg:p-8">
       <div className="max-w-4xl mx-auto">
         <OnboardingProgressBar
           steps={['RELEVANCE', 'RISKS', 'REWARDS', 'ROADBLOCKS', 'REPETITION']}
           currentStep={1}
         />
 
-        <div className="bg-white rounded-3xl shadow-lg p-8 border border-gray-100">
+        <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg p-6 md:p-8 lg:p-10 border border-gray-100">
           <h1 className="text-[#1C3B5E] mb-2">Step 2: RISKS</h1>
           <p className="text-[#333333] mb-8">
             Understanding the health risks of tobacco use can strengthen your motivation to quit. 

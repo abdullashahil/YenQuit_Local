@@ -89,14 +89,14 @@ export function FiveR_Roadblocks({ onNext, onBack }: FiveR_RoadblocksProps) {
   };
 
   return (
-    <div className="min-h-screen bg-white p-8">
+    <div className="min-h-screen bg-white p-4 md:p-6 lg:p-8">
       <div className="max-w-4xl mx-auto">
         <OnboardingProgressBar
           steps={['RELEVANCE', 'RISKS', 'REWARDS', 'ROADBLOCKS', 'REPETITION']}
           currentStep={3}
         />
 
-        <div className="bg-white rounded-3xl shadow-lg p-8 border border-gray-100">
+        <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg p-6 md:p-8 lg:p-10 border border-gray-100">
           <h1 className="text-[#1C3B5E] mb-2">Step 4: ROADBLOCKS</h1>
           <p className="text-[#333333] mb-8">
             Identify potential obstacles to quitting and plan strategies to overcome them. 
