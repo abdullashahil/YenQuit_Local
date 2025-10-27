@@ -159,23 +159,23 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
       />
 
       {/* Main Content Area */}
-      <div className="ml-64 p-8">
+      <div className="p-4 md:p-6 lg:p-8">
         <div className="max-w-[1800px] mx-auto">
           {/* Page Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl mb-2" style={{ color: "#1C3B5E" }}>
+          <div className="mb-6 md:mb-8">
+            <h1 className="text-2xl md:text-3xl mb-2" style={{ color: "#1C3B5E" }}>
               User Management
             </h1>
-            <p style={{ color: "#333333" }}>
+            <p className="text-sm md:text-base" style={{ color: "#333333" }}>
               Manage user accounts, view progress, and provide personalized support
             </p>
           </div>
 
           {/* Search & Filters Bar */}
-          <div className="bg-white rounded-3xl shadow-lg border-0 p-6 mb-6">
-            <div className="grid grid-cols-12 gap-4">
+          <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg border-0 p-4 md:p-6 mb-4 md:mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4">
               {/* Search Input */}
-              <div className="col-span-5 relative">
+              <div className="md:col-span-5 relative">
                 <Search
                   className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5"
                   style={{ color: "#20B2AA" }}
@@ -189,7 +189,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
               </div>
 
               {/* Addiction Level Filter */}
-              <div className="col-span-3">
+              <div className="md:col-span-3">
                 <Select value={addictionFilter} onValueChange={setAddictionFilter}>
                   <SelectTrigger className="h-12 rounded-2xl border-gray-200">
                     <SelectValue placeholder="Addiction Level" />
@@ -204,7 +204,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
               </div>
 
               {/* Status Filter */}
-              <div className="col-span-3">
+              <div className="md:col-span-3">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="h-12 rounded-2xl border-gray-200">
                     <SelectValue placeholder="Status" />
@@ -219,12 +219,13 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
               </div>
 
               {/* Add User Button */}
-              <div className="col-span-1">
+              <div className="md:col-span-1">
                 <Button
-                  className="w-full h-12 rounded-2xl"
+                  className="w-full h-12 rounded-2xl flex items-center justify-center gap-2"
                   style={{ backgroundColor: "#20B2AA", color: "white" }}
                 >
                   <UserPlus className="w-5 h-5" />
+                  <span className="md:hidden">Add User</span>
                 </Button>
               </div>
             </div>
@@ -236,7 +237,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
           </div>
 
           {/* Main User Table */}
-          <div className="bg-white rounded-3xl shadow-lg border-0 overflow-hidden">
+          <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg border-0 overflow-hidden">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
