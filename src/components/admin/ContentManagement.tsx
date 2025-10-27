@@ -157,25 +157,25 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
       />
 
       {/* Main Content Area */}
-      <div className="ml-64 p-8">
+      <div className="p-4 md:p-6 lg:p-8">
         <div className="max-w-[1800px] mx-auto">
           {/* Page Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl mb-2" style={{ color: "#1C3B5E" }}>
+          <div className="mb-6 md:mb-8">
+            <h1 className="text-2xl md:text-3xl mb-2" style={{ color: "#1C3B5E" }}>
               Content Management
             </h1>
-            <p style={{ color: "#333333" }}>
+            <p className="text-sm md:text-base" style={{ color: "#333333" }}>
               Manage all public-facing content, campaigns, and user communications
             </p>
           </div>
 
           {/* Main Grid Layout */}
-          <div className="grid grid-cols-12 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6">
             {/* Left Column - Content Table */}
-            <div className="col-span-8 space-y-6">
+            <div className="lg:col-span-8 space-y-4 md:space-y-6">
               {/* Management Toolbar */}
-              <div className="bg-white rounded-3xl shadow-lg border-0 p-6">
-                <div className="grid grid-cols-12 gap-4">
+              <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg border-0 p-4 md:p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 md:gap-4">
                   {/* Add New Content Button */}
                   <div className="col-span-3">
                     <Button
