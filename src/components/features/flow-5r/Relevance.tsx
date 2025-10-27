@@ -26,16 +26,16 @@ export function FiveR_Relevance({ onNext }: FiveR_RelevanceProps) {
   };
 
   return (
-    <div className="min-h-screen bg-white p-8">
+    <div className="min-h-screen bg-white p-4 md:p-6 lg:p-8">
       <div className="max-w-4xl mx-auto">
         <OnboardingProgressBar
           steps={['RELEVANCE', 'RISKS', 'REWARDS', 'ROADBLOCKS', 'REPETITION']}
           currentStep={0}
         />
 
-        <div className="bg-white rounded-3xl shadow-lg p-8 border border-gray-100">
-          <h1 className="text-[#1C3B5E] mb-2">Step 1: RELEVANCE</h1>
-          <p className="text-[#333333] mb-8">
+        <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg p-6 md:p-8 lg:p-10 border border-gray-100">
+          <h1 className="text-2xl md:text-3xl lg:text-4xl text-[#1C3B5E] mb-2">Step 1: RELEVANCE</h1>
+          <p className="text-sm md:text-base text-[#333333] mb-6 md:mb-8">
             Why might quitting matter most to you? Select all that apply.
           </p>
 

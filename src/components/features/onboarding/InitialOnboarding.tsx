@@ -50,37 +50,37 @@ export const InitialOnboarding: React.FC<InitialOnboardingProps> = ({ onComplete
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-8" style={{ backgroundColor: '#FFFFFF' }}>
+    <div className="min-h-screen flex items-center justify-center p-4 md:p-6 lg:p-8" style={{ backgroundColor: '#FFFFFF' }}>
       <div 
-        className="w-full max-w-4xl p-10 rounded-3xl"
+        className="w-full max-w-4xl p-6 md:p-8 lg:p-10 rounded-2xl md:rounded-3xl"
         style={{ 
           backgroundColor: '#FFFFFF',
           boxShadow: '0 10px 40px rgba(28, 59, 94, 0.12)'
         }}
       >
         {/* Header */}
-        <div className="text-center mb-10">
+        <div className="text-center mb-6 md:mb-8 lg:mb-10">
           <h1 
-            className="mb-2"
+            className="text-2xl md:text-3xl lg:text-4xl mb-2"
             style={{ color: '#1C3B5E' }}
           >
             Your Quitting Journey Begins
           </h1>
-          <p style={{ color: '#333333', opacity: 0.7 }}>
+          <p className="text-sm md:text-base" style={{ color: '#333333', opacity: 0.7 }}>
             Help us understand your needs to personalize your journey
           </p>
         </div>
 
         {/* Demographics Collection */}
-        <div className="mb-8">
+        <div className="mb-6 md:mb-8">
           <h2 
-            className="mb-6"
+            className="text-xl md:text-2xl mb-4 md:mb-6"
             style={{ color: '#1C3B5E' }}
           >
             Personal Information
           </h2>
           
-          <div className="grid grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">
             <div>
               <Label htmlFor="name" style={{ color: '#333333' }}>Full Name</Label>
               <Input
@@ -108,7 +108,7 @@ export const InitialOnboarding: React.FC<InitialOnboardingProps> = ({ onComplete
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">
             <div>
               <Label style={{ color: '#333333' }}>Gender</Label>
               <div className="flex gap-3 mt-2">
@@ -143,7 +143,7 @@ export const InitialOnboarding: React.FC<InitialOnboardingProps> = ({ onComplete
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">
             <div>
               <Label htmlFor="contact" style={{ color: '#333333' }}>Contact Number</Label>
               <Input
