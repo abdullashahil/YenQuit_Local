@@ -1,6 +1,6 @@
 # 🚭 YenQuit: Tobacco Cessation & Motivation App
 
-> **Built with Next.js 16** | Migrated from React + Vite | Production Ready
+> **Built with Next.js 16** | Production Ready
 
 ## Project Overview
 
@@ -230,15 +230,8 @@ YenQuit/
 
 ---
 
-## 🎉 Next.js Migration
-
-This project was successfully migrated from **React + Vite + React Router** to **Next.js 16**.
-
-### What Changed
-
 #### ✅ Routing
-- **Before**: React Router with `<BrowserRouter>` and `<Routes>`
-- **After**: Next.js file-based routing in `pages/` directory
+- **Routes**: Next.js file-based routing in `pages/` directory
 - **Navigation**: Use `useRouter()` from `next/router` instead of `useNavigate()`
 
 #### ✅ State Management
@@ -250,20 +243,6 @@ This project was successfully migrated from **React + Vite + React Router** to *
 - `AppLayout` for user dashboard pages
 - `AdminLayout` for admin panel pages
 - Shared navigation and authentication logic
-
-#### ✅ All Routes Migrated (23 pages)
-- Landing, Login, Onboarding
-- 4 App pages (Dashboard, Learning, Community, Profile)
-- 4 Admin pages (Users, Content, Settings)
-- 5 A's flow (5 pages)
-- 5 R's flow (5 pages)
-
-### Removed Files
-- `index.html` - Vite entry point
-- `vite.config.ts` - Vite configuration
-- `src/main.tsx` - React entry point
-- `src/App.tsx` - React Router setup
-- React Router dependencies
 
 ---
 
@@ -335,10 +314,4 @@ When contributing to this project:
 
 ---
 
-## 📄 License
-
-This project is part of the YenQuit tobacco cessation initiative.
-
----
-
-**Built with ❤️ using Next.js | Migration completed successfully! 🎉**
+**Built with ❤️ using Next.js **
