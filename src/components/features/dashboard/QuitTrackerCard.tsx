@@ -12,12 +12,12 @@ export function QuitTrackerCard() {
   const progressPercentage = (daysSmokeFree / totalGoal) * 100;
 
   return (
-    <Card className="p-8 rounded-3xl shadow-lg border-0">
-      <div className="space-y-6">
+    <Card className="p-4 md:p-6 lg:p-8 rounded-2xl md:rounded-3xl shadow-lg border-0">
+      <div className="space-y-4 md:space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h2 className="text-2xl" style={{ color: "#1C3B5E" }}>Your Journey Progress</h2>
+            <h2 className="text-xl md:text-2xl" style={{ color: "#1C3B5E" }}>Your Journey Progress</h2>
             <p className="text-sm mt-1" style={{ color: "#333333" }}>Keep up the amazing work!</p>
           </div>
           <div className="p-4 rounded-2xl" style={{ backgroundColor: "#20B2AA20" }}>
@@ -26,12 +26,12 @@ export function QuitTrackerCard() {
         </div>
 
         {/* Days Counter */}
-        <div className="text-center py-6">
+        <div className="text-center py-4 md:py-6">
           <div className="flex items-baseline justify-center gap-2">
-            <span className="text-6xl" style={{ color: "#20B2AA" }}>{daysSmokeFree}</span>
-            <span className="text-2xl" style={{ color: "#333333" }}>days</span>
+            <span className="text-4xl md:text-5xl lg:text-6xl" style={{ color: "#20B2AA" }}>{daysSmokeFree}</span>
+            <span className="text-xl md:text-2xl" style={{ color: "#333333" }}>days</span>
           </div>
-          <p className="mt-2" style={{ color: "#333333" }}>smoke-free and counting</p>
+          <p className="mt-2 text-sm md:text-base" style={{ color: "#333333" }}>smoke-free and counting</p>
         </div>
 
         {/* Progress Bar */}
