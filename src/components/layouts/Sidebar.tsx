@@ -1,4 +1,6 @@
-import { Home, BookOpen, Users, User, Phone, LogOut } from "lucide-react";
+import { Home, BookOpen, Users, User, Phone, LogOut, Menu, X } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
+import { useState } from "react";
 
 interface SidebarProps {
   activeTab: string;
@@ -7,6 +9,8 @@ interface SidebarProps {
 }
 
 export function Sidebar({ activeTab, setActiveTab, onLogout }: SidebarProps) {
+  const [open, setOpen] = useState(false);
+  
   const navItems = [
     { id: "dashboard", label: "Home", icon: Home },
     { id: "learning", label: "Learning Hub", icon: BookOpen },
@@ -14,8 +18,14 @@ export function Sidebar({ activeTab, setActiveTab, onLogout }: SidebarProps) {
     { id: "profile", label: "Profile", icon: User },
   ];
 
-  return (
-    <div className="fixed left-0 top-0 h-screen w-64 flex flex-col" style={{ backgroundColor: "#1C3B5E" }}>
+  const handleNavClick = (tabId: string) => {
+    setActiveTab(tabId);
+    setOpen(false); // Close mobile menu after selection
+  };
+
+  // Sidebar content component (reused for both desktop and mobile)
+  const SidebarContent = () => (
+    <div className="h-full flex flex-col" style={{ backgroundColor: "#1C3B5E" }}>
       {/* Emergency Support Button */}
       <div className="p-6">
         <button
@@ -23,7 +33,7 @@ export function Sidebar({ activeTab, setActiveTab, onLogout }: SidebarProps) {
           style={{ backgroundColor: "#20B2AA" }}
         >
           <Phone className="w-5 h-5 text-white" />
-          <span className="text-white">Live Support</span>
+          <span className="text-white text-sm md:text-base">Live Support</span>
         </button>
       </div>
 
@@ -36,13 +46,13 @@ export function Sidebar({ activeTab, setActiveTab, onLogout }: SidebarProps) {
           return (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => handleNavClick(item.id)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${
                 isActive ? "bg-white/10" : "hover:bg-white/5"
               }`}
             >
               <Icon className="w-5 h-5 text-white" />
-              <span className="text-white">{item.label}</span>
+              <span className="text-white text-sm md:text-base">{item.label}</span>
             </button>
           );
         })}
@@ -57,7 +67,7 @@ export function Sidebar({ activeTab, setActiveTab, onLogout }: SidebarProps) {
         
         {/* Admin Link */}
         <button
-          onClick={() => setActiveTab("admin")}
+          onClick={() => handleNavClick("admin")}
           className="w-full text-xs hover:text-white/80 transition-all mb-3"
           style={{ color: "#ffffff40" }}
         >
@@ -77,5 +87,30 @@ export function Sidebar({ activeTab, setActiveTab, onLogout }: SidebarProps) {
         )}
       </div>
     </div>
+  );
+
+  return (
+    <>
+      {/* Mobile Menu Button - Only visible on mobile */}
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger asChild>
+          <button
+            className="fixed top-4 left-4 z-50 p-2 rounded-lg md:hidden"
+            style={{ backgroundColor: "#1C3B5E" }}
+            aria-label="Open menu"
+          >
+            <Menu className="w-6 h-6 text-white" />
+          </button>
+        </SheetTrigger>
+        <SheetContent side="left" className="p-0 w-64">
+          <SidebarContent />
+        </SheetContent>
+      </Sheet>
+
+      {/* Desktop Sidebar - Hidden on mobile */}
+      <div className="hidden md:block fixed left-0 top-0 h-screen w-64">
+        <SidebarContent />
+      </div>
+    </>
   );
 }

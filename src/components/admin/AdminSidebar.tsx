@@ -1,4 +1,6 @@
-import { LayoutDashboard, Users, FileText, Settings, ArrowLeft, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, FileText, Settings, ArrowLeft, LogOut, Menu } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
+import { useState } from "react";
 
 interface AdminSidebarProps {
   activeTab: string;
@@ -8,6 +10,8 @@ interface AdminSidebarProps {
 }
 
 export function AdminSidebar({ activeTab, setActiveTab, onExitAdmin, onLogout }: AdminSidebarProps) {
+  const [open, setOpen] = useState(false);
+  
   const navItems = [
     { id: "admin-dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "user-management", label: "User Management", icon: Users },
@@ -15,9 +19,15 @@ export function AdminSidebar({ activeTab, setActiveTab, onExitAdmin, onLogout }:
     { id: "system-settings", label: "System Settings", icon: Settings },
   ];
 
-  return (
+  const handleNavClick = (tabId: string) => {
+    setActiveTab(tabId);
+    setOpen(false); // Close mobile menu after selection
+  };
+
+  // Sidebar content component (reused for both desktop and mobile)
+  const SidebarContent = () => (
     <div
-      className="fixed left-0 top-0 h-screen w-64 shadow-xl flex flex-col"
+      className="h-full shadow-xl flex flex-col"
       style={{ backgroundColor: "#1C3B5E" }}
     >
       {/* Admin Header */}
@@ -47,7 +57,7 @@ export function AdminSidebar({ activeTab, setActiveTab, onExitAdmin, onLogout }:
           return (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => handleNavClick(item.id)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${
                 isActive ? "shadow-lg" : ""
               }`}
@@ -57,7 +67,7 @@ export function AdminSidebar({ activeTab, setActiveTab, onExitAdmin, onLogout }:
               }}
             >
               <Icon className="w-5 h-5" />
-              <span className="text-sm">{item.label}</span>
+              <span className="text-sm md:text-base">{item.label}</span>
             </button>
           );
         })}
@@ -66,7 +76,10 @@ export function AdminSidebar({ activeTab, setActiveTab, onExitAdmin, onLogout }:
       {/* Exit Admin & Logout Buttons */}
       <div className="p-4 border-t space-y-2" style={{ borderColor: "#ffffff20" }}>
         <button
-          onClick={onExitAdmin}
+          onClick={() => {
+            onExitAdmin();
+            setOpen(false);
+          }}
           className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all hover:bg-white/10"
           style={{ color: "#ffffff80" }}
         >
@@ -76,7 +89,10 @@ export function AdminSidebar({ activeTab, setActiveTab, onExitAdmin, onLogout }:
         
         {onLogout && (
           <button
-            onClick={onLogout}
+            onClick={() => {
+              onLogout();
+              setOpen(false);
+            }}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all hover:bg-white/10"
             style={{ color: "#ffffff80" }}
           >
@@ -86,5 +102,30 @@ export function AdminSidebar({ activeTab, setActiveTab, onExitAdmin, onLogout }:
         )}
       </div>
     </div>
+  );
+
+  return (
+    <>
+      {/* Mobile Menu Button - Only visible on mobile */}
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger asChild>
+          <button
+            className="fixed top-4 left-4 z-50 p-2 rounded-lg md:hidden"
+            style={{ backgroundColor: "#1C3B5E" }}
+            aria-label="Open admin menu"
+          >
+            <Menu className="w-6 h-6 text-white" />
+          </button>
+        </SheetTrigger>
+        <SheetContent side="left" className="p-0 w-64">
+          <SidebarContent />
+        </SheetContent>
+      </Sheet>
+
+      {/* Desktop Sidebar - Hidden on mobile */}
+      <div className="hidden md:block fixed left-0 top-0 h-screen w-64">
+        <SidebarContent />
+      </div>
+    </>
   );
 }

@@ -86,7 +86,7 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
       </div>
 
       {/* Right Side - Login/Sign Up Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 md:p-8">
         <div className="w-full max-w-md">
           {/* Back to Landing */}
           <button
@@ -98,10 +98,10 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
 
           {/* Form Container */}
           <div 
-            className="p-8 rounded-3xl bg-white shadow-[0_10px_40px_rgba(28,59,94,0.12)] auth-panel"
+            className="p-6 md:p-8 rounded-2xl md:rounded-3xl bg-white shadow-[0_10px_40px_rgba(28,59,94,0.12)] auth-panel"
           >
             {/* Toggle Tabs */}
-            <div className="flex gap-2 mb-8 p-1 rounded-2xl auth-tabs">
+            <div className="flex gap-2 mb-6 md:mb-8 p-1 rounded-2xl auth-tabs">
               <button
                 onClick={() => setIsLogin(true)}
                 className={`flex-1 py-3 rounded-xl transition-all auth-tab ${isLogin ? 'brand-btn text-white' : 'brand-text'}`}
@@ -117,11 +117,11 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
             </div>
 
             {/* Form Title */}
-            <div className="mb-6">
-              <h2 className="mb-2 brand-heading">
+            <div className="mb-4 md:mb-6">
+              <h2 className="text-xl md:text-2xl mb-2 brand-heading">
                 {isLogin ? 'Welcome Back' : 'Create Account'}
               </h2>
-              <p className="brand-muted">
+              <p className="text-sm md:text-base brand-muted">
                 {isLogin 
                   ? 'Enter your credentials to continue your journey' 
                   : 'Start your journey to a smoke-free life'}
@@ -129,7 +129,7 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
             </div>
 
             {/* Form */}
-            <form onSubmit={isLogin ? handleLogin : handleSignUp} className="space-y-5">
+            <form onSubmit={isLogin ? handleLogin : handleSignUp} className="space-y-4 md:space-y-5">
               {/* Full Name (Sign Up Only) */}
               {!isLogin && (
                 <div>

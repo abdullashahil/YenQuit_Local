@@ -108,12 +108,12 @@ export function LandingPage({ onNavigateToLogin, onNavigateToSignup }: LandingPa
       <nav 
         className="sticky top-0 z-50 bg-white shadow-sm border-b border-gray-100"
       >
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
             <div className="flex items-center">
               <h1 
-                className="text-2xl cursor-pointer brand-heading"
+                className="text-lg md:text-2xl cursor-pointer brand-heading"
                 onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
               >
                 Quitting Journey App
@@ -149,17 +149,17 @@ export function LandingPage({ onNavigateToLogin, onNavigateToSignup }: LandingPa
             </div>
 
             {/* CTA Buttons */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
               <Button
                 onClick={onNavigateToLogin}
                 variant="outline"
-                className="px-6 py-2 rounded-xl transition-all hover:bg-gray-50 brand-btn-outline"
+                className="hidden sm:block px-4 md:px-6 py-2 rounded-xl transition-all hover:bg-gray-50 brand-btn-outline"
               >
                 Login
               </Button>
               <Button
                 onClick={onNavigateToSignup}
-                className="px-6 py-2 rounded-xl text-white transition-all hover:opacity-90 shadow-md brand-btn"
+                className="px-4 md:px-6 py-2 text-sm md:text-base rounded-xl text-white transition-all hover:opacity-90 shadow-md brand-btn"
               >
                 Get Started
               </Button>
@@ -169,58 +169,58 @@ export function LandingPage({ onNavigateToLogin, onNavigateToSignup }: LandingPa
       </nav>
 
       {/* Hero Section */}
-      <section className="relative py-20 px-6">
+      <section className="relative py-10 md:py-20 px-4 md:px-6">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             {/* Left: Text Content */}
             <div>
               <h1 
-                className="text-5xl mb-6 leading-tight brand-hero-title"
+                className="text-3xl md:text-4xl lg:text-5xl mb-4 md:mb-6 leading-tight brand-hero-title"
               >
                 Your Journey to a Smoke-Free Life Starts Here
               </h1>
               <p 
-                className="text-xl mb-8 leading-relaxed brand-hero-subtitle"
+                className="text-base md:text-lg lg:text-xl mb-6 md:mb-8 leading-relaxed brand-hero-subtitle"
               >
                 Join thousands of people who have successfully quit smoking with our evidence-based support program. 
                 Track your progress, connect with a community, and reclaim your health—one day at a time.
               </p>
               <Button
                 onClick={onNavigateToSignup}
-                className="px-10 py-6 rounded-2xl text-white text-lg transition-all hover:opacity-90 shadow-lg brand-btn-lg"
+                className="w-full sm:w-auto px-8 md:px-10 py-4 md:py-6 rounded-2xl text-white text-base md:text-lg transition-all hover:opacity-90 shadow-lg brand-btn-lg"
               >
                 Get Started Now
               </Button>
 
               {/* Quick Stats */}
-              <div className="grid grid-cols-3 gap-6 mt-12">
+              <div className="grid grid-cols-3 gap-3 md:gap-6 mt-8 md:mt-12">
                 <div>
                   <p 
-                    className="text-3xl mb-1 brand-accent"
+                    className="text-xl md:text-2xl lg:text-3xl mb-1 brand-accent"
                   >
                     10K+
                   </p>
-                  <p className="text-sm" style={{ color: "#333333", opacity: 0.7 }}>
+                  <p className="text-xs md:text-sm" style={{ color: "#333333", opacity: 0.7 }}>
                     Users Helped
                   </p>
                 </div>
                 <div>
                   <p 
-                    className="text-3xl mb-1 brand-accent"
+                    className="text-xl md:text-2xl lg:text-3xl mb-1 brand-accent"
                   >
                     85%
                   </p>
-                  <p className="text-sm" style={{ color: "#333333", opacity: 0.7 }}>
+                  <p className="text-xs md:text-sm" style={{ color: "#333333", opacity: 0.7 }}>
                     Success Rate
                   </p>
                 </div>
                 <div>
                   <p 
-                    className="text-3xl mb-1 brand-accent"
+                    className="text-xl md:text-2xl lg:text-3xl mb-1 brand-accent"
                   >
                     24/7
                   </p>
-                  <p className="text-sm" style={{ color: "#333333", opacity: 0.7 }}>
+                  <p className="text-xs md:text-sm" style={{ color: "#333333", opacity: 0.7 }}>
                     Support
                   </p>
                 </div>
@@ -228,12 +228,12 @@ export function LandingPage({ onNavigateToLogin, onNavigateToSignup }: LandingPa
             </div>
 
             {/* Right: Hero Image */}
-            <div className="relative">
+            <div className="relative hidden lg:block">
               <div className="rounded-3xl overflow-hidden shadow-2xl">
                 <ImageWithFallback
                   src="https://images.unsplash.com/photo-1637091476785-55859d508285?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwZXJzb24lMjBjb25maWRlbnQlMjBzdW5yaXNlJTIwaG9wZXxlbnwxfHx8fDE3NjEyNzkwNTZ8MA&ixlib=rb-4.1.0&q=80&w=1080"
                   alt="Person looking confident towards a bright future"
-                  className="w-full h-[500px] object-cover"
+                  className="w-full h-[400px] lg:h-[500px] object-cover"
                 />
               </div>
             </div>
@@ -242,16 +242,16 @@ export function LandingPage({ onNavigateToLogin, onNavigateToSignup }: LandingPa
       </section>
 
       {/* About Us Section */}
-      <section id="about" className="py-20 px-6 brand-section-bg">
+      <section id="about" className="py-12 md:py-20 px-4 md:px-6 brand-section-bg">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
+          <div className="text-center mb-8 md:mb-16">
             <h2 
-              className="text-4xl mb-4 brand-heading"
+              className="text-2xl md:text-3xl lg:text-4xl mb-3 md:mb-4 brand-heading"
             >
               About Us
             </h2>
             <p 
-              className="text-lg max-w-3xl mx-auto brand-muted"
+              className="text-sm md:text-base lg:text-lg max-w-3xl mx-auto brand-muted"
             >
               We believe that everyone deserves the freedom to live smoke-free. Our mission is to provide 
               compassionate, evidence-based support that empowers you to quit tobacco for good.
@@ -259,13 +259,13 @@ export function LandingPage({ onNavigateToLogin, onNavigateToSignup }: LandingPa
           </div>
 
           {/* Feature Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {features.map((feature, index) => {
               const Icon = feature.icon;
               return (
                 <Card 
                   key={index}
-                  className="p-8 rounded-3xl border-0 shadow-lg hover:shadow-xl transition-all bg-white brand-card"
+                  className="p-6 md:p-8 rounded-2xl md:rounded-3xl border-0 shadow-lg hover:shadow-xl transition-all bg-white brand-card"
                 >
                   <div 
                     className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6"
@@ -274,7 +274,7 @@ export function LandingPage({ onNavigateToLogin, onNavigateToSignup }: LandingPa
                     <Icon className="w-7 h-7 brand-accent" />
                   </div>
                   <h3 
-                    className="text-xl mb-3 brand-heading"
+                    className="text-lg md:text-xl mb-2 md:mb-3 brand-heading"
                   >
                     {feature.title}
                   </h3>
@@ -291,16 +291,16 @@ export function LandingPage({ onNavigateToLogin, onNavigateToSignup }: LandingPa
       </section>
 
       {/* Why Quit Section */}
-      <section id="why-quit" className="py-20 px-6 bg-white">
+      <section id="why-quit" className="py-12 md:py-20 px-4 md:px-6 bg-white">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
+          <div className="text-center mb-8 md:mb-16">
             <h2 
-              className="text-4xl mb-4 brand-heading"
+              className="text-2xl md:text-3xl lg:text-4xl mb-3 md:mb-4 brand-heading"
             >
               Why Quit?
             </h2>
             <p 
-              className="text-lg max-w-3xl mx-auto brand-muted"
+              className="text-sm md:text-base lg:text-lg max-w-3xl mx-auto brand-muted"
             >
               Quitting smoking is one of the best decisions you can make for your health, finances, and overall well-being.
             </p>
@@ -309,26 +309,26 @@ export function LandingPage({ onNavigateToLogin, onNavigateToSignup }: LandingPa
       </section>
 
       {/* Contact Us Section */}
-      <section id="contact" className="py-20 px-6 bg-white">
+      <section id="contact" className="py-12 md:py-20 px-4 md:px-6 bg-white">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
+          <div className="text-center mb-8 md:mb-12">
             <h2 
-              className="text-4xl mb-4 brand-heading"
+              className="text-2xl md:text-3xl lg:text-4xl mb-3 md:mb-4 brand-heading"
             >
               Get In Touch
             </h2>
             <p 
-              className="text-lg brand-muted"
+              className="text-sm md:text-base lg:text-lg brand-muted"
             >
               Have questions? We're here to help. Reach out to our support team.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12">
             {/* Contact Form */}
-            <Card className="p-8 rounded-3xl border-0 shadow-lg brand-card">
+            <Card className="p-6 md:p-8 rounded-2xl md:rounded-3xl border-0 shadow-lg brand-card">
               <h3 
-                className="text-xl mb-6 brand-heading"
+                className="text-lg md:text-xl mb-4 md:mb-6 brand-heading"
               >
                 Send Us a Message
               </h3>
@@ -364,7 +364,7 @@ export function LandingPage({ onNavigateToLogin, onNavigateToSignup }: LandingPa
                 </div>
                 <Button
                   type="submit"
-                  className="w-full py-6 rounded-2xl text-white transition-all hover:opacity-90 shadow-md brand-btn"
+                  className="w-full py-4 md:py-6 rounded-2xl text-white transition-all hover:opacity-90 shadow-md brand-btn"
                 >
                   Send Message
                 </Button>
@@ -372,8 +372,8 @@ export function LandingPage({ onNavigateToLogin, onNavigateToSignup }: LandingPa
             </Card>
 
             {/* Contact Information */}
-            <div className="space-y-8">
-              <Card className="p-6 rounded-3xl border-0 shadow-lg brand-card">
+            <div className="space-y-4 md:space-y-8">
+              <Card className="p-4 md:p-6 rounded-2xl md:rounded-3xl border-0 shadow-lg brand-card">
                 <div className="flex items-center gap-4">
                   <div 
                     className="w-12 h-12 rounded-2xl flex items-center justify-center brand-accent-bg"
@@ -391,7 +391,7 @@ export function LandingPage({ onNavigateToLogin, onNavigateToSignup }: LandingPa
                 </div>
               </Card>
 
-              <Card className="p-6 rounded-3xl border-0 shadow-lg brand-card">
+              <Card className="p-4 md:p-6 rounded-2xl md:rounded-3xl border-0 shadow-lg brand-card">
                 <div className="flex items-center gap-4">
                   <div 
                     className="w-12 h-12 rounded-2xl flex items-center justify-center brand-accent-bg"
