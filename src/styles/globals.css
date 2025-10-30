@@ -1,4 +1,7 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap");
+
 @tailwind base;
+
 @tailwind components;
 @tailwind utilities;
 
@@ -118,3 +121,42 @@ html {
   .brand-section-bg { background-color: #f8f8f8; }
 }
 
+
+body {
+  font-family: "Poppins", sans-serif;
+}
+
+/* Slick slider custom styles for testimonials */
+.slick-slide {
+  padding: 0 8px;
+}
+
+.slick-list {
+  margin: 0 -8px;
+  padding: 20px 0;
+}
+
+.slick-dots {
+  bottom: -50px;
+}
+
+.slick-dots li button:before {
+  font-size: 12px;
+  color: #1C3B5E;
+  opacity: 0.5;
+}
+
+.slick-dots li.slick-active button:before {
+  color: #FFC107;
+  opacity: 1;
+}
+
+/* Ensure smooth transitions */
+.slick-slide {
+  transition: transform 0.3s ease;
+}
+
+/* Focus styles for accessibility */
+.slick-slide:focus {
+  outline: none;
+}
