@@ -37,7 +37,6 @@ export function ProfileHub({ activeTab, setActiveTab, onLogout }: ProfileHubProp
             <div className="lg:col-span-5 space-y-4 md:space-y-6">
               {/* User Card */}
               <UserProfileCard />
-
               {/* Progress Summary Panel */}
               <ProgressSummaryPanel />
 
