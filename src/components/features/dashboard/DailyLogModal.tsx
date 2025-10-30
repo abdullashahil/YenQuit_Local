@@ -73,7 +73,7 @@ export function DailyLogModal({ open, onOpenChange }: DailyLogModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl p-0 rounded-3xl border-0 overflow-hidden shadow-2xl">
+      <DialogContent className="max-w-2xl p-0 rounded-3xl border-0 overflow-hidden shadow-2xl bg-white">
         {/* Header */}
         <div className="p-8 pb-6 border-b border-gray-100">
           <div className="flex items-start justify-between">
@@ -85,12 +85,11 @@ export function DailyLogModal({ open, onOpenChange }: DailyLogModalProps) {
                 {currentDate} at {currentTime}
               </p>
             </div>
-            <button
+            {/* <button
               onClick={() => onOpenChange(false)}
-              className="p-2 rounded-xl hover:bg-gray-100 transition-all"
             >
               <X className="w-5 h-5" style={{ color: "#333333" }} />
-            </button>
+            </button> */}
           </div>
         </div>
 
@@ -122,7 +121,7 @@ export function DailyLogModal({ open, onOpenChange }: DailyLogModalProps) {
             <Label className="text-sm" style={{ color: "#1C3B5E" }}>
               Daily Tobacco Usage <span style={{ color: "#D9534F" }}>*</span>
             </Label>
-            
+
             {/* Smoke-Free Day Button */}
             <button
               onClick={handleSmokeFreeDay}
