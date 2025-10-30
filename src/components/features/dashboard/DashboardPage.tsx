@@ -28,17 +28,28 @@ export function DashboardPage({ activeTab, setActiveTab, onLogout, onboardingNam
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6">
-            <div className="lg:col-span-8 space-y-4 md:space-y-6">
-              <QuitTrackerCard />
-              <StatsSnapshot />
-              <MotivationalContent />
-              <ProgressCalendar />
-            </div>
-            <div className="lg:col-span-4">
-              <AdaptiveAdviceModule />
-            </div>
-          </div>
+          // In DashboardPage.tsx
+<div className="space-y-6">
+  {/* Two Column Layout */}
+  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    {/* Left Column */}
+    <div className="lg:col-span-8 space-y-6">
+      <QuitTrackerCard />
+      <StatsSnapshot />
+      <MotivationalContent />
+    </div>
+    
+    {/* Right Column */}
+    <div className="lg:col-span-4">
+      <AdaptiveAdviceModule />
+    </div>
+  </div>
+  
+  {/* Calendar - Full Width */}
+  <div className="w-full">
+    <ProgressCalendar />
+  </div>
+</div>
         </div>
       </div>
     </div>

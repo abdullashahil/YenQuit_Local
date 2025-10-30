@@ -1,116 +1,213 @@
+import { useState, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { Card } from "../../ui/card";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
+// Remove the dynamic import of Calendar since we're using FullCalendar directly
+
+type ValuePiece = Date | null;
+type Value = ValuePiece | [ValuePiece, ValuePiece];
+
+const generateTimeSlots = (startTime: string, endTime: string) => {
+  const timeSlots = [];
+  const start = new Date(`2024-01-01T${startTime}:00`);
+  const end = new Date(`2024-01-01T${endTime}:00`);
+
+  while (start <= end) {
+    timeSlots.push(start.toTimeString().slice(0, 5));
+    start.setMinutes(start.getMinutes() + 30);
+  }
+
+  return timeSlots;
+};
+
+const formatTo12Hour = (time: string) => {
+  const [hours, minutes] = time.split(':').map(Number);
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const formattedHours = hours % 12 === 0 ? 12 : hours % 12;
+  return `${formattedHours}:${minutes < 10 ? '0' : ''}${minutes} ${ampm}`;
+};
 
 export function ProgressCalendar() {
-  const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  
-  // Mock calendar data for October 2025
-  const calendarDays = [
-    { day: 1, status: "smoke-free" },
-    { day: 2, status: "smoke-free" },
-    { day: 3, status: "high" },
-    { day: 4, status: "smoke-free" },
-    { day: 5, status: "smoke-free" },
-    { day: 6, status: "smoke-free" },
-    { day: 7, status: "smoke-free" },
-    { day: 8, status: "smoke-free" },
-    { day: 9, status: "smoke-free" },
-    { day: 10, status: "smoke-free" },
-    { day: 11, status: "smoke-free" },
-    { day: 12, status: "smoke-free" },
-    { day: 13, status: "high" },
-    { day: 14, status: "smoke-free" },
-    { day: 15, status: "smoke-free" },
-    { day: 16, status: "smoke-free" },
-    { day: 17, status: "current" },
-    { day: 18, status: null },
-    { day: 19, status: null },
-    { day: 20, status: null },
-    { day: 21, status: null },
-    { day: 22, status: null },
-    { day: 23, status: null },
-    { day: 24, status: null },
-    { day: 25, status: null },
-    { day: 26, status: null },
-    { day: 27, status: null },
-    { day: 28, status: null },
-    { day: 29, status: null },
-    { day: 30, status: null },
-    { day: 31, status: null },
-  ];
+  const [isTimeVisible, setIsTimeVisible] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedDay, setSelectedDay] = useState<string>('');
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('');
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
+  const [appointmentsdateTimePairs, setAppointmentsdateTimePairs] = useState<string[]>([]);
+  const [is24Hour, setIs24Hour] = useState(false);
+  const timeSlotDivRef = useRef<HTMLDivElement>(null);
+  const [enabledDays, setEnabledDays] = useState<string[]>([]);
+  const [availability, setAvailability] = useState<Record<string, { start: string; end: string }>>({});
 
-  // Add empty cells for the start of month (assuming Oct 1 is on a Wednesday)
-  const startEmptyCells = 3;
-  
-  const getDayStyle = (status: string | null) => {
-    if (status === "smoke-free") {
-      return { backgroundColor: "#20B2AA", color: "white" };
-    } else if (status === "high") {
-      return { backgroundColor: "#E57373", color: "white" };
-    } else if (status === "current") {
-      return { backgroundColor: "#1C3B5E", color: "white" };
-    }
-    return { backgroundColor: "white", color: "#333333" };
+  const toggleTimeFormat = () => {
+    setIs24Hour(!is24Hour);
   };
 
+  const handleClickOutside = (event: MouseEvent) => {
+    if (timeSlotDivRef.current && !timeSlotDivRef.current.contains(event.target as Node)) {
+      setIsTimeVisible(false);
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleDateClick = (arg: any) => {
+    const date = arg.dateStr;
+    const day = new Date(date).toLocaleDateString('en-US', { weekday: 'long' });
+
+    setSelectedDate(date);
+    setSelectedDay(day);
+    setIsTimeVisible(true);
+
+    // Mock time slots for demonstration
+    const timeRange = { start: '09:00', end: '17:00' }; // Default time range
+    const slots = generateTimeSlots(timeRange.start, timeRange.end);
+    setAvailableTimeSlots(slots);
+    setAppointmentsdateTimePairs([]); // Clear any previous appointments
+  };
+
+  const handleTimeClick = (time: string) => {
+    setSelectedTimeSlot(time);
+    // Here you would typically handle the time slot selection
+    console.log(`Selected time: ${time} on ${selectedDate}`);
+    setIsTimeVisible(false);
+  };
+
+  // Mock data for marked dates
+  const markedDates = {
+    '2025-10-01': 'smoke-free',
+    '2025-10-02': 'smoke-free',
+    '2025-10-03': 'high',
+    '2025-10-04': 'smoke-free',
+    '2025-10-05': 'smoke-free',
+    '2025-10-06': 'smoke-free',
+    '2025-10-07': 'smoke-free',
+    '2025-10-08': 'smoke-free',
+    '2025-10-09': 'smoke-free',
+    '2025-10-10': 'smoke-free',
+    '2025-10-13': 'high',
+    '2025-10-14': 'smoke-free',
+    '2025-10-15': 'smoke-free',
+    '2025-10-16': 'smoke-free',
+  };
+
+  const eventContent = (arg: any) => {
+  // Check if arg.date exists and is a valid date
+  if (!arg.date) {
+    return null; // or return a default content
+  }
+  
+  try {
+    const dateStr = new Date(arg.date).toISOString().split('T')[0];
+    const status = markedDates[dateStr as keyof typeof markedDates];
+
+    if (status === 'smoke-free') {
+      return {
+        className: 'bg-[#20B2AA]',
+        // ... rest of your smoke-free styling
+      };
+    }
+    // ... rest of your existing code
+  } catch (error) {
+    console.error('Error processing date:', error);
+    return null;
+  }
+};
+
   return (
-    <Card className="rounded-3xl shadow-lg border-0 overflow-hidden">
-      {/* Header */}
-      <div className="p-6" style={{ backgroundColor: "#1C3B5E" }}>
-        <div className="flex items-center justify-between text-white">
-          <button className="p-2 hover:bg-white/10 rounded-xl transition-all">
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <h3 className="text-lg">October 2025</h3>
-          <button className="p-2 hover:bg-white/10 rounded-xl transition-all">
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-
-      {/* Calendar Grid */}
-      <div className="p-6">
-        {/* Day Headers */}
-        <div className="grid grid-cols-7 gap-2 mb-4">
-          {daysOfWeek.map((day) => (
-            <div key={day} className="text-center text-xs" style={{ color: "#333333" }}>
-              {day}
-            </div>
-          ))}
+    <Card className="rounded-2xl shadow-sm border border-gray-100 w-full">
+      <div className="p-4 " >
+        <div className="flex justify-between items-center mb-3 ">
+          <h3 className="text-base font-bold text-gray-900">Progress Calendar</h3>
+          {/* <button
+            onClick={() => {
+              const calendarApi = document.querySelector('.fc') as any;
+              if (calendarApi) {
+                calendarApi.getApi().today();
+              }
+            }}
+            className="text-xs text-[#20B2AA] hover:text-[#1a9c94] font-medium"
+          >
+            Today
+          </button> */}
         </div>
 
-        {/* Calendar Days */}
-        <div className="grid grid-cols-7 gap-2">
-          {/* Empty cells for start of month */}
-          {Array.from({ length: startEmptyCells }).map((_, index) => (
-            <div key={`empty-${index}`} />
-          ))}
-          
-          {/* Actual days */}
-          {calendarDays.map((dayData) => (
+        <div className="relative">
+          <FullCalendar
+            plugins={[dayGridPlugin, interactionPlugin]}
+            initialView="dayGridMonth"
+            headerToolbar={{
+              start: 'title',
+              center: '',
+              end: 'prev,next'
+            }}
+            dayHeaderFormat={{ weekday: 'short' }}
+            dayHeaderContent={(arg) => ({
+              html: `<div class="bg-[#e3f4ffd7] text-black p-2">${arg.text}</div>`
+            })}
+            dayCellContent={(arg) => ({
+              html: `<div class="hover:bg-[#5fb6afd7] cursor-pointer h-full w-full">${arg.dayNumberText}</div>`
+            })}
+            height="auto"
+            dateClick={handleDateClick}
+            eventContent={eventContent}
+            events={Object.entries(markedDates).map(([date, status]) => ({
+              start: date,
+              display: 'background',
+              className: status === 'smoke-free' ? 'bg-[#20B2AA]' : 'bg-[#E57373]'
+            }))}
+          />
+
+          {isTimeVisible && selectedDate && (
             <div
-              key={dayData.day}
-              className="aspect-square flex items-center justify-center rounded-xl text-sm cursor-pointer hover:opacity-80 transition-all"
-              style={getDayStyle(dayData.status)}
+              ref={timeSlotDivRef}
+              className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[15vw] max-h-[50vh] px-6 py-8 border text-center rounded-lg shadow-lg bg-white z-10 overflow-y-auto`}
             >
-              {dayData.day}
-            </div>
-          ))}
-        </div>
+              <div className='flex justify-between items-center'>
+                <h1 className='mt-5 text-lg font-semibold mb-4'>
+                  On <span className='text-green-700'>{selectedDate}</span> @
+                </h1>
+                <button
+                  className='mb-6 px-2 py-1 border rounded-lg stroke-blue-500 text-gray-600 hover:bg-gray-200 transition duration-200 text-sm'
+                  onClick={toggleTimeFormat}
+                >
+                  {is24Hour ? '24HR' : '12HR'}
+                </button>
+              </div>
 
-        {/* Legend */}
-        <div className="mt-6 pt-6 border-t border-gray-100 flex items-center justify-center gap-6 flex-wrap">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: "#20B2AA" }} />
-            <span className="text-xs" style={{ color: "#333333" }}>Smoke-free</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: "#E57373" }} />
-            <span className="text-xs" style={{ color: "#333333" }}>High-risk day</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: "#1C3B5E" }} />
-            <span className="text-xs" style={{ color: "#333333" }}>Today</span>
+              {availableTimeSlots.map((slot) => (
+                <div
+                  key={slot}
+                  className={`border border-gray-300 p-2 rounded-lg mb-4 transition-colors duration-200 
+                    ${appointmentsdateTimePairs.includes(slot)
+                      ? 'bg-gray-200 opacity-50 cursor-not-allowed'
+                      : 'bg-gray-100 hover:bg-gray-300 cursor-pointer'}`}
+                  onClick={() => !appointmentsdateTimePairs.includes(slot) && handleTimeClick(slot)}
+                >
+                  <span className="text-sm font-small">
+                    {is24Hour ? slot : formatTo12Hour(slot)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex justify-center gap-4 mt-3 text-xs">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-[#20B2AA]"></div>
+              <span className="text-gray-600">Smoke-free</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-[#E57373]"></div>
+              <span className="text-gray-600">High-risk</span>
+            </div>
           </div>
         </div>
       </div>

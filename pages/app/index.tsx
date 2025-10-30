@@ -35,25 +35,28 @@ export default function Dashboard() {
 
   return (
     <AppLayout activeTab="dashboard">
-      <div className="p-8">
+      <div className="p-4 md:p-6 lg:p-8 min-h-screen">
         <div className="max-w-[1400px] mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl mb-2" style={{ color: "#1C3B5E" }}>
+          <div className="mb-6 md:mb-8">
+            <h1 className="text-2xl md:text-3xl font-semibold mb-1 md:mb-2 text-[#1C3B5E]">
               Welcome back, {userName}
             </h1>
-            <p style={{ color: "#333333" }}>
+            <p className="text-gray-600">
               Here's your progress overview for today
             </p>
           </div>
 
-          <div className="grid grid-cols-12 gap-6">
-            <div className="col-span-8 space-y-6">
+          <div className="flex flex-col lg:flex-row gap-4 md:gap-6">
+            {/* Main Content */}
+            <div className="w-full lg:w-8/12 space-y-4 md:space-y-6">
               <QuitTrackerCard />
               <StatsSnapshot />
               <MotivationalContent />
-              <ProgressCalendar />
             </div>
-            <div className="col-span-4">
+            
+            {/* Sidebar */}
+            <div className="w-full lg:w-4/12 space-y-4 md:space-y-6">
+              <ProgressCalendar />
               <AdaptiveAdviceModule />
             </div>
           </div>

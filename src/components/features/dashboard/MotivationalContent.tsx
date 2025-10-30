@@ -35,96 +35,86 @@ export function MotivationalContent() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg" style={{ color: "#1C3B5E" }}>
+      <div className="flex items-center justify-between px-1">
+        <h3 className="text-lg font-semibold text-gray-900 md:block hidden">
           Continue Your Journey
         </h3>
         <button 
-          className="text-sm flex items-center gap-1 hover:opacity-70 transition-all"
-          style={{ color: "#20B2AA" }}
+          className="text-sm flex items-center gap-1 text-[#20B2AA] hover:text-[#1a9c94] transition-colors"
         >
           View All
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {motivationalItems.map((item, index) => {
           const Icon = item.icon;
+          const isQuote = item.type === "quote";
           
           return (
             <Card 
               key={index} 
-              className="rounded-3xl shadow-lg border-0 overflow-hidden hover:shadow-xl transition-all cursor-pointer group"
+              className="rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all cursor-pointer group h-full flex flex-col"
             >
-              {/* Thumbnail */}
-              <div className="relative h-40 overflow-hidden">
-                <ImageWithFallback
-                  src={item.thumbnail}
-                  alt={item.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                
-                {/* Overlay with Icon */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
-                  <div 
-                    className="p-3 rounded-2xl"
-                    style={{ backgroundColor: "#20B2AA" }}
-                  >
-                    <Icon className="w-5 h-5 text-white" />
+              {/* Thumbnail with Aspect Ratio */}
+              <div className="relative pt-[56.25%] overflow-hidden bg-gray-50">
+                <div className="absolute inset-0">
+                  <ImageWithFallback
+                    src={item.thumbnail}
+                    alt={item.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    width={400}
+                    height={225}
+                  />
+                  
+                  {/* Overlay with Icon */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex items-end p-4">
+                    <div className="p-2 rounded-xl bg-[#20B2AA] shadow-md">
+                      <Icon className="w-4 h-4 text-white" />
+                    </div>
                   </div>
-                </div>
 
-                {/* Progress Bar for Video/Podcast */}
-                {item.type !== "quote" && item.progress && (
-                  <div className="absolute bottom-0 left-0 right-0 h-1" style={{ backgroundColor: "rgba(255,255,255,0.3)" }}>
-                    <div 
-                      className="h-full"
-                      style={{ 
-                        width: `${item.progress}%`,
-                        backgroundColor: "#20B2AA"
-                      }}
-                    />
-                  </div>
-                )}
+                  {/* Progress Bar for Video/Podcast */}
+                  {!isQuote && item.progress && (
+                    <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-gray-200/50">
+                      <div 
+                        className="h-full bg-[#20B2AA] transition-all duration-300"
+                        style={{ width: `${item.progress}%` }}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Content */}
-              <div className="p-5 space-y-2">
-                {item.type === "quote" ? (
-                  <>
+              <div className="p-4 flex-1 flex flex-col">
+                {isQuote ? (
+                  <div className="space-y-2">
                     <div className="flex items-start gap-2">
-                      <Quote className="w-4 h-4 flex-shrink-0 mt-1" style={{ color: "#20B2AA" }} />
-                      <p className="text-sm leading-relaxed" style={{ color: "#333333" }}>
+                      <Quote className="w-4 h-4 flex-shrink-0 mt-1 text-[#20B2AA]" />
+                      <p className="text-sm text-gray-800 leading-relaxed line-clamp-3">
                         "{item.quote}"
                       </p>
                     </div>
-                    <p className="text-xs" style={{ color: "#333333", opacity: 0.6 }}>
-                      — {item.author}
+                    <p className="text-xs text-gray-500 mt-1">
+                      - {item.author}
                     </p>
-                    <p className="text-xs" style={{ color: "#20B2AA" }}>
-                      Uploaded {item.uploadedTime}
-                    </p>
-                  </>
+                  </div>
                 ) : (
-                  <>
-                    <h4 className="text-sm leading-snug" style={{ color: "#1C3B5E" }}>
+                  <div className="space-y-1.5">
+                    <h4 className="text-sm font-medium text-gray-900 line-clamp-2 h-10">
                       {item.title}
                     </h4>
-                    <p className="text-xs" style={{ color: "#333333", opacity: 0.7 }}>
-                      {item.subtitle}
-                    </p>
-                    <div className="flex items-center justify-between pt-2">
-                      <span className="text-xs" style={{ color: "#333333", opacity: 0.6 }}>
-                        {item.duration} remaining
+                    <div className="flex items-center justify-between mt-1">
+                      <p className="text-xs text-gray-500 truncate pr-2">
+                        {item.subtitle}
+                      </p>
+                      <span className="text-xs text-gray-500 whitespace-nowrap">
+                        {item.duration}
                       </span>
-                      {item.progress && (
-                        <span className="text-xs" style={{ color: "#20B2AA" }}>
-                          {item.progress}% complete
-                        </span>
-                      )}
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
             </Card>

@@ -1,0 +1,304 @@
+/* Calendar Container */
+.reactCalendar {
+  width: 100%;
+  max-width: 100%;
+  background: white;
+  border: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  line-height: 1.2;
+  padding: 0 0.5rem;
+}
+
+/* Navigation */
+.reactCalendar__navigation {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  margin-bottom: 0.5rem;
+  padding: 0 0.5rem;
+}
+
+.reactCalendar__navigation__label {
+  flex-grow: 1;
+  text-align: center;
+  font-weight: 600;
+  color: #1a1a1a;
+  font-size: 0.95rem;
+  pointer-events: none;
+}
+
+.reactCalendar__navigation__arrow {
+  background: #f5f5f5;
+  border: none;
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.reactCalendar__navigation__arrow:hover {
+  background: #eaeaea;
+}
+
+/* Month View */
+.reactCalendar__month-view__weekdays {
+  text-align: center;
+  text-transform: uppercase;
+  font-weight: 500;
+  font-size: 0.7rem;
+  color: #666;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 0.5rem;
+}
+
+.reactCalendar__month-view__weekdays__weekday {
+  padding: 0.5rem 0;
+}
+
+.reactCalendar__month-view__weekdays__weekday abbr {
+  text-decoration: none;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+/* Days */
+.reactCalendar__month-view__days {
+  row-gap: 0.25rem;
+}
+
+.reactCalendar__month-view__days__day {
+  color: #333;
+  font-weight: 500;
+  padding: 0.5rem 0;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.reactCalendar__month-view__days__day--neighboringMonth {
+  color: #999;
+}
+
+.reactCalendar__month-view__days__day--weekend {
+  color: #666;
+}
+
+.reactCalendar__tile {
+  max-width: 100%;
+  text-align: center;
+  padding: 0.5rem 0;
+  background: none;
+  border-radius: 8px;
+  height: 40px;
+  width: 40px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+}
+
+.reactCalendar__tile:enabled:hover,
+.reactCalendar__tile:enabled:focus {
+  background-color: #f5f5f5;
+  outline: none;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.reactCalendar__tile--now {
+  background: #f8f9fa !important;
+  color: #1a1a1a !important;
+  border: 2px solid #1C3B5E !important;
+}
+
+.reactCalendar__tile--now:enabled:hover,
+.reactCalendar__tile--now:enabled:focus {
+  background: #f0f4f8 !important;
+  border-color: #1C3B5E !important;
+}
+
+.reactCalendar__tile--active {
+  background: #20B2AA !important;
+  color: white !important;
+  border-color: transparent !important;
+  font-weight: 600;
+}
+
+.reactCalendar__tile--active:enabled:hover,
+.reactCalendar__tile--active:enabled:focus {
+  background: #1a9c94 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(32, 178, 170, 0.3);
+}
+
+/* Custom day states */
+.smokeFreeDay {
+  background: #20B2AA !important;
+  color: white !important;
+  font-weight: 500;
+}
+
+.highRiskDay {
+  background: #E57373 !important;
+  color: white !important;
+  font-weight: 500;
+}
+
+/* Legend */
+.calendarLegend {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  padding: 1rem 0.5rem 0;
+  margin-top: 1rem;
+  border-top: 1px solid #f0f0f0;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.legendDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .reactCalendar {
+    padding: 0 0.25rem;
+  }
+  
+  .reactCalendar__tile {
+    width: 36px;
+    height: 36px;
+    font-size: 0.85rem;
+  }
+  
+  .reactCalendar__month-view__weekdays__weekday abbr {
+    font-size: 0.7rem;
+  }
+  
+  .calendarLegend {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  
+  .legendItem {
+    font-size: 0.7rem;
+  }
+  
+  .legendDot {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+/* FullCalendar overrides */
+.fc {
+  --fc-button-text-color: #000000;
+  --fc-button-bg-color: #ffffff;
+  --fc-button-hover-bg-color: rgba(217, 222, 201, 0);
+  --fc-button-hover-border-color: rgba(255, 255, 255, 0);
+  --fc-button-active-bg-color: #d8d9d200;
+  --fc-button-active-border-color: #4b535a00;
+  --fc-event-bg-color: #3788d8;
+  --fc-event-border-color: #3788d8;
+  --fc-event-text-color: #fff;
+  --fc-event-selected-overlay-color: rgba(0, 0, 0, 0);
+  --fc-more-link-bg-color: #d0d0d0;
+  --fc-more-link-text-color: inherit;
+  --fc-page-bg-color: #27cd2400;
+  --fc-border-color: #a9414100;
+  --fc-today-bg-color: rgba(189, 246, 195, 0.705);
+  --fc-today-bg-color1: rgba(172, 243, 178, 0.712);
+}
+
+.fc-col-header-cell {
+  background-color: #e3f4ffd7 !important;
+  color: #000000 !important;
+  padding: 8px 0;
+}
+
+.fc-col-header-cell:hover {
+  background-color: #e3f4ffd7 !important;
+}
+
+.fc-theme-standard td,
+.fc-theme-standard th {
+  border: 0;
+}
+
+.fc-daygrid-day-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  margin: 2px;
+  border-radius: 8px;
+}
+
+.fc-day-today {
+  background-color: var(--fc-today-bg-color) !important;
+  font-weight: bold;
+}
+
+.fc-day-today:hover {
+  background-color: var(--fc-today-bg-color1) !important;
+}
+
+.fc-day-past {
+  opacity: 0.6;
+}
+
+.fc-day-future {
+  cursor: pointer;
+}
+
+.fc-day-future:hover {
+  background-color: rgba(95, 182, 175, 0.2) !important;
+}
+
+.fc .fc-daygrid-day-number {
+  padding: 4px;
+  color: inherit;
+}
+
+.fc .fc-button {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.fc .fc-button:focus {
+  box-shadow: none;
+}
+
+/* Time slot popup styles */
+.time-slot-popup {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  max-height: 80vh;
+  overflow-y: auto;
+  width: 80%;
+  max-width: 400px;
+}
