@@ -1,13 +1,18 @@
 import type { AppProps } from 'next/app'
+import { useState } from 'react'
 import { AppProvider } from '../src/context/AppContext'
+import { Sidebar } from '../src/components/layouts/Sidebar'
 import '../src/styles/globals.css'
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
 
 export default function App({ Component, pageProps }: AppProps) {
+  const [activeTab, setActiveTab] = useState('dashboard')
+  
   return (
     <AppProvider>
-      <Component {...pageProps} />
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <div>
+        <Component {...pageProps} />
+      </div>
     </AppProvider>
   )
 }
