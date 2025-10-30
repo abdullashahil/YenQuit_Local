@@ -79,44 +79,70 @@ export function LearningActivityLog() {
         </div>
       </div>
 
-      <ScrollArea className="flex-1 p-6">
-        <div className="space-y-4">
-          {activities.map((activity) => {
-            const Icon = activity.icon;
-            
-            return (
-              <div
-                key={activity.id}
-                className="flex items-start gap-4 p-4 rounded-2xl hover:bg-gray-50 transition-all"
-              >
-                {/* Icon */}
-                <div
-                  className="p-2.5 rounded-xl flex-shrink-0"
-                  style={{ backgroundColor: "#20B2AA10" }}
-                >
-                  <Icon className="w-5 h-5" style={{ color: "#20B2AA" }} />
-                </div>
+<ScrollArea
+  className="
+    flex-1 p-6
+    [mask-image:linear-gradient(to_bottom,rgba(0,0,0,1)_90%,rgba(0,0,0,0)_100%)]
+    overflow-hidden
+    rounded-2xl
+    isolate
+  "
+>
+  <div
+    className="
+      bg-white w-full h-full
+      rounded-2xl overflow-hidden
+      relative isolate
+    "
+    style={{
+      contain: "paint",
+      WebkitMaskImage:
+        "linear-gradient(to bottom, rgba(0,0,0,1) 98%, rgba(0,0,0,0) 100%)",
+    }}
+  >
+    <div className="space-y-4 pb-6 pr-2 scroll-smooth w-full">
+      {activities.map((activity) => {
+        const Icon = activity.icon;
+        return (
+          <div
+            key={activity.id}
+            className="
+              flex items-start gap-3 p-3 rounded-2xl
+              hover:bg-gray-50 transition-all w-full overflow-hidden
+            "
+          >
+            {/* Icon */}
+            <div
+              className="p-2 rounded-xl flex-shrink-0"
+              style={{ backgroundColor: '#20B2AA10' }}
+            >
+              <Icon className="w-5 h-5" style={{ color: '#20B2AA' }} />
+            </div>
 
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <p className="text-sm" style={{ color: "#333333" }}>
-                      <span style={{ opacity: 0.7 }}>{activity.action}</span>{" "}
-                      <span style={{ color: "#20B2AA" }}>{activity.title}</span>
-                    </p>
-                    {activity.completed && (
-                      <CheckCircle2 className="w-4 h-4 flex-shrink-0" style={{ color: "#8BC34A" }} />
-                    )}
-                  </div>
-                  <p className="text-xs" style={{ color: "#333333", opacity: 0.5 }}>
-                    {activity.date} at {activity.time}
-                  </p>
-                </div>
+            {/* Content */}
+            <div className="flex-1 min-w-0 break-words">
+              <div className="flex items-start justify-between gap-2 mb-1 flex-wrap">
+                <p className="text-sm text-[#333333] break-words leading-snug">
+                  <span className="opacity-70">{activity.action}</span>{' '}
+                  <span className="text-[#20B2AA] break-all">
+                    {activity.title}
+                  </span>
+                </p>
+                {activity.completed && (
+                  <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-[#8BC34A]" />
+                )}
               </div>
-            );
-          })}
-        </div>
-      </ScrollArea>
+              <p className="text-xs text-[#333333] opacity-50 leading-tight">
+                {activity.date} at {activity.time}
+              </p>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+</ScrollArea>
+
     </Card>
   );
 }
