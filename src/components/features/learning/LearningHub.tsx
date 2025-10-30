@@ -1,17 +1,21 @@
-import { Sidebar } from "../../layouts/Sidebar";
+import { useState } from "react";
 import { VideoCard } from "./VideoCard";
 import { PodcastCard } from "./PodcastCard";
 import { ImageCard } from "./ImageCard";
 import { LearningSection } from "./LearningSection";
 import { RecommendedSidebar } from "./RecommendedSidebar";
+import { ContentViewPage } from "./ContentViewPage";
 
 interface LearningHubProps {
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
+  activeTab?: string;
+  setActiveTab?: (tab: string) => void;
   onLogout?: () => void;
 }
 
 export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubProps) {
+  const [currentView, setCurrentView] = useState<"hub" | "content">("hub");
+  const [contentType, setContentType] = useState<"video" | "podcast" | "image">("video");
+
   const videos = [
     {
       thumbnail: "https://images.unsplash.com/photo-1716284129276-c84a6b77325f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZWRpdGF0aW9uJTIwYnJlYXRoaW5nJTIwcmVsYXhhdGlvbnxlbnwxfHx8fDE3NjA3MDY5OTJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
@@ -97,17 +101,48 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
     },
   ];
 
+  const handleViewMore = (type: "video" | "podcast" | "image") => {
+    setContentType(type);
+    setCurrentView("content");
+  };
+
+  const handleBackToHub = () => {
+    setCurrentView("hub");
+  };
+
+  const getContentItems = () => {
+    switch (contentType) {
+      case "video":
+        return videos;
+      case "podcast":
+        return podcasts;
+      case "image":
+        return images;
+      default:
+        return [];
+    }
+  };
+
+  // Show content view page if user clicked "View More"
+  if (currentView === "content") {
+    return (
+      <ContentViewPage
+        contentType={contentType}
+        items={getContentItems()}
+        onBack={handleBackToHub}
+      />
+    );
+  }
+
+  // Show main hub view
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#FFFFFF" }}>
-      {/* Sidebar Navigation */}
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={onLogout} />
-
       {/* Main Content Area */}
       <div className="p-4 md:p-6 lg:p-8">
         <div className="max-w-[1600px] mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
-            {/* Main Content - Left Side */}
-            <div className="lg:col-span-9 space-y-6 md:space-y-8 lg:space-y-10">
+          <div className="grid grid-cols-1">
+            {/* Main Content */}
+            <div className="space-y-6 md:space-y-8 lg:space-y-10">
               {/* Page Header */}
               <div>
                 <h1 className="text-2xl md:text-3xl mb-2" style={{ color: "#1C3B5E" }}>
@@ -119,7 +154,10 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
               </div>
 
               {/* Video-Based Learning Section */}
-              <LearningSection title="Video-Based Learning">
+              <LearningSection 
+                title="Video-Based Learning"
+                onViewMore={() => handleViewMore("video")}
+              >
                 {videos.map((video, index) => (
                   <div key={index}>
                     <VideoCard {...video} />
@@ -128,7 +166,10 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
               </LearningSection>
 
               {/* Podcast-Based Learning Section */}
-              <LearningSection title="Podcast-Based Learning">
+              <LearningSection 
+                title="Podcast-Based Learning"
+                onViewMore={() => handleViewMore("podcast")}
+              >
                 {podcasts.map((podcast, index) => (
                   <div key={index}>
                     <PodcastCard {...podcast} />
@@ -137,17 +178,18 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
               </LearningSection>
 
               {/* Image-Based Learning Section */}
-              <LearningSection title="Image-Based Learning">
+              <LearningSection 
+                title="Image-Based Learning"
+                onViewMore={() => handleViewMore("image")}
+              >
                 {images.map((image, index) => (
                   <div key={index}>
                     <ImageCard {...image} />
                   </div>
                 ))}
               </LearningSection>
-            </div>
-
-            {/* Right Sidebar - Recommendations */}
-            <div className="lg:col-span-3">
+              
+              {/* Floating Recommended Sidebar */}
               <RecommendedSidebar />
             </div>
           </div>

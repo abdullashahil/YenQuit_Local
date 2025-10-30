@@ -16,20 +16,9 @@ export default function Learning() {
     }
   }, [router])
 
-  // LearningHub expects activeTab and setActiveTab props, but we handle routing in AppLayout
-  // We'll need to modify LearningHub or create a wrapper
   return (
     <AppLayout activeTab="learning">
-      <LearningHub 
-        activeTab="learning" 
-        setActiveTab={() => {}} 
-        onLogout={() => {
-          if (typeof window !== 'undefined') {
-            sessionStorage.clear()
-          }
-          router.push('/')
-        }} 
-      />
+      <LearningHub />
     </AppLayout>
   )
 }
