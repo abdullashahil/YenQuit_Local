@@ -10,7 +10,7 @@ export default function Profile() {
     // Check if user is authenticated
     if (typeof window !== 'undefined') {
       const userType = sessionStorage.getItem('userType')
-      if (!userType) {
+      if (!userType) { 
         router.push('/login')
       }
     }
