@@ -26,8 +26,13 @@ export function Sidebar({ activeTab, setActiveTab, onLogout }: SidebarProps) {
   // Sidebar content component (reused for both desktop and mobile)
   const SidebarContent = () => (
     <div className="h-full flex flex-col" style={{ backgroundColor: "#1C3B5E" }}>
+      {/* create a logo "YENQUIT" */}
+      <div className="p-6 mb-6">
+        <h1 className="ml-2 text-2xl font-bold text-white">YEN<span className="text-[#FFC107]">QUIT</span></h1>
+      </div>
+
       {/* Emergency Support Button */}
-      <div className="p-6">
+      {/* <div className="p-6">
         <button
           className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl transition-all hover:opacity-90"
           style={{ backgroundColor: "#20B2AA" }}
@@ -35,7 +40,7 @@ export function Sidebar({ activeTab, setActiveTab, onLogout }: SidebarProps) {
           <Phone className="w-5 h-5 text-white" />
           <span className="text-white text-sm md:text-base">Live Support</span>
         </button>
-      </div>
+      </div> */}
 
       {/* Navigation Items */}
       <nav className="flex-1 px-4 space-y-2">
@@ -59,23 +64,23 @@ export function Sidebar({ activeTab, setActiveTab, onLogout }: SidebarProps) {
       </nav>
 
       {/* App Branding */}
-      <div className="p-6 border-t" style={{ borderColor: "#ffffff20" }}>
+      {/* <div className="p-6 border-t" style={{ borderColor: "#ffffff20" }}>
         <div className="text-center mb-4">
           <p className="text-white/60 text-sm">Quitting Journey</p>
           <p className="text-white/40 text-xs mt-1">Your path to freedom</p>
-        </div>
+        </div> */}
         
         {/* Admin Link */}
-        <button
+        {/* <button
           onClick={() => handleNavClick("admin")}
           className="w-full text-xs hover:text-white/80 transition-all mb-3"
           style={{ color: "#ffffff40" }}
         >
           Admin Panel →
-        </button>
+        </button> */}
 
         {/* Logout Button */}
-        {onLogout && (
+        {/* {onLogout && (
           <button
             onClick={onLogout}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl transition-all hover:bg-white/10"
@@ -84,8 +89,8 @@ export function Sidebar({ activeTab, setActiveTab, onLogout }: SidebarProps) {
             <LogOut className="w-4 h-4" />
             <span className="text-sm">Logout</span>
           </button>
-        )}
-      </div>
+        )} */}
+      {/* </div> */}
     </div>
   );
 
@@ -108,7 +113,7 @@ export function Sidebar({ activeTab, setActiveTab, onLogout }: SidebarProps) {
       </Sheet>
 
       {/* Desktop Sidebar - Hidden on mobile */}
-      <div className="hidden md:block fixed left-0 top-0 h-screen w-64">
+      <div className=" hidden md:block fixed left-0 top-0 h-screen w-1/8 min-w-[250px] max-w-[320px]">
         <SidebarContent />
       </div>
     </>
