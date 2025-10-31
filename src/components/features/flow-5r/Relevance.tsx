@@ -83,11 +83,18 @@ export function FiveR_Relevance({ onNext }: FiveR_RelevanceProps) {
             </p>
           </div>
 
-          <div className="mt-8 flex justify-end">
+          <div className="mt-8 flex justify-between gap-4">
+            <Button
+              onClick={() => window.location.href = '/5a/ask'}
+              className="flex-1 px-6 py-6 rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 text-white"
+            >
+              I'm Ready to Quit
+            </Button>
             <Button
               onClick={() => onNext({ relevance: selected, potentialSavings: savingsAmount })}
               disabled={selected.length === 0}
-              className="px-8 py-6 rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 disabled:opacity-50"
+              variant="outline"
+              className="flex-1 px-6 py-6 rounded-2xl border-[#20B2AA] text-[#20B2AA] hover:bg-[#20B2AA]/10 disabled:opacity-50"
             >
               Next: See Your Risks
             </Button>

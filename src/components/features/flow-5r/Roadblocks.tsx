@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from '../../ui/button';
 import { Textarea } from '../../ui/textarea';
 import { OnboardingProgressBar } from '../flow-shared/OnboardingProgressBar';
-import { AlertCircle, Lightbulb, Brain, Users, Coffee, Home } from 'lucide-react';
+import { AlertCircle, Lightbulb, Brain, Users, Coffee, Home, Check } from 'lucide-react';
 
 interface FiveR_RoadblocksProps {
   onNext: (data: any) => void;
@@ -11,72 +11,54 @@ interface FiveR_RoadblocksProps {
 
 const commonRoadblocks = [
   {
-    icon: Brain,
-    title: 'Nicotine Withdrawal',
-    description: 'Physical cravings and irritability',
-    strategies: [
-      'Use nicotine replacement therapy (patches, gum, lozenges)',
-      'Practice deep breathing exercises',
-      'Stay hydrated and eat healthy snacks',
-      'Engage in physical activity'
-    ]
+    id: 'stress',
+    title: 'Stress Management',
+    description: 'Smoking is my main way to cope with stress and anxiety.',
+    resolution: 'Learn alternative stress management techniques like deep breathing, meditation, or physical activity to replace smoking as a coping mechanism.'
   },
   {
-    icon: Users,
+    id: 'social',
     title: 'Social Situations',
-    description: 'Pressure from friends who smoke',
-    strategies: [
-      'Avoid smoking areas and triggers initially',
-      'Tell friends and family about your quit decision',
-      'Practice saying "No, thank you" confidently',
-      'Find non-smoking social activities'
-    ]
+    description: 'I often smoke when I\'m with friends who smoke or in social settings.',
+    resolution: 'Plan ahead for social situations. Let friends know you\'re trying to quit, and have strategies ready like chewing gum or having non-smoking friends as support.'
   },
   {
-    icon: Coffee,
-    title: 'Habitual Triggers',
-    description: 'Coffee breaks, after meals, driving',
-    strategies: [
-      'Change your routine during trigger times',
-      'Replace smoking with healthier habits',
-      'Use substitutes like sugar-free gum or hard candy',
-      'Keep hands busy with a stress ball or fidget tool'
-    ]
+    id: 'cravings',
+    title: 'Nicotine Cravings',
+    description: 'The physical cravings for nicotine are too strong to resist.',
+    resolution: 'Consider nicotine replacement therapy (patches, gum) or prescription medications. Cravings typically peak at 2-3 days and decrease over 2-4 weeks.'
   },
   {
-    icon: AlertCircle,
-    title: 'Stress & Emotions',
-    description: 'Using tobacco to cope with stress',
-    strategies: [
-      'Learn relaxation techniques (meditation, yoga)',
-      'Exercise regularly to manage stress',
-      'Talk to supportive friends or counselor',
-      'Journal your feelings and progress'
-    ]
+    id: 'habit',
+    title: 'Habit & Routine',
+    description: 'Smoking is part of my daily routine (after meals, with coffee, etc.).',
+    resolution: 'Disrupt your smoking routines. Change your morning routine, take a different route to work, or switch to tea instead of coffee to break the association.'
   },
   {
-    icon: Home,
-    title: 'Home Environment',
-    description: 'Tobacco products at home',
-    strategies: [
-      'Remove all tobacco products from your home',
-      'Clean and air out your living space',
-      'Avoid keeping "emergency" cigarettes',
-      'Create a smoke-free home policy'
-    ]
+    id: 'withdrawal',
+    title: 'Withdrawal Symptoms',
+    description: 'I\'m afraid of withdrawal symptoms like irritability and weight gain.',
+    resolution: 'Withdrawal is temporary (2-4 weeks). Stay hydrated, exercise, and have healthy snacks ready. The benefits of quitting far outweigh these temporary discomforts.'
+  },
+  {
+    id: 'motivation',
+    title: 'Motivation',
+    description: 'I struggle to stay motivated to quit for the long term.',
+    resolution: 'Create a motivation list, set small milestones, and reward yourself. Track your progress and remember your reasons for quitting.'
   }
 ];
 
 export function FiveR_Roadblocks({ onNext, onBack }: FiveR_RoadblocksProps) {
   const [selectedRoadblocks, setSelectedRoadblocks] = useState<string[]>([]);
+  const [showResolutions, setShowResolutions] = useState(false);
   const [personalRoadblock, setPersonalRoadblock] = useState('');
   const [personalStrategy, setPersonalStrategy] = useState('');
 
-  const toggleRoadblock = (title: string) => {
+  const toggleRoadblock = (id: string) => {
     setSelectedRoadblocks(prev => 
-      prev.includes(title) 
-        ? prev.filter(r => r !== title)
-        : [...prev, title]
+      prev.includes(id) 
+        ? prev.filter(r => r !== id)
+        : [...prev, id]
     );
   };
 
@@ -86,6 +68,14 @@ export function FiveR_Roadblocks({ onNext, onBack }: FiveR_RoadblocksProps) {
       personalRoadblock,
       personalStrategy
     });
+  };
+
+  const handleShowResolutions = () => {
+    setShowResolutions(true);
+  };
+
+  const handleBackToSelection = () => {
+    setShowResolutions(false);
   };
 
   return (
@@ -126,68 +116,94 @@ export function FiveR_Roadblocks({ onNext, onBack }: FiveR_RoadblocksProps) {
 
           {/* Common Roadblocks */}
           <div className="mb-8">
-            <h2 className="text-[#1C3B5E] mb-6">Common Roadblocks & Solutions</h2>
-            
-            <div className="space-y-4">
-              {commonRoadblocks.map((roadblock) => {
-                const Icon = roadblock.icon;
-                const isSelected = selectedRoadblocks.includes(roadblock.title);
-                
-                return (
-                  <button
-                    key={roadblock.title}
-                    onClick={() => toggleRoadblock(roadblock.title)}
-                    className="w-full text-left p-6 rounded-2xl border-2 transition-all hover:shadow-md"
-                    style={{
-                      backgroundColor: isSelected ? 'rgba(32, 178, 170, 0.05)' : '#FFFFFF',
-                      borderColor: isSelected ? '#20B2AA' : '#E0E0E0'
-                    }}
-                  >
-                    <div className="flex items-start gap-4">
+            <h2 className="text-[#1C3B5E] mb-6 text-2xl font-semibold">Identify Your Roadblocks</h2>
+            <p className="text-[#333333] mb-8 text-lg">
+              Select the challenges you face when trying to quit smoking. 
+              {!showResolutions && selectedRoadblocks.length > 0 && (
+                <span className="block mt-2 text-[#20B2AA] font-medium">
+                  {selectedRoadblocks.length} selected. Ready to see strategies?
+                </span>
+              )}
+            </p>
+
+            {!showResolutions ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                  {commonRoadblocks.map((roadblock) => {
+                    const isSelected = selectedRoadblocks.includes(roadblock.id);
+                    return (
                       <div 
-                        className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: 'rgba(251, 146, 60, 0.1)' }}
+                        key={roadblock.id}
+                        className={`p-5 rounded-2xl border-2 cursor-pointer transition-all ${
+                          isSelected 
+                            ? 'border-[#20B2AA] bg-[#F0F9F9]' 
+                            : 'border-gray-200 hover:border-gray-300 bg-white'
+                        }`}
+                        onClick={() => toggleRoadblock(roadblock.id)}
                       >
-                        <Icon size={24} style={{ color: '#FB923C' }} />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <div>
-                            <h3 className="text-[#1C3B5E]">{roadblock.title}</h3>
-                            <p className="text-sm text-[#333333] opacity-70 mt-1">
-                              {roadblock.description}
-                            </p>
+                        <div className="flex items-center gap-4">
+                          <div 
+                            className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+                              isSelected ? 'bg-[#20B2AA]' : 'bg-gray-100 border-2 border-gray-300'
+                            }`}
+                          >
+                            {isSelected && <Check className="w-4 h-4 text-white" />}
                           </div>
-                          {isSelected && (
-                            <div 
-                              className="w-6 h-6 rounded-full flex items-center justify-center"
-                              style={{ backgroundColor: '#20B2AA' }}
-                            >
-                              <span className="text-white text-sm">✓</span>
-                            </div>
-                          )}
+                          <h3 className="text-[#1C3B5E] font-medium">{roadblock.title}</h3>
                         </div>
-                        {isSelected && (
-                          <div className="mt-4 pl-4 border-l-2" style={{ borderColor: '#20B2AA' }}>
-                            <p className="text-sm mb-2" style={{ color: '#20B2AA' }}>
-                              Recommended Strategies:
-                            </p>
-                            <ul className="space-y-2">
-                              {roadblock.strategies.map((strategy, index) => (
-                                <li key={index} className="text-sm text-[#333333] opacity-80 flex items-start gap-2">
-                                  <span className="text-[#20B2AA] mt-1">•</span>
-                                  <span>{strategy}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
                       </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
+
+                {selectedRoadblocks.length > 0 && (
+                  <div className="flex justify-center mb-8">
+                    <Button
+                      onClick={handleShowResolutions}
+                      className="px-8 py-6 text-lg rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 text-white"
+                    >
+                      Show Me Strategies for {selectedRoadblocks.length} {selectedRoadblocks.length === 1 ? 'Challenge' : 'Challenges'}
+                    </Button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="space-y-6">
+                <div className="space-y-6">
+                  {commonRoadblocks
+                    .filter(r => selectedRoadblocks.includes(r.id))
+                    .map((roadblock) => (
+                      <div 
+                        key={roadblock.id}
+                        className="p-6 rounded-2xl bg-white border-2 border-[#E0F2F1]"
+                      >
+                        <h3 className="text-[#1C3B5E] text-xl font-semibold mb-3">{roadblock.title}</h3>
+                        <p className="text-[#333333] mb-4">{roadblock.description}</p>
+                        <div className="p-4 bg-[#F0F9F9] rounded-lg border-l-4 border-[#20B2AA]">
+                          <p className="text-[#1C3B5E] font-medium mb-2">Strategy:</p>
+                          <p className="text-[#333333]">{roadblock.resolution}</p>
+                        </div>
+                      </div>
+                    ))}
+                  
+                  <div className="pt-4 flex justify-between">
+                    <Button
+                      onClick={handleBackToSelection}
+                      variant="outline"
+                      className="px-6 py-6 text-lg rounded-2xl border-[#20B2AA] text-[#20B2AA] hover:bg-[#20B2AA]/10"
+                    >
+                      ← Back to Selection
+                    </Button>
+                    <Button
+                      onClick={handleNext}
+                      className="px-8 py-6 text-lg rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 text-white"
+                    >
+                      Continue to Next Step
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
             
             <p className="text-sm text-[#333333] opacity-70 mt-4 text-center">
               Click to select roadblocks and view strategies ({selectedRoadblocks.length} selected)
@@ -228,18 +244,17 @@ export function FiveR_Roadblocks({ onNext, onBack }: FiveR_RoadblocksProps) {
           </div>
 
           {/* Navigation Buttons */}
-          <div className="flex justify-between">
+          <div className="flex justify-between gap-4">
             <Button
-              onClick={onBack}
-              variant="outline"
-              className="px-6 py-6 rounded-2xl border-2"
-              style={{ borderColor: '#1C3B5E', color: '#1C3B5E' }}
+              onClick={() => window.location.href = '/5a/ask'}
+              className="flex-1 px-6 py-6 rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 text-white"
             >
-              Back
+              I'm Ready to Quit
             </Button>
             <Button
               onClick={handleNext}
-              className="px-8 py-6 rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 text-white"
+              variant="outline"
+              className="flex-1 px-6 py-6 rounded-2xl border-[#20B2AA] text-[#20B2AA] hover:bg-[#20B2AA]/10"
             >
               Continue to Repetition
             </Button>
