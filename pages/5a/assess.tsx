@@ -1,15 +1,13 @@
-import { useRouter } from 'next/router'
-import { useAppContext } from '../../src/context/AppContext'
-import { FiveA_Assess } from '../../src/components/features/flow-5a/Assess'
+import { FiveA_Assess } from '../../src/components/features/flow-5a/Assess';
+import { useRouter } from 'next/router';
 
-export default function Assess() {
-  const router = useRouter()
-  const { fiveAData, setFiveAData } = useAppContext()
-
+export default function AssessPage() {
+  const router = useRouter();
+  
   const handleNext = (data: any) => {
-    setFiveAData({ ...fiveAData, assess: data })
-    router.push('/5a/assist')
-  }
+    // Store data in context or state management
+    router.push('/5a/assist');
+  };
 
-  return <FiveA_Assess onNext={handleNext} />
+  return <FiveA_Assess onNext={handleNext} />;
 }

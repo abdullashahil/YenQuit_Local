@@ -1,15 +1,13 @@
-import { useRouter } from 'next/router'
-import { useAppContext } from '../../src/context/AppContext'
-import { FiveA_Ask } from '../../src/components/features/flow-5a/Ask'
+import { FiveA_Ask } from '../../src/components/features/flow-5a/Ask';
+import { useRouter } from 'next/router';
 
-export default function Ask() {
-  const router = useRouter()
-  const { fiveAData, setFiveAData } = useAppContext()
-
+export default function AskPage() {
+  const router = useRouter();
+  
   const handleNext = (data: any) => {
-    setFiveAData({ ...fiveAData, ask: data })
-    router.push('/5a/advise')
-  }
+    // Store data in context or state management
+    router.push('/5a/advise');
+  };
 
-  return <FiveA_Ask onNext={handleNext} />
+  return <FiveA_Ask onNext={handleNext} />;
 }

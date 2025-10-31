@@ -3,54 +3,61 @@ import { Button } from '../../ui/button';
 import { Label } from '../../ui/label';
 import { RadioGroup, RadioGroupItem } from '../../ui/radio-group';
 import { OnboardingProgressBar } from '../flow-shared/OnboardingProgressBar';
+import { HesitationLink } from '../flow-shared/HesitationLink';
+import { FiveA_AskProps } from '../../../types/fiveAFlow';
 
-interface FiveA_AskProps {
-  onNext: (data: any) => void;
-}
-
-const fagerstromQuestions = [
+const askQuestions = [
   {
     id: 'q1',
-    question: 'How soon after you wake up do you smoke your first cigarette?',
+    question: 'What type of tobacco do you use?',
     options: [
-      'Within 5 minutes',
-      '6-30 minutes',
-      '31-60 minutes',
-      'After 60 minutes'
+      'Cigarettes',
+      'Beedi',
+      'Cigars',
+      'Chewing Tobacco',
+      'Hookah',
+      'Other'
     ]
   },
   {
     id: 'q2',
-    question: 'Do you find it difficult to refrain from smoking in places where it is forbidden?',
-    options: ['Yes', 'No']
+    question: 'How often do you use tobacco in a day?',
+    options: [
+      '1-2 times',
+      '3-5 times',
+      '6-10 times',
+      'More than 10 times'
+    ]
   },
   {
     id: 'q3',
-    question: 'Which cigarette would you hate to give up the most?',
+    question: 'For how long have you been using tobacco?',
     options: [
-      'The first one in the morning',
-      'Any other'
+      'Less than 6 months',
+      '6 months - 1 year',
+      '1-5 years',
+      'More than 5 years'
     ]
   },
   {
     id: 'q4',
-    question: 'How many cigarettes per day do you smoke?',
+    question: 'How much tobacco do you consume in a day?',
     options: [
-      '10 or less',
-      '11-20',
-      '21-30',
-      '31 or more'
+      'Less than 5 cigarettes/beedis',
+      '5-10 cigarettes/beedis',
+      '11-20 cigarettes/beedis',
+      'More than 20 cigarettes/beedis'
     ]
   },
   {
     id: 'q5',
-    question: 'Do you smoke more frequently during the first hours after waking than during the rest of the day?',
-    options: ['Yes', 'No']
-  },
-  {
-    id: 'q6',
-    question: 'Do you smoke when you are so ill that you are in bed most of the day?',
-    options: ['Yes', 'No']
+    question: 'How much money do you spend on each cigarette or tobacco use?',
+    options: [
+      'Less than ₹5',
+      '₹5-₹10',
+      '₹11-₹20',
+      'More than ₹20'
+    ]
   }
 ];
 
@@ -61,7 +68,7 @@ export function FiveA_Ask({ onNext }: FiveA_AskProps) {
     setAnswers(prev => ({ ...prev, [questionId]: value }));
   };
 
-  const isComplete = Object.keys(answers).length === fagerstromQuestions.length;
+  const isComplete = Object.keys(answers).length === askQuestions.length;
 
   return (
     <div className="min-h-screen p-4 md:p-6 lg:p-8" style={{ backgroundColor: '#FFFFFF' }}>
@@ -82,17 +89,17 @@ export function FiveA_Ask({ onNext }: FiveA_AskProps) {
             className="text-2xl md:text-3xl lg:text-4xl mb-2"
             style={{ color: '#1C3B5E' }}
           >
-            Step 1: Identify Your Dependency
+            Step 1: Ask – Understand Your Tobacco Use
           </h1>
           <p 
             className="text-sm md:text-base mb-6 md:mb-8 lg:mb-10"
             style={{ color: '#333333', opacity: 0.7 }}
           >
-            Complete the Fagerström Questionnaire to assess your tobacco dependency level
+            Please answer the following questions to help us understand your tobacco use pattern.
           </p>
 
           <div className="space-y-4 md:space-y-5">
-            {fagerstromQuestions.map((q, index) => (
+            {askQuestions.map((q, index) => (
               <div 
                 key={q.id} 
                 className="rounded-xl md:rounded-2xl p-4 md:p-6"
@@ -151,7 +158,9 @@ export function FiveA_Ask({ onNext }: FiveA_AskProps) {
             ))}
           </div>
 
-          <div className="mt-10 flex justify-end">
+          <HesitationLink />
+
+          <div className="mt-4 flex justify-end">
             <Button
               onClick={() => onNext(answers)}
               disabled={!isComplete}
