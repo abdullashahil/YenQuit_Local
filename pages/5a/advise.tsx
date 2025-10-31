@@ -1,14 +1,18 @@
-import { useRouter } from 'next/router'
-import { useAppContext } from '../../src/context/AppContext'
-import { FiveA_Advise } from '../../src/components/features/flow-5a/Advise'
+import { FiveA_Advise } from '../../src/components/features/flow-5a/Advise';
+import { useRouter } from 'next/router';
 
-export default function Advise() {
-  const router = useRouter()
-  const { onboardingData } = useAppContext()
-
+export default function AdvisePage() {
+  const router = useRouter();
+  
   const handleNext = () => {
-    router.push('/5a/assess')
-  }
+    router.push('/5a/assess');
+  };
 
-  return <FiveA_Advise onNext={handleNext} userData={onboardingData} />
+  // In a real app, you would get this from your state management
+  const userData = {
+    tobaccoType: 'Cigarettes', // Example data
+    usageFrequency: 'Daily',   // Example data
+  };
+
+  return <FiveA_Advise onNext={handleNext} userData={userData} />;
 }

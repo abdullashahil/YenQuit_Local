@@ -1,12 +1,9 @@
 import React from 'react';
 import { Button } from '../../ui/button';
 import { OnboardingProgressBar } from '../flow-shared/OnboardingProgressBar';
+import { HesitationLink } from '../flow-shared/HesitationLink';
 import { Play } from 'lucide-react';
-
-interface FiveA_AdviseProps {
-  onNext: () => void;
-  userData: any;
-}
+import { FiveA_AdviseProps } from '../../../types/fiveAFlow';
 
 export function FiveA_Advise({ onNext, userData }: FiveA_AdviseProps) {
   return (
@@ -131,7 +128,9 @@ export function FiveA_Advise({ onNext, userData }: FiveA_AdviseProps) {
             </div>
           </div>
 
-          <div className="mt-10 flex justify-end">
+          <HesitationLink />
+
+          <div className="mt-4 flex justify-end">
             <Button
               onClick={onNext}
               className="px-8 py-6 rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl"
