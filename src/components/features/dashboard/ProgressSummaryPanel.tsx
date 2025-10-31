@@ -1,5 +1,5 @@
 import { Card } from "../../ui/card";
-import { Trophy, Calendar, DollarSign } from "lucide-react";
+import { Trophy, Calendar, IndianRupee } from "lucide-react";
 
 export function ProgressSummaryPanel() {
   const stats = [
@@ -20,9 +20,9 @@ export function ProgressSummaryPanel() {
       bgColor: "#1C3B5E10",
     },
     {
-      icon: DollarSign,
+      icon: IndianRupee,
       label: "Money Saved",
-      value: "$152.00",
+      value: "152.00",
       highlight: false,
       iconColor: "#8BC34A",
       bgColor: "#8BC34A10",

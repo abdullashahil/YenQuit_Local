@@ -11,16 +11,19 @@ export function SupportHistory() {
   return (
     <Card className="rounded-3xl shadow-lg border-0 p-6">
       {/* Header */}
-      <div className="mb-5">
-        <h3 className="text-lg font-semibold text-[#1C3B5E]">24/7 Helpline</h3>
+      <div className="mb-6 text-center md:text-left">
+        <h3 className="text-xl font-semibold text-[#1C3B5E]">
+          24/7 Helpline
+        </h3>
         <p className="text-sm mt-1 text-[#333333]/60">
           Get immediate support from our helplines
         </p>
       </div>
 
-      {/* Yenepoya Helpline */}
-      <div className="mb-6 bg-gradient-to-r from-[#20B2AA]/5 to-[#20B2AA]/10 rounded-2xl p-6 border border-[#20B2AA]/30">
-        <div className="flex items-start gap-4">
+      {/* Responsive Grid Container */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Yenepoya Helpline */}
+        <div className="bg-gradient-to-r from-[#20B2AA]/5 to-[#20B2AA]/10 rounded-2xl p-6 border border-[#20B2AA]/30 flex flex-col md:flex-row items-start gap-4">
           <div className="w-12 h-12 bg-[#20B2AA] rounded-full flex items-center justify-center flex-shrink-0">
             <Phone className="text-white" size={24} />
           </div>
@@ -34,17 +37,15 @@ export function SupportHistory() {
             </p>
             <Button
               onClick={() => handleCall("+911234567890")}
-              className="rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 text-white px-6 py-5"
+              className="w-full md:w-auto rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 text-white px-6 py-5"
             >
-              <Phone className="mr-2 h-4 w-4" />+91 12345 67890
+              <Phone className="mr-2 h-4 w-4" /> Call Now: +91 12345 67890
             </Button>
           </div>
         </div>
-      </div>
 
-      {/* National Helpline */}
-      <div className="bg-gradient-to-r from-[#1C3B5E]/5 to-[#1C3B5E]/10 rounded-2xl p-6 border border-[#1C3B5E]/30">
-        <div className="flex items-start gap-4">
+        {/* National Helpline */}
+        <div className="bg-gradient-to-r from-[#1C3B5E]/5 to-[#1C3B5E]/10 rounded-2xl p-6 border border-[#1C3B5E]/30 flex flex-col md:flex-row items-start gap-4">
           <div className="w-12 h-12 bg-[#1C3B5E] rounded-full flex items-center justify-center flex-shrink-0">
             <MessageSquare className="text-white" size={24} />
           </div>
@@ -59,9 +60,9 @@ export function SupportHistory() {
             <Button
               onClick={() => handleCall("1800-11-2356")}
               variant="outline"
-              className="rounded-2xl border-[#1C3B5E] text-[#1C3B5E] hover:bg-[#1C3B5E]/10 px-6 py-5"
+              className="w-full md:w-auto rounded-2xl border-[#1C3B5E] text-[#1C3B5E] hover:bg-[#1C3B5E]/10 px-6 py-5"
             >
-              <Phone className="mr-2 h-4 w-4" /> 1800-11-2356
+              <Phone className="mr-2 h-4 w-4" /> Call Now: 1800-11-2356
             </Button>
           </div>
         </div>

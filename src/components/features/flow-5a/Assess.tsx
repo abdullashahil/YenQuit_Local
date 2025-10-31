@@ -197,13 +197,13 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
 
           <HesitationLink />
 
-          <div className="mt-8 flex justify-end">
+          <div className="mt-8 flex justify-center">
             <Button
               onClick={handleNext}
               disabled={!quitTimeline || !isFagerstromComplete}
-              className="px-8 py-6 rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 disabled:opacity-50 text-white shadow-lg"
+              className="px-12 py-6 text-lg rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 disabled:opacity-50 text-white shadow-lg"
             >
-              Next: Build Your Quit Plan
+              Assess Me
             </Button>
           </div>
         </div>

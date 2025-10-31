@@ -25,43 +25,47 @@ export function FiveA_Arrange({ onComplete, quitDate }: FiveA_ArrangeProps) {
 
           {/* Yenepoya Helpline */}
           <div className="mb-6 bg-gradient-to-r from-[#20B2AA]/5 to-[#20B2AA]/10 rounded-2xl p-6 border border-[#20B2AA]/30">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-[#20B2AA] rounded-full flex items-center justify-center flex-shrink-0">
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-4 text-center md:text-left">
+              <div className="w-16 h-16 md:w-12 md:h-12 bg-[#20B2AA] rounded-full flex items-center justify-center flex-shrink-0">
                 <Phone className="text-white" size={24} />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 w-full">
                 <h3 className="text-[#1C3B5E] text-lg font-semibold mb-2">Yenepoya Helpline</h3>
                 <p className="text-[#333333] text-sm mb-4">
                   Speak directly with our trained counselors for personalized support and guidance on your quit journey.
                 </p>
-                <Button
-                  onClick={() => handleCall('+911234567890')}
-                  className="rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 text-white px-6 py-5"
-                >
-                  <Phone className="mr-2 h-4 w-4" /> Call Now: +91 12345 67890
-                </Button>
+                <div className="flex justify-center md:justify-start">
+                  <Button
+                    onClick={() => handleCall('+911234567890')}
+                    className="rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 text-white px-6 py-5"
+                  >
+                    <Phone className="mr-2 h-4 w-4" /> Call Now: +91 12345 67890
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
 
           {/* National Helpline */}
           <div className="mb-8 bg-gradient-to-r from-[#1C3B5E]/5 to-[#1C3B5E]/10 rounded-2xl p-6 border border-[#1C3B5E]/30">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-[#1C3B5E] rounded-full flex items-center justify-center flex-shrink-0">
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-4 text-center md:text-left">
+              <div className="w-16 h-16 md:w-12 md:h-12 bg-[#1C3B5E] rounded-full flex items-center justify-center flex-shrink-0">
                 <MessageSquare className="text-white" size={24} />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 w-full">
                 <h3 className="text-[#1C3B5E] text-lg font-semibold mb-2">National Tobacco Cessation Helpline</h3>
                 <p className="text-[#333333] text-sm mb-4">
                   Available 24/7 for confidential support and advice from national tobacco cessation experts.
                 </p>
-                <Button
-                  onClick={() => handleCall('1800-11-2356')}
-                  variant="outline"
-                  className="rounded-2xl border-[#1C3B5E] text-[#1C3B5E] hover:bg-[#1C3B5E]/10 px-6 py-5"
-                >
-                  <Phone className="mr-2 h-4 w-4" /> Call Now: 1800-11-2356
-                </Button>
+                <div className="flex justify-center md:justify-start">
+                  <Button
+                    onClick={() => handleCall('1800-11-2356')}
+                    variant="outline"
+                    className="rounded-2xl border-[#1C3B5E] text-[#1C3B5E] hover:bg-[#1C3B5E]/10 px-6 py-5"
+                  >
+                    <Phone className="mr-2 h-4 w-4" /> Call Now: 1800-11-2356
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -91,7 +95,7 @@ export function FiveA_Arrange({ onComplete, quitDate }: FiveA_ArrangeProps) {
 
           <div className="mt-8 flex justify-end">
             <Button
-              onClick={() => onComplete({})}
+              onClick={() => onComplete()}
               className="px-8 py-6 rounded-2xl bg-[#1C3B5E] hover:bg-[#1C3B5E]/90 text-white"
             >
               Go to Dashboard

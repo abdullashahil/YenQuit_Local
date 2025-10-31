@@ -169,85 +169,100 @@ export function FiveA_Assist({ onNext }: FiveA_AssistProps) {
               {/* Daily Motivational Reminder */}
               <div className="bg-gray-50 rounded-xl p-6">
                 <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <Label className="text-[#333333]">Daily Motivational Reminder</Label>
-                    <p className="text-sm text-gray-600 mt-1">
+                  <div className="flex-1">
+                    <Label className="text-[#1C3B5E] font-medium">Daily Motivational Reminder</Label>
+                    <p className="text-sm text-gray-500 mt-1">
                       Start your day with encouragement
                     </p>
                   </div>
                   <Switch
                     checked={notifications.dailyMotivation.enabled}
                     onCheckedChange={() => handleToggle('dailyMotivation')}
-                    className="data-[state=checked]:bg-[#20B2AA]"
+                    className="h-6 w-11 data-[state=checked]:bg-[#20B2AA] data-[state=unchecked]:bg-gray-300 transition-colors duration-200"
                   />
                 </div>
-                {notifications.dailyMotivation.enabled && (
-                  <div className="mt-3">
-                    <Label className="text-sm text-[#333333]">Time</Label>
-                    <Input
-                      type="time"
-                      value={notifications.dailyMotivation.time}
-                      onChange={(e) => handleTimeChange('dailyMotivation', e.target.value)}
-                      className="mt-2 rounded-lg w-40"
-                    />
+                <div className={`mt-4 pl-1 overflow-hidden transition-all duration-300 ease-in-out ${notifications.dailyMotivation.enabled ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-32">
+                      <Label className="text-sm font-medium text-gray-700">Time</Label>
+                      <Input
+                        type="time"
+                        value={notifications.dailyMotivation.time}
+                        onChange={(e) => handleTimeChange('dailyMotivation', e.target.value)}
+                        className="mt-1 rounded-lg h-10 w-full border-gray-300 focus:border-[#20B2AA] focus:ring-1 focus:ring-[#20B2AA]"
+                      />
+                    </div>
+                    <div className="text-sm text-gray-500 mt-5">
+                      Every morning
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
 
               {/* Progress Check-In */}
-              <div className="bg-gray-50 rounded-xl p-6">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <Label className="text-[#333333]">Progress Check-In (Evening)</Label>
-                    <p className="text-sm text-gray-600 mt-1">
+              <div className="bg-white rounded-xl p-5 border border-gray-200 hover:border-[#20B2AA]/50 transition-colors duration-200">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <Label className="text-[#1C3B5E] font-medium">Progress Check-In (Evening)</Label>
+                    <p className="text-sm text-gray-500 mt-1">
                       Reflect on your day and log progress
                     </p>
                   </div>
                   <Switch
                     checked={notifications.progressCheckIn.enabled}
                     onCheckedChange={() => handleToggle('progressCheckIn')}
-                    className="data-[state=checked]:bg-[#20B2AA]"
+                    className="h-6 w-11 data-[state=checked]:bg-[#20B2AA] data-[state=unchecked]:bg-gray-300 transition-colors duration-200"
                   />
                 </div>
-                {notifications.progressCheckIn.enabled && (
-                  <div className="mt-3">
-                    <Label className="text-sm text-[#333333]">Time</Label>
-                    <Input
-                      type="time"
-                      value={notifications.progressCheckIn.time}
-                      onChange={(e) => handleTimeChange('progressCheckIn', e.target.value)}
-                      className="mt-2 rounded-lg w-40"
-                    />
+                <div className={`mt-4 pl-1 overflow-hidden transition-all duration-300 ease-in-out ${notifications.progressCheckIn.enabled ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-32">
+                      <Label className="text-sm font-medium text-gray-700">Time</Label>
+                      <Input
+                        type="time"
+                        value={notifications.progressCheckIn.time}
+                        onChange={(e) => handleTimeChange('progressCheckIn', e.target.value)}
+                        className="mt-1 rounded-lg h-10 w-full border-gray-300 focus:border-[#20B2AA] focus:ring-1 focus:ring-[#20B2AA]"
+                      />
+                    </div>
+                    <div className="text-sm text-gray-500 mt-5">
+                      Every evening
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
 
               {/* Weekly Tip */}
-              <div className="bg-gray-50 rounded-xl p-6">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <Label className="text-[#333333]">Weekly Tip</Label>
-                    <p className="text-sm text-gray-600 mt-1">
+              <div className="bg-white rounded-xl p-5 border border-gray-200 hover:border-[#20B2AA]/50 transition-colors duration-200">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <Label className="text-[#1C3B5E] font-medium">Weekly Tip</Label>
+                    <p className="text-sm text-gray-500 mt-1">
                       Expert advice delivered weekly
                     </p>
                   </div>
                   <Switch
                     checked={notifications.weeklyTip.enabled}
                     onCheckedChange={() => handleToggle('weeklyTip')}
-                    className="data-[state=checked]:bg-[#20B2AA]"
+                    className="h-6 w-11 data-[state=checked]:bg-[#20B2AA] data-[state=unchecked]:bg-gray-300 transition-colors duration-200"
                   />
                 </div>
-                {notifications.weeklyTip.enabled && (
-                  <div className="mt-3">
-                    <Label className="text-sm text-[#333333]">Time</Label>
-                    <Input
-                      type="time"
-                      value={notifications.weeklyTip.time}
-                      onChange={(e) => handleTimeChange('weeklyTip', e.target.value)}
-                      className="mt-2 rounded-lg w-40"
-                    />
+                <div className={`mt-4 pl-1 overflow-hidden transition-all duration-300 ease-in-out ${notifications.weeklyTip.enabled ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-32">
+                      <Label className="text-sm font-medium text-gray-700">Time</Label>
+                      <Input
+                        type="time"
+                        value={notifications.weeklyTip.time}
+                        onChange={(e) => handleTimeChange('weeklyTip', e.target.value)}
+                        className="mt-1 rounded-lg h-10 w-full border-gray-300 focus:border-[#20B2AA] focus:ring-1 focus:ring-[#20B2AA]"
+                      />
+                    </div>
+                    <div className="text-sm text-gray-500 mt-5">
+                      Every Monday
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
             </div>
           </div>
@@ -290,13 +305,13 @@ export function FiveA_Assist({ onNext }: FiveA_AssistProps) {
 
           <HesitationLink />
 
-          <div className="mt-4 flex justify-end">
+          <div className="mt-8 flex justify-center">
             <Button
               onClick={() => {
                 handleNext();
                 router.push('/app');
               }}
-              className="px-8 py-6 rounded-2xl brand-btn"
+              className="px-8 py-6 rounded-2xl bg-[#1C3B5E] hover:bg-[#1C3B5E]/90 text-white"
             >
               Go to Dashboard
             </Button>
