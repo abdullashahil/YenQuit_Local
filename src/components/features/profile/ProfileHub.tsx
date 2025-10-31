@@ -3,7 +3,7 @@ import { ProgressSummaryPanel } from "../dashboard/ProgressSummaryPanel";
 import { ActionBlock } from "../../admin/ActionBlock";
 import { LearningActivityLog } from "../dashboard/LearningActivityLog";
 import { SupportHistory } from "./SupportHistory";
-import { PsychologicalProfileStatus } from "./PsychologicalProfileStatus";
+// import { PsychologicalProfileStatus } from "./PsychologicalProfileStatus";
 
 interface ProfileHubProps {
   activeTab?: string;
@@ -49,7 +49,7 @@ export function ProfileHub({ activeTab, setActiveTab, onLogout }: ProfileHubProp
               <SupportHistory />
 
               {/* Psychological Profile Status */}
-              <PsychologicalProfileStatus />
+              {/* <PsychologicalProfileStatus /> */}
             </div>
           </div>
         </div>

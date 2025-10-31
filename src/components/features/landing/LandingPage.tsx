@@ -460,7 +460,7 @@ export function LandingPage() {
                   <div className="bg-gradient-to-br from-[#1C3B5E] to-[#2D4A6E] text-white rounded-3xl p-6 sm:p-8 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-105 min-h-[380px] sm:min-h-[420px] flex flex-col justify-between relative overflow-hidden">
                     {/* Quote icon */}
                     <div className="absolute top-6 right-6 text-6xl opacity-10">"</div>
-                    
+
                     <div>
                       <div className="flex justify-center mb-4 sm:mb-6">
                         <div className="relative">
@@ -482,7 +482,7 @@ export function LandingPage() {
                         "{testimonial.text}"
                       </p>
                     </div>
-                    
+
                     {/* Rating stars */}
                     <div className="flex justify-center mt-4 sm:mt-6 space-x-1">
                       {[1, 2, 3, 4, 5].map((star) => (
@@ -629,7 +629,7 @@ export function LandingPage() {
       </footer>
 
       {/* Floating Action Button */}
-      <button 
+      <button
         onClick={() => scrollToSection("hero")}
         className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-[#FFC107] to-[#FFD54F] rounded-full shadow-2xl flex items-center justify-center text-white z-40 transition-all duration-300 hover:scale-110 hover:shadow-2xl text-sm sm:text-base"
       >

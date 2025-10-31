@@ -1,11 +1,9 @@
-import { useState } from 'react';
 import { Button } from '../../ui/button';
 import { OnboardingProgressBar } from '../flow-shared/OnboardingProgressBar';
 import { AlertTriangle, Heart, Skull, Baby, Users, TrendingDown } from 'lucide-react';
 
 interface FiveR_RisksProps {
   onNext: (data: any) => void;
-  onBack: () => void;
 }
 
 const healthRisks = [
@@ -47,19 +45,9 @@ const healthRisks = [
   }
 ];
 
-export function FiveR_Risks({ onNext, onBack }: FiveR_RisksProps) {
-  const [acknowledgedRisks, setAcknowledgedRisks] = useState<string[]>([]);
-
-  const toggleRisk = (title: string) => {
-    setAcknowledgedRisks(prev => 
-      prev.includes(title) 
-        ? prev.filter(r => r !== title)
-        : [...prev, title]
-    );
-  };
-
+export function FiveR_Risks({ onNext }: FiveR_RisksProps) {
   const handleNext = () => {
-    onNext({ acknowledgedRisks });
+    onNext({ acknowledgedRisks: healthRisks.map(r => r.title) });
   };
 
   return (
@@ -105,17 +93,11 @@ export function FiveR_Risks({ onNext, onBack }: FiveR_RisksProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {healthRisks.map((risk) => {
                 const Icon = risk.icon;
-                const isAcknowledged = acknowledgedRisks.includes(risk.title);
                 
                 return (
-                  <button
+                  <div
                     key={risk.title}
-                    onClick={() => toggleRisk(risk.title)}
-                    className="text-left p-5 rounded-2xl border-2 transition-all hover:shadow-md"
-                    style={{
-                      backgroundColor: isAcknowledged ? 'rgba(32, 178, 170, 0.05)' : '#FFFFFF',
-                      borderColor: isAcknowledged ? '#20B2AA' : '#E0E0E0'
-                    }}
+                    className="text-left p-5 rounded-2xl border-2 transition-all hover:shadow-md bg-white border-gray-200"
                   >
                     <div className="flex items-start gap-4">
                       <div 
@@ -134,30 +116,16 @@ export function FiveR_Risks({ onNext, onBack }: FiveR_RisksProps) {
                         />
                       </div>
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-[#1C3B5E]">{risk.title}</h3>
-                          {isAcknowledged && (
-                            <div 
-                              className="w-5 h-5 rounded-full flex items-center justify-center"
-                              style={{ backgroundColor: '#20B2AA' }}
-                            >
-                              <span className="text-white text-xs">✓</span>
-                            </div>
-                          )}
-                        </div>
+                        <h3 className="text-[#1C3B5E] mb-2">{risk.title}</h3>
                         <p className="text-sm text-[#333333] opacity-80">
                           {risk.description}
                         </p>
                       </div>
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>
-            
-            <p className="text-sm text-[#333333] opacity-70 mt-4 text-center">
-              Click on each risk to acknowledge you've reviewed it ({acknowledgedRisks.length}/{healthRisks.length})
-            </p>
           </div>
 
           {/* Positive Message */}
@@ -177,18 +145,17 @@ export function FiveR_Risks({ onNext, onBack }: FiveR_RisksProps) {
           </div>
 
           {/* Navigation Buttons */}
-          <div className="flex justify-between">
+          <div className="flex justify-between gap-4">
             <Button
-              onClick={onBack}
-              variant="outline"
-              className="px-6 py-6 rounded-2xl border-2"
-              style={{ borderColor: '#1C3B5E', color: '#1C3B5E' }}
+              onClick={() => window.location.href = '/5a/ask'}
+              className="flex-1 px-6 py-6 rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 text-white"
             >
-              Back
+              I'm Ready to Quit
             </Button>
             <Button
               onClick={handleNext}
-              className="px-8 py-6 rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 text-white"
+              variant="outline"
+              className="flex-1 px-6 py-6 rounded-2xl border-[#20B2AA] text-[#20B2AA] hover:bg-[#20B2AA]/10"
             >
               Continue to Rewards
             </Button>
