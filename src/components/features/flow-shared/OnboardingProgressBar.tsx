@@ -10,13 +10,23 @@ interface OnboardingProgressBarProps {
 export function OnboardingProgressBar({ 
   steps, 
   currentStep, 
-  basePath = '/5a' 
+  basePath = '' 
 }: OnboardingProgressBarProps) {
   const router = useRouter();
 
   const handleStepClick = (stepIndex: number, stepName: string) => {
-    const path = `${basePath}/${stepName.toLowerCase()}`;
-    window.location.href = path; // Use full page navigation to ensure clean URL
+    // Remove any existing /5a or /5r prefix from the step name to prevent double-prefixing
+    const cleanStepName = stepName.toLowerCase().replace(/^\/?(5a|5r)\//, '');
+    
+    // Determine if this is a 5R flow based on the current path
+    const is5RFlow = router.pathname.startsWith('/5r/');
+    
+    // Construct the correct path based on the flow
+    const path = is5RFlow 
+      ? `/5r/${cleanStepName}`
+      : `/5a/${cleanStepName}`;
+      
+    window.location.href = path;
   };
 
   return (
