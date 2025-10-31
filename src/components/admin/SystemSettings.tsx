@@ -44,13 +44,13 @@ export function SystemSettings({ activeTab, setActiveTab, onExitAdmin }: SystemS
 
       {/* Main Content Area */}
       <div>
-        <div className="max-w-[1600px] mx-auto">
+        <div className="max-w-[1600px] ml-5 mx-auto">
           {/* Page Header */}
           <div className="px-4 md:px-6 lg:px-8 pt-6 md:pt-8 pb-4 md:pb-6">
-            <h1 className="text-2xl md:text-3xl mb-2" style={{ color: "#1C3B5E" }}>
+            <h1 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: "#1C3B5E" }}>
               System Settings
             </h1>
-            <p className="text-sm md:text-base" style={{ color: "#333333" }}>
+            <p className="text-sm md:text-base" style={{ color: "#333333", opacity: 0.8 }}>
               Manage your profile, security, and global system configuration
             </p>
           </div>
@@ -62,7 +62,7 @@ export function SystemSettings({ activeTab, setActiveTab, onExitAdmin }: SystemS
           />
 
           {/* Content Area */}
-          <div className="px-8 py-8">
+          <div className="px-4 md:px-8 py-8">
             {renderSettingsContent()}
           </div>
         </div>

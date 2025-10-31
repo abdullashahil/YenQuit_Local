@@ -1,84 +1,69 @@
+import React from "react";
 import { Card } from "../../ui/card";
-import { MessageCircle, Bot, Phone } from "lucide-react";
+import { Button } from "../../ui/button";
+import { Phone, MessageSquare } from "lucide-react";
 
 export function SupportHistory() {
-  const interactions = [
-    {
-      id: 1,
-      type: "ai",
-      icon: Bot,
-      title: "AI Check-in Complete",
-      description: "Daily wellness assessment and craving support",
-      date: "Oct 16, 2025",
-    },
-    {
-      id: 2,
-      type: "chat",
-      icon: MessageCircle,
-      title: "Chat with Alex M.",
-      description: "Peer support conversation about managing stress",
-      date: "Oct 15, 2025",
-    },
-    {
-      id: 3,
-      type: "staff",
-      icon: Phone,
-      title: "Live Support Session",
-      description: "15-minute check-in with counselor",
-      date: "Oct 13, 2025",
-    },
-    {
-      id: 4,
-      type: "ai",
-      icon: Bot,
-      title: "AI Check-in Complete",
-      description: "Evening motivation and progress review",
-      date: "Oct 12, 2025",
-    },
-  ];
+  const handleCall = (number: string) => {
+    window.location.href = `tel:${number}`};
 
   return (
     <Card className="rounded-3xl shadow-lg border-0 p-6">
+      {/* Header */}
       <div className="mb-5">
-        <h3 className="text-lg" style={{ color: "#1C3B5E" }}>
-          Support Interactions
-        </h3>
-        <p className="text-sm mt-1" style={{ color: "#333333", opacity: 0.6 }}>
-          Recent support and community activity
+        <h3 className="text-lg font-semibold text-[#1C3B5E]">24/7 Helpline</h3>
+        <p className="text-sm mt-1 text-[#333333]/60">
+          Get immediate support from our helplines
         </p>
       </div>
 
-      <div className="space-y-3">
-        {interactions.map((interaction) => {
-          const Icon = interaction.icon;
-          
-          return (
-            <div
-              key={interaction.id}
-              className="flex items-start gap-3 p-4 rounded-2xl border"
-              style={{ borderColor: "#f0f0f0" }}
+      {/* Yenepoya Helpline */}
+      <div className="mb-6 bg-gradient-to-r from-[#20B2AA]/5 to-[#20B2AA]/10 rounded-2xl p-6 border border-[#20B2AA]/30">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 bg-[#20B2AA] rounded-full flex items-center justify-center flex-shrink-0">
+            <Phone className="text-white" size={24} />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-[#1C3B5E] text-lg font-semibold mb-2">
+              Yenepoya Helpline
+            </h3>
+            <p className="text-[#333333] text-sm mb-4">
+              Speak directly with our trained counselors for personalized
+              support and guidance on your quit journey.
+            </p>
+            <Button
+              onClick={() => handleCall("+911234567890")}
+              className="rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 text-white px-6 py-5"
             >
-              <div
-                className="p-2 rounded-xl flex-shrink-0"
-                style={{ backgroundColor: "#20B2AA10" }}
-              >
-                <Icon className="w-4 h-4" style={{ color: "#20B2AA" }} />
-              </div>
+              <Phone className="mr-2 h-4 w-4" />+91 12345 67890
+            </Button>
+          </div>
+        </div>
+      </div>
 
-              <div className="flex-1 min-w-0">
-                <p className="text-sm mb-1" style={{ color: "#1C3B5E" }}>
-                  {interaction.title}
-                </p>
-                <p className="text-xs mb-2" style={{ color: "#333333", opacity: 0.6 }}>
-                  {interaction.description}
-                </p>
-                <p className="text-xs" style={{ color: "#333333", opacity: 0.5 }}>
-                  {interaction.date}
-                </p>
-              </div>
-            </div>
-          );
-        })}
+      {/* National Helpline */}
+      <div className="bg-gradient-to-r from-[#1C3B5E]/5 to-[#1C3B5E]/10 rounded-2xl p-6 border border-[#1C3B5E]/30">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 bg-[#1C3B5E] rounded-full flex items-center justify-center flex-shrink-0">
+            <MessageSquare className="text-white" size={24} />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-[#1C3B5E] text-lg font-semibold mb-2">
+              National Tobacco Cessation Helpline
+            </h3>
+            <p className="text-[#333333] text-sm mb-4">
+              Available 24/7 for confidential support and advice from national
+              tobacco cessation experts.
+            </p>
+            <Button
+              onClick={() => handleCall("1800-11-2356")}
+              variant="outline"
+              className="rounded-2xl border-[#1C3B5E] text-[#1C3B5E] hover:bg-[#1C3B5E]/10 px-6 py-5"
+            >
+              <Phone className="mr-2 h-4 w-4" /> 1800-11-2356
+            </Button>
+          </div>
+        </div>
       </div>
     </Card>
   );

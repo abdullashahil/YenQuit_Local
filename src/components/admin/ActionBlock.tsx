@@ -10,13 +10,6 @@ export function ActionBlock() {
       </h3>
       
       <div className="space-y-3">
-        <Button
-          className="w-full py-6 rounded-2xl transition-all hover:opacity-90 flex items-center justify-center gap-2"
-          style={{ backgroundColor: "#20B2AA10", color: "#20B2AA" }}
-        >
-          <Download className="w-5 h-5" />
-          Export My Data
-        </Button>
 
         <Button
           className="w-full py-6 rounded-2xl transition-all hover:opacity-90 flex items-center justify-center gap-2 border"
