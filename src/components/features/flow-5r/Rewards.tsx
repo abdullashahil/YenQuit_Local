@@ -5,7 +5,6 @@ import { Heart, DollarSign, Sparkles, Users, Activity, Smile, CheckCircle2 } fro
 
 interface FiveR_RewardsProps {
   onNext: (data: any) => void;
-  onBack: () => void;
 }
 
 const rewards = [
@@ -83,19 +82,9 @@ const rewards = [
   }
 ];
 
-export function FiveR_Rewards({ onNext, onBack }: FiveR_RewardsProps) {
-  const [selectedRewards, setSelectedRewards] = useState<string[]>([]);
-
-  const toggleReward = (title: string) => {
-    setSelectedRewards(prev => 
-      prev.includes(title) 
-        ? prev.filter(r => r !== title)
-        : [...prev, title]
-    );
-  };
-
+export function FiveR_Rewards({ onNext }: FiveR_RewardsProps) {
   const handleNext = () => {
-    onNext({ selectedRewards });
+    onNext({});
   };
 
   return (
@@ -138,17 +127,11 @@ export function FiveR_Rewards({ onNext, onBack }: FiveR_RewardsProps) {
           <div className="mb-8 space-y-4">
             {rewards.map((reward) => {
               const Icon = reward.icon;
-              const isSelected = selectedRewards.includes(reward.title);
               
               return (
-                <button
+                <div
                   key={reward.title}
-                  onClick={() => toggleReward(reward.title)}
-                  className="w-full text-left p-6 rounded-2xl border-2 transition-all hover:shadow-md"
-                  style={{
-                    backgroundColor: isSelected ? 'rgba(32, 178, 170, 0.05)' : '#FFFFFF',
-                    borderColor: isSelected ? '#20B2AA' : '#E0E0E0'
-                  }}
+                  className="w-full text-left p-6 rounded-2xl border-2 transition-all hover:shadow-md bg-white border-gray-200"
                 >
                   <div className="flex items-start gap-4">
                     <div 
@@ -158,17 +141,7 @@ export function FiveR_Rewards({ onNext, onBack }: FiveR_RewardsProps) {
                       <Icon size={28} style={{ color: '#20B2AA' }} />
                     </div>
                     <div className="flex-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-[#1C3B5E]">{reward.title}</h3>
-                        {isSelected && (
-                          <div 
-                            className="w-6 h-6 rounded-full flex items-center justify-center"
-                            style={{ backgroundColor: '#20B2AA' }}
-                          >
-                            <span className="text-white text-sm">✓</span>
-                          </div>
-                        )}
-                      </div>
+                      <h3 className="text-[#1C3B5E] mb-2">{reward.title}</h3>
                       <p className="text-sm text-[#20B2AA] mb-3">
                         {reward.timeline}
                       </p>
@@ -182,28 +155,23 @@ export function FiveR_Rewards({ onNext, onBack }: FiveR_RewardsProps) {
                       </ul>
                     </div>
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
 
-          <p className="text-sm text-[#333333] opacity-70 mb-8 text-center">
-            Click on the rewards that motivate you most ({selectedRewards.length} selected)
-          </p>
-
           {/* Navigation Buttons */}
-          <div className="flex justify-between">
+          <div className="flex justify-between gap-4">
             <Button
-              onClick={onBack}
-              variant="outline"
-              className="px-6 py-6 rounded-2xl border-2"
-              style={{ borderColor: '#1C3B5E', color: '#1C3B5E' }}
+              onClick={() => window.location.href = '/5a/ask'}
+              className="flex-1 px-6 py-6 rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 text-white"
             >
-              Back
+              I'm Ready to Quit
             </Button>
             <Button
               onClick={handleNext}
-              className="px-8 py-6 rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 text-white"
+              variant="outline"
+              className="flex-1 px-6 py-6 rounded-2xl border-[#20B2AA] text-[#20B2AA] hover:bg-[#20B2AA]/10"
             >
               Continue to Roadblocks
             </Button>

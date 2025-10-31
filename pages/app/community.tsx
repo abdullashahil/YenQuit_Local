@@ -18,16 +18,7 @@ export default function Community() {
 
   return (
     <AppLayout activeTab="community">
-      <CommunityHub 
-        activeTab="community" 
-        setActiveTab={() => {}} 
-        onLogout={() => {
-          if (typeof window !== 'undefined') {
-            sessionStorage.clear()
-          }
-          router.push('/')
-        }} 
-      />
+      <CommunityHub />
     </AppLayout>
   )
 }

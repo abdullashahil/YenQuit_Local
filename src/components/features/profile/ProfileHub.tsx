@@ -1,23 +1,19 @@
-import { Sidebar } from "../../layouts/Sidebar";
 import { UserProfileCard } from "./UserProfileCard";
 import { ProgressSummaryPanel } from "../dashboard/ProgressSummaryPanel";
 import { ActionBlock } from "../../admin/ActionBlock";
 import { LearningActivityLog } from "../dashboard/LearningActivityLog";
 import { SupportHistory } from "./SupportHistory";
-import { PsychologicalProfileStatus } from "./PsychologicalProfileStatus";
+// import { PsychologicalProfileStatus } from "./PsychologicalProfileStatus";
 
 interface ProfileHubProps {
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
+  activeTab?: string;
+  setActiveTab?: (tab: string) => void;
   onLogout?: () => void;
 }
 
 export function ProfileHub({ activeTab, setActiveTab, onLogout }: ProfileHubProps) {
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#FFFFFF" }}>
-      {/* Sidebar Navigation */}
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={onLogout} />
-
       {/* Main Content Area */}
       <div className="p-4 md:p-6 lg:p-8">
         <div className="max-w-[1600px] mx-auto">
@@ -53,7 +49,7 @@ export function ProfileHub({ activeTab, setActiveTab, onLogout }: ProfileHubProp
               <SupportHistory />
 
               {/* Psychological Profile Status */}
-              <PsychologicalProfileStatus />
+              {/* <PsychologicalProfileStatus /> */}
             </div>
           </div>
         </div>
