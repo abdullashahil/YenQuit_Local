@@ -1,7 +1,20 @@
 import { Dialog, DialogContent } from "../ui/dialog";
 import { ScrollArea } from "../ui/scroll-area";
-import { X, Calendar, TrendingUp, FileText } from "lucide-react";
+import { 
+  X, 
+  Calendar, 
+  TrendingUp, 
+  FileText, 
+  User, 
+  Mail, 
+  Phone, 
+  Target,
+  Award,
+  Clock,
+  MessageCircle
+} from "lucide-react";
 import { Card } from "../ui/card";
+import { Button } from "../ui/button";
 
 interface UserDetailModalProps {
   open: boolean;
@@ -20,10 +33,10 @@ export function UserDetailModal({ open, onOpenChange, user }: UserDetailModalPro
   ];
 
   const dailyLogs = [
-    { date: "Oct 16, 2025", cigarettes: 0, craving: 4, notes: "Had coffee with friends but stayed strong. Using breathing exercises helped!" },
-    { date: "Oct 15, 2025", cigarettes: 2, craving: 6, notes: "Stressful day at work. Need to work on stress management techniques." },
-    { date: "Oct 14, 2025", cigarettes: 3, craving: 5, notes: "Morning was tough but afternoon went well. Exercised in the evening." },
-    { date: "Oct 13, 2025", cigarettes: 5, craving: 7, notes: "Felt stressed and anxious. Spoke with AI helper which was very supportive." },
+    { date: "Oct 16, 2025", cigarettes: 0, craving: 4, mood: "😊", notes: "Had coffee with friends but stayed strong. Using breathing exercises helped!" },
+    { date: "Oct 15, 2025", cigarettes: 2, craving: 6, mood: "😔", notes: "Stressful day at work. Need to work on stress management techniques." },
+    { date: "Oct 14, 2025", cigarettes: 3, craving: 5, mood: "😐", notes: "Morning was tough but afternoon went well. Exercised in the evening." },
+    { date: "Oct 13, 2025", cigarettes: 5, craving: 7, mood: "😟", notes: "Felt stressed and anxious. Spoke with AI helper which was very supportive." },
   ];
 
   const progressData = [
@@ -35,115 +48,275 @@ export function UserDetailModal({ open, onOpenChange, user }: UserDetailModalPro
     { week: "Week 6", cigarettes: 2, craving: 4 },
   ];
 
+  const getStatusColor = (status: string) => {
+    const colors = {
+      joined: "#1C3B5E",
+      milestone: "#20B2AA", 
+      progress: "#FFA726",
+      success: "#8BC34A"
+    };
+    return colors[status as keyof typeof colors] || "#1C3B5E";
+  };
+
+  const getMoodColor = (mood: string) => {
+    const colors: Record<string, string> = {
+      "😊": "#8BC34A",
+      "😐": "#FFA726", 
+      "😔": "#D9534F",
+      "😟": "#D9534F"
+    };
+    return colors[mood] || "#1C3B5E";
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl h-[85vh] p-0 rounded-3xl border-0 overflow-hidden shadow-2xl">
-        <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl mb-1" style={{ color: "#1C3B5E" }}>
-              {user.name}'s Detailed Profile
-            </h2>
-            <p className="text-sm" style={{ color: "#333333", opacity: 0.6 }}>
-              Comprehensive view of user progress and activity
-            </p>
+      <DialogContent className="max-w-6xl h-[90vh] p-0 rounded-3xl border-0 overflow-hidden shadow-2xl bg-white">
+        {/* Header */}
+        <div className="p-8 border-b border-gray-100 bg-gradient-to-r from-white to-blue-50/30">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-r from-[#20B2AA] to-[#1C9B94] flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                  {user.name.split(' ').map(n => n[0]).join('')}
+                </div>
+                <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white ${
+                  user.status === 'Active' ? 'bg-green-500' : 
+                  user.status === 'Quit' ? 'bg-blue-500' : 'bg-red-500'
+                }`} />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-[#1C3B5E]">{user.name}'s Profile</h2>
+                <p className="text-sm text-gray-600 mt-1">Comprehensive view of user progress and journey</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button className="rounded-2xl border-0 bg-gradient-to-r from-[#20B2AA] to-[#1C9B94] hover:shadow-lg transition-all">
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Send Message
+              </Button>
+              <button 
+                onClick={() => onOpenChange(false)}
+                className="p-3 rounded-2xl hover:bg-gray-100 transition-all duration-200"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
           </div>
-          <button onClick={() => onOpenChange(false)} className="p-2 rounded-xl hover:bg-gray-100 transition-all">
-            <X className="w-5 h-5" style={{ color: "#333333" }} />
-          </button>
         </div>
 
         <ScrollArea className="flex-1">
-          <div className="p-6 space-y-6">
-            <div className="grid grid-cols-4 gap-4">
-              <Card className="p-4 rounded-2xl border-0 shadow-md">
-                <p className="text-xs mb-1" style={{ color: "#333333", opacity: 0.7 }}>Fagerström Score</p>
-                <p className="text-2xl" style={{ color: "#1C3B5E" }}>{user.fagerstrom}</p>
+          <div className="p-8 space-y-8">
+            {/* Quick Stats Grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card className="p-6 rounded-3xl border-0 shadow-lg bg-gradient-to-br from-white to-blue-50/50">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 rounded-xl bg-blue-100">
+                    <Target className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-600">Fagerström Score</p>
+                </div>
+                <p className="text-3xl font-bold text-[#1C3B5E]">{user.fagerstrom}</p>
+                <p className="text-xs text-gray-500 mt-1">Addiction Level: {user.addictionLevel}</p>
               </Card>
-              <Card className="p-4 rounded-2xl border-0 shadow-md">
-                <p className="text-xs mb-1" style={{ color: "#333333", opacity: 0.7 }}>Addiction Level</p>
-                <p className="text-2xl" style={{ color: user.addictionLevel === "High" ? "#D9534F" : user.addictionLevel === "Moderate" ? "#FFA726" : "#8BC34A" }}>{user.addictionLevel}</p>
+
+              <Card className="p-6 rounded-3xl border-0 shadow-lg bg-gradient-to-br from-white to-green-50/50">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 rounded-xl bg-green-100">
+                    <Award className="w-4 h-4 text-green-600" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-600">Current Status</p>
+                </div>
+                <p className="text-3xl font-bold text-[#20B2AA]">{user.status}</p>
+                <p className="text-xs text-gray-500 mt-1">45 days in program</p>
               </Card>
-              <Card className="p-4 rounded-2xl border-0 shadow-md">
-                <p className="text-xs mb-1" style={{ color: "#333333", opacity: 0.7 }}>Current Status</p>
-                <p className="text-2xl" style={{ color: "#20B2AA" }}>{user.status}</p>
+
+              <Card className="p-6 rounded-3xl border-0 shadow-lg bg-gradient-to-br from-white to-orange-50/50">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 rounded-xl bg-orange-100">
+                    <TrendingUp className="w-4 h-4 text-orange-600" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-600">Progress</p>
+                </div>
+                <p className="text-3xl font-bold text-[#1C3B5E]">72%</p>
+                <p className="text-xs text-gray-500 mt-1">18 sessions completed</p>
               </Card>
-              <Card className="p-4 rounded-2xl border-0 shadow-md">
-                <p className="text-xs mb-1" style={{ color: "#333333", opacity: 0.7 }}>Days in Program</p>
-                <p className="text-2xl" style={{ color: "#1C3B5E" }}>45</p>
+
+              <Card className="p-6 rounded-3xl border-0 shadow-lg bg-gradient-to-br from-white to-purple-50/50">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 rounded-xl bg-purple-100">
+                    <Clock className="w-4 h-4 text-purple-600" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-600">Last Active</p>
+                </div>
+                <p className="text-3xl font-bold text-[#1C3B5E]">2h</p>
+                <p className="text-xs text-gray-500 mt-1">ago</p>
               </Card>
             </div>
 
-            <Card className="p-6 rounded-3xl border-0 shadow-lg">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 rounded-xl" style={{ backgroundColor: "#20B2AA20" }}>
-                  <TrendingUp className="w-5 h-5" style={{ color: "#20B2AA" }} />
+            {/* User Information & Progress */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* User Details */}
+              <Card className="p-6 rounded-3xl border-0 shadow-lg lg:col-span-1">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 rounded-xl bg-[#20B2AA20]">
+                    <User className="w-5 h-5 text-[#20B2AA]" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-[#1C3B5E]">User Information</h3>
                 </div>
-                <h3 className="text-lg" style={{ color: "#1C3B5E" }}>Progress Trend Chart</h3>
-              </div>
-              <div className="space-y-3">
-                {progressData.map((data, index) => (
-                  <div key={index} className="space-y-1">
-                    <div className="flex items-center justify-between text-sm">
-                      <span style={{ color: "#333333" }}>{data.week}</span>
-                      <span style={{ color: "#20B2AA" }}>{data.cigarettes} cigs/day</span>
-                    </div>
-                    <div className="h-8 rounded-xl bg-gray-100 overflow-hidden">
-                      <div className="h-full rounded-xl transition-all" style={{ width: `${(data.cigarettes / 20) * 100}%`, backgroundColor: "#20B2AA" }} />
+                
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 p-3 rounded-2xl bg-gray-50">
+                    <Mail className="w-4 h-4 text-gray-600" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Email</p>
+                      <p className="text-sm text-[#1C3B5E]">{user.email}</p>
                     </div>
                   </div>
-                ))}
-              </div>
-            </Card>
-
-            <Card className="p-6 rounded-3xl border-0 shadow-lg">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 rounded-xl" style={{ backgroundColor: "#20B2AA20" }}>
-                  <Calendar className="w-5 h-5" style={{ color: "#20B2AA" }} />
+                  
+                  <div className="flex items-center gap-3 p-3 rounded-2xl bg-gray-50">
+                    <Phone className="w-4 h-4 text-gray-600" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Phone</p>
+                      <p className="text-sm text-[#1C3B5E]">{user.phone}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 p-3 rounded-2xl bg-gray-50">
+                    <Calendar className="w-4 h-4 text-gray-600" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Age</p>
+                      <p className="text-sm text-[#1C3B5E]">{user.age} years</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 p-3 rounded-2xl bg-gray-50">
+                    <Clock className="w-4 h-4 text-gray-600" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Member Since</p>
+                      <p className="text-sm text-[#1C3B5E]">{user.joinDate}</p>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="text-lg" style={{ color: "#1C3B5E" }}>Addiction History Timeline</h3>
-              </div>
-              <div className="relative space-y-4 pl-6">
-                <div className="absolute left-2 top-2 bottom-2 w-0.5" style={{ backgroundColor: "#20B2AA40" }} />
-                {addictionHistory.map((event, index) => {
-                  const colors: Record<string, string> = { joined: "#1C3B5E", milestone: "#20B2AA", progress: "#FFA726", success: "#8BC34A" };
-                  return (
+              </Card>
+
+              {/* Progress Chart */}
+              <Card className="p-6 rounded-3xl border-0 shadow-lg lg:col-span-2">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 rounded-xl bg-[#20B2AA20]">
+                    <TrendingUp className="w-5 h-5 text-[#20B2AA]" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-[#1C3B5E]">Progress Trend</h3>
+                </div>
+                
+                <div className="space-y-4">
+                  {progressData.map((data, index) => (
+                    <div key={index} className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium text-[#1C3B5E]">{data.week}</span>
+                        <span className="text-[#20B2AA] font-semibold">{data.cigarettes} cigs/day</span>
+                      </div>
+                      <div className="h-3 rounded-xl bg-gray-200 overflow-hidden">
+                        <div 
+                          className="h-full rounded-xl transition-all duration-500"
+                          style={{ 
+                            width: `${(data.cigarettes / 20) * 100}%`,
+                            background: "linear-gradient(90deg, #20B2AA 0%, #1C9B94 100%)"
+                          }}
+                        />
+                      </div>
+                      <div className="flex justify-between text-xs text-gray-500">
+                        <span>Craving Level: {data.craving}/10</span>
+                        <span>{Math.round((data.cigarettes / 20) * 100)}% of initial</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </div>
+
+            {/* Timeline & Daily Logs */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Timeline */}
+              <Card className="p-6 rounded-3xl border-0 shadow-lg">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 rounded-xl bg-[#20B2AA20]">
+                    <Calendar className="w-5 h-5 text-[#20B2AA]" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-[#1C3B5E]">Journey Timeline</h3>
+                </div>
+                
+                <div className="relative space-y-6 pl-8">
+                  <div className="absolute left-4 top-2 bottom-2 w-0.5 bg-gradient-to-b from-[#20B2AA] to-[#1C9B94]" />
+                  
+                  {addictionHistory.map((event, index) => (
                     <div key={index} className="relative">
-                      <div className="absolute -left-6 top-1 w-4 h-4 rounded-full border-4 border-white" style={{ backgroundColor: colors[event.status] }} />
+                      <div 
+                        className="absolute -left-8 top-1 w-6 h-6 rounded-full border-4 border-white shadow-lg"
+                        style={{ backgroundColor: getStatusColor(event.status) }}
+                      />
                       <div className="pl-4">
-                        <div className="flex items-center justify-between mb-1">
-                          <p className="text-sm" style={{ color: "#1C3B5E" }}>{event.event}</p>
-                          <span className="text-xs" style={{ color: "#333333", opacity: 0.6 }}>{event.date}</span>
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-sm font-semibold text-[#1C3B5E]">{event.event}</p>
+                          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                            {event.date}
+                          </span>
                         </div>
-                        <p className="text-xs" style={{ color: "#333333", opacity: 0.7 }}>{event.cigarettesPerDay} cigarettes/day</p>
+                        <p className="text-xs text-gray-600">
+                          {event.cigarettesPerDay} cigarettes per day
+                        </p>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            </Card>
-
-            <Card className="p-6 rounded-3xl border-0 shadow-lg">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 rounded-xl" style={{ backgroundColor: "#20B2AA20" }}>
-                  <FileText className="w-5 h-5" style={{ color: "#20B2AA" }} />
+                  ))}
                 </div>
-                <h3 className="text-lg" style={{ color: "#1C3B5E" }}>Daily Log Notes</h3>
-              </div>
-              <div className="space-y-4">
-                {dailyLogs.map((log, index) => (
-                  <div key={index} className="p-4 rounded-2xl border" style={{ borderColor: "#f0f0f0" }}>
-                    <div className="flex items-start justify-between mb-3">
-                      <span className="text-sm" style={{ color: "#1C3B5E" }}>{log.date}</span>
-                      <div className="flex gap-3 text-xs">
-                        <span style={{ color: "#333333", opacity: 0.7 }}>{log.cigarettes} cigs</span>
-                        <span style={{ color: log.craving >= 7 ? "#D9534F" : "#FFA726" }}>Craving: {log.craving}/10</span>
-                      </div>
-                    </div>
-                    <p className="text-sm" style={{ color: "#333333" }}>{log.notes}</p>
+              </Card>
+
+              {/* Daily Logs */}
+              <Card className="p-6 rounded-3xl border-0 shadow-lg">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 rounded-xl bg-[#20B2AA20]">
+                    <FileText className="w-5 h-5 text-[#20B2AA]" />
                   </div>
-                ))}
-              </div>
-            </Card>
+                  <h3 className="text-lg font-semibold text-[#1C3B5E]">Recent Activity</h3>
+                </div>
+                
+                <div className="space-y-4">
+                  {dailyLogs.map((log, index) => (
+                    <div key={index} className="p-4 rounded-2xl border border-gray-200 bg-white hover:shadow-md transition-shadow">
+                      <div className="flex items-start justify-between mb-3">
+                        <span className="text-sm font-semibold text-[#1C3B5E]">{log.date}</span>
+                        <div className="flex items-center gap-3 text-xs">
+                          <span 
+                            className="px-2 py-1 rounded-full font-medium"
+                            style={{ 
+                              backgroundColor: log.cigarettes === 0 ? '#8BC34A20' : '#FFA72620',
+                              color: log.cigarettes === 0 ? '#8BC34A' : '#FFA726'
+                            }}
+                          >
+                            {log.cigarettes} cigs
+                          </span>
+                          <span 
+                            className="px-2 py-1 rounded-full font-medium"
+                            style={{ 
+                              backgroundColor: log.craving >= 7 ? '#D9534F20' : '#FFA72620',
+                              color: log.craving >= 7 ? '#D9534F' : '#FFA726'
+                            }}
+                          >
+                            Craving: {log.craving}/10
+                          </span>
+                          <span 
+                            className="text-lg"
+                            style={{ color: getMoodColor(log.mood) }}
+                          >
+                            {log.mood}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-700 leading-relaxed">{log.notes}</p>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </div>
           </div>
         </ScrollArea>
       </DialogContent>
