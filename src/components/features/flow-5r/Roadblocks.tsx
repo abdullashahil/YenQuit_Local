@@ -185,22 +185,6 @@ export function FiveR_Roadblocks({ onNext, onBack }: FiveR_RoadblocksProps) {
                         </div>
                       </div>
                     ))}
-                  
-                  <div className="pt-4 flex justify-between">
-                    <Button
-                      onClick={handleBackToSelection}
-                      variant="outline"
-                      className="px-6 py-6 text-lg rounded-2xl border-[#20B2AA] text-[#20B2AA] hover:bg-[#20B2AA]/10"
-                    >
-                      ← Back to Selection
-                    </Button>
-                    <Button
-                      onClick={handleNext}
-                      className="px-8 py-6 text-lg rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 text-white"
-                    >
-                      Continue to Next Step
-                    </Button>
-                  </div>
                 </div>
               </div>
             )}
