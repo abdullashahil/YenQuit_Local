@@ -1,0 +1,162 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-size: 16px;
+  --background: #ffffff;
+  --foreground: oklch(0.145 0 0);
+  --card: #ffffff;
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: #030213;
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.95 0.0058 264.53);
+  --secondary-foreground: #030213;
+  --muted: #ececf0;
+  --muted-foreground: #717182;
+  --accent: #e9ebef;
+  --accent-foreground: #030213;
+  --destructive: #d4183d;
+  --destructive-foreground: #ffffff;
+  --border: rgba(0, 0, 0, 0.1);
+  --input: transparent;
+  --input-background: #f3f3f5;
+  --switch-background: #cbced4;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: #030213;
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.145 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.145 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.985 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.637 0.237 25.331);
+  --border: oklch(0.269 0 0);
+  --input: oklch(0.269 0 0);
+  --ring: oklch(0.439 0 0);
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.269 0 0);
+  --sidebar-ring: oklch(0.439 0 0);
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+html {
+  font-size: var(--font-size);
+}
+
+@layer components {
+  /* Brand text colors */
+  .brand-heading { color: #1C3B5E; }
+  .brand-text { color: #333333; }
+  .brand-muted { color: #333333; opacity: .7; }
+  .brand-accent { color: #20B2AA; }
+
+  /* Buttons */
+  .brand-btn { @apply px-6 py-2 rounded-xl text-white transition-all hover:opacity-90 shadow-md; background-color: #20B2AA; }
+  .brand-btn-lg { @apply px-10 py-6 rounded-2xl text-white text-lg transition-all hover:opacity-90 shadow-lg; background-color: #20B2AA; }
+  .brand-btn-outline { @apply px-6 py-2 rounded-xl border-2 transition-all; border-color: #1C3B5E; color: #1C3B5E; }
+  .brand-btn-outline-accent { @apply px-4 py-2 rounded-2xl text-sm transition-all; background-color: #20B2AA10; color: #20B2AA; }
+
+  /* Cards & panels */
+  .brand-card { @apply rounded-3xl bg-white shadow-lg; border: 1px solid #F1F5F9; }
+  .brand-panel { @apply rounded-2xl bg-white shadow-md; border: 1px solid #F1F5F9; }
+
+  /* Chips & accents */
+  .brand-chip { @apply inline-block rounded-full px-4 py-1; background-color: rgba(32,178,170,.20); }
+  .brand-accent-bg { background-color: rgba(32,178,170,.10); }
+  .brand-accent-bg-strong { background-color: rgba(32,178,170,.20); }
+  .brand-border { border-color: #E0E0E0; }
+  .brand-stat { color: #20B2AA; }
+
+  /* Landing / general titles */
+  .brand-hero-title { color: #1C3B5E; }
+  .brand-hero-subtitle { color: #333333; opacity: .8; }
+  .brand-section-bg { background-color: #f8f8f8; }
+}
+
+
+body {
+  font-family: "Poppins", sans-serif;
+}
+
+/* Slick slider custom styles for testimonials */
+.slick-slide {
+  padding: 0 8px;
+}
+
+.slick-list {
+  margin: 0 -8px;
+  padding: 20px 0;
+}
+
+.slick-dots {
+  bottom: -50px;
+}
+
+.slick-dots li button:before {
+  font-size: 12px;
+  color: #1C3B5E;
+  opacity: 0.5;
+}
+
+.slick-dots li.slick-active button:before {
+  color: #FFC107;
+  opacity: 1;
+}
+
+/* Ensure smooth transitions */
+.slick-slide {
+  transition: transform 0.3s ease;
+}
+
+/* Focus styles for accessibility */
+.slick-slide:focus {
+  outline: none;
+}
