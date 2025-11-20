@@ -2,6 +2,9 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import authRoutes from './routes/auth.js';
+import assessmentsRoutes from './routes/assessments.js';
+import quitPlansRoutes from './routes/quitPlans.js';
+import adviceRoutes from './routes/advice.js';
 
 dotenv.config();
 
@@ -16,6 +19,9 @@ app.use(cors({
 }));
 
 app.use('/api/auth', authRoutes);
+app.use('/api/assessments', assessmentsRoutes);
+app.use('/api/quit-plans', quitPlansRoutes);
+app.use('/api/advice', adviceRoutes);
 import userRoutes from './routes/user.js';
 app.use('/api/users', userRoutes);
 
