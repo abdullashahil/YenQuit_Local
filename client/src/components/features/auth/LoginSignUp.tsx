@@ -21,27 +21,52 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
     fullName: ''
   });
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Simple mock authentication - check if email contains "admin"
-    if (formData.email.toLowerCase().includes('admin')) {
-      onLogin('admin');
-    } else {
-      onLogin('standard');
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email, password: formData.password })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Login failed');
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('accessToken', data.accessToken);
+        localStorage.setItem('refreshToken', data.refreshToken);
+        localStorage.setItem('user', JSON.stringify(data.user));
+      }
+      const userType: 'admin' | 'standard' = data?.user?.role === 'admin' ? 'admin' : 'standard';
+      onLogin(userType);
+    } catch (err: any) {
+      alert(err?.message || 'Login failed');
     }
   };
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (formData.password !== formData.confirmPassword) {
       alert('Passwords do not match!');
       return;
     }
-    
-    // Proceed to onboarding for new users
-    onSignUp();
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          role: 'user',
+          profile: { full_name: formData.fullName }
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Sign up failed');
+      onSignUp();
+    } catch (err: any) {
+      alert(err?.message || 'Sign up failed');
+    }
   };
 
   return (
