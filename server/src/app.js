@@ -5,6 +5,7 @@ import authRoutes from './routes/auth.js';
 import assessmentsRoutes from './routes/assessments.js';
 import quitPlansRoutes from './routes/quitPlans.js';
 import adviceRoutes from './routes/advice.js';
+import fiveRRoutes from './routes/fiveR.js';
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/assessments', assessmentsRoutes);
 app.use('/api/quit-plans', quitPlansRoutes);
 app.use('/api/advice', adviceRoutes);
+app.use('/api/5r', fiveRRoutes);
 import userRoutes from './routes/user.js';
 app.use('/api/users', userRoutes);
 
