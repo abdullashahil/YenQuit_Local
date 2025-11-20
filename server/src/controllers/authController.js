@@ -1,5 +1,6 @@
 import * as authService from '../services/authService.js';
 import * as userService from '../services/userService.js';
+import * as activityService from '../services/activityService.js';
 import bcrypt from 'bcrypt';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/token.js';
 
@@ -10,7 +11,23 @@ export async function register(req, res, next) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
     const result = await authService.registerUserWithProfile({ email, password, role, profile: profile || {} });
-    res.status(201).json({ user: result.user, profile: result.profile });
+    const accessToken = generateAccessToken({ userId: result.user.id, role: result.user.role });
+    const refreshToken = generateRefreshToken({ userId: result.user.id, role: result.user.role });
+
+    // Log activity
+    try {
+      await activityService.logActivity(
+        result.user.id,
+        'user_registered',
+        'New user registration',
+        req.ip,
+        req.get('user-agent')
+      );
+    } catch (e) {
+      // non-blocking
+    }
+
+    res.status(201).json({ user: { ...result.user, profile: result.profile }, accessToken, refreshToken });
   } catch (err) {
     if (err.code === '23505') {
       // Unique violation (email exists)
@@ -32,8 +49,14 @@ export async function login(req, res, next) {
     if (!match) return res.status(401).json({ error: 'Invalid credentials' });
     const accessToken = generateAccessToken({ userId: user.id, role: user.role });
     const refreshToken = generateRefreshToken({ userId: user.id, role: user.role });
-delete user.password_hash;
-res.json({ user, accessToken, refreshToken });
+    // update last_login (non-blocking)
+    userService.updateLastLogin(user.id).catch(() => {});
+    // log activity (non-blocking)
+    activityService
+      .logActivity(user.id, 'user_login', 'User logged in', req.ip, req.get('user-agent'))
+      .catch(() => {});
+    delete user.password_hash;
+    res.json({ user, accessToken, refreshToken });
   } catch (err) {
     next(err);
   }
