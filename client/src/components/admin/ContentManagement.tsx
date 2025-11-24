@@ -20,8 +20,9 @@ import { AddContentModal } from "./AddContentModal";
 import { PreviewContentModal } from "./PreviewContentModal";
 import { CampaignScheduler } from "./CampaignScheduler";
 import { InsightsNotifications } from "../features/community/InsightsNotifications";
-import { Search, Plus, Edit, Trash2, Eye, Filter, ChevronDown, BarChart3, Users, Calendar, FileText, MessageSquare, Bell } from "lucide-react";
-import { useState } from "react";
+import { Search, Plus, Edit, Trash2, Eye, Filter, ChevronDown, BarChart3, Users, Calendar, FileText, MessageSquare, Bell, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 interface ContentManagementProps {
   activeTab: string;
@@ -29,6 +30,8 @@ interface ContentManagementProps {
   onExitAdmin: () => void;
   onLogout?: () => void;
 }
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogout }: ContentManagementProps) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -38,111 +41,95 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [editContent, setEditContent] = useState<any>(null);
   const [previewContent, setPreviewContent] = useState<any>(null);
-
-  // Mock content data
-  const contentList = [
-    {
-      id: 1,
-      title: "Understanding Nicotine Addiction",
-      category: "Blog",
-      publishDate: "Oct 10, 2025",
-      status: "Live",
-      endDate: "-",
-      description: "A comprehensive guide to understanding nicotine dependence",
-      views: 1247,
-      engagement: 68,
-    },
-    {
-      id: 2,
-      title: "You Are Stronger Than You Think",
-      category: "Quote",
-      publishDate: "Oct 15, 2025",
-      status: "Live",
-      endDate: "-",
-      description: "Motivational quote by Dr. Sarah Johnson",
-      views: 892,
-      engagement: 85,
-    },
-    {
-      id: 3,
-      title: "30-Day Smoke-Free Challenge",
-      category: "Campaign",
-      publishDate: "Nov 1, 2025",
-      status: "Pending",
-      endDate: "Nov 30, 2025",
-      description: "Join our community-wide challenge",
-      views: 0,
-      engagement: 0,
-    },
-    {
-      id: 4,
-      title: "Breathing Exercises for Cravings",
-      category: "Video",
-      publishDate: "Oct 12, 2025",
-      status: "Live",
-      endDate: "-",
-      description: "5-minute guided breathing session",
-      views: 567,
-      engagement: 72,
-    },
-    {
-      id: 5,
-      title: "Overcoming Social Triggers",
-      category: "Podcast",
-      publishDate: "Oct 8, 2025",
-      status: "Live",
-      endDate: "-",
-      description: "Expert discussion on managing social situations",
-      views: 423,
-      engagement: 61,
-    },
-    {
-      id: 6,
-      title: "Benefits Timeline Infographic",
-      category: "Image",
-      publishDate: "Oct 5, 2025",
-      status: "Live",
-      endDate: "-",
-      description: "Visual guide to health improvements over time",
-      views: 934,
-      engagement: 78,
-    },
-    {
-      id: 7,
-      title: "Stress Management Techniques",
-      category: "Blog",
-      publishDate: "Oct 20, 2025",
-      status: "Draft",
-      endDate: "-",
-      description: "Alternative strategies for coping with stress",
-      views: 0,
-      engagement: 0,
-    },
-    {
-      id: 8,
-      title: "Holiday Support Campaign",
-      category: "Campaign",
-      publishDate: "Dec 15, 2025",
-      status: "Pending",
-      endDate: "Jan 5, 2026",
-      description: "Extra support during the holiday season",
-      views: 0,
-      engagement: 0,
-    },
-  ];
-
-  // Filter logic
-  const filteredContent = contentList.filter((content) => {
-    const matchesSearch =
-      content.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      content.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory =
-      categoryFilter === "all" || content.category === categoryFilter;
-    const matchesStatus =
-      statusFilter === "all" || content.status === statusFilter;
-    
-    return matchesSearch && matchesCategory && matchesStatus;
+  const [contentList, setContentList] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false
   });
+
+  // Fetch content from API
+  const fetchContent = async (page = 1, search = '', category = '', status = '') => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '10'
+      });
+      
+      if (search) params.append('search', search);
+      if (category && category !== 'all') params.append('category', category);
+      if (status && status !== 'all') params.append('status', status);
+      
+      const response = await axios.get(`${API_BASE_URL}/content?${params.toString()}`);
+      
+      if (response.data.success) {
+        setContentList(response.data.data);
+        setPagination(response.data.pagination);
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to fetch content');
+      console.error('Error fetching content:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch statistics from API
+  const fetchStats = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/content/stats`);
+      
+      if (response.data.success) {
+        setStats(response.data.data);
+      }
+    } catch (err: any) {
+      console.error('Error fetching stats:', err);
+    }
+  };
+
+  // Load data on component mount and when filters change
+  useEffect(() => {
+    fetchContent(1, searchQuery, categoryFilter, statusFilter);
+  }, [searchQuery, categoryFilter, statusFilter]);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  // Handle pagination
+  const handlePageChange = (newPage: number) => {
+    fetchContent(newPage, searchQuery, categoryFilter, statusFilter);
+  };
+
+  // Handle content operations
+  const handleContentSaved = (savedContent: any) => {
+    // Refresh the content list
+    fetchContent(1, searchQuery, categoryFilter, statusFilter);
+    fetchStats();
+  };
+
+  const handleDelete = async (contentId: string) => {
+    if (!confirm('Are you sure you want to delete this content?')) return;
+    
+    try {
+      await axios.delete(`${API_BASE_URL}/content/${contentId}`);
+      // Refresh the content list
+      fetchContent(1, searchQuery, categoryFilter, statusFilter);
+      fetchStats();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to delete content');
+      console.error('Error deleting content:', err);
+    }
+  };
 
   const handleEdit = (content: any) => {
     setEditContent(content);
@@ -158,6 +145,25 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
     setEditContent(null);
     setIsAddModalOpen(true);
   };
+
+  // Format date helper
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "-";
+    return new Date(dateString).toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
+
+  // Transform API data to match expected format
+  const transformedContent = contentList.map((content) => ({
+    ...content,
+    publishDate: formatDate(content.publish_date),
+    endDate: formatDate(content.end_date),
+    views: 0, // Backend doesn't track views yet
+    engagement: 0 // Backend doesn't track engagement yet
+  }));
 
   const getStatusColor = (status: string) => {
     if (status === "Live") return "#8BC34A";
@@ -226,12 +232,18 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
 
               {/* Stats Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                {[
-                  { label: "Total Content", value: "247", change: "+12%", icon: FileText, color: "#20B2AA" },
-                  { label: "Live Content", value: "189", change: "+8%", icon: BarChart3, color: "#10B981" },
-                  { label: "Avg. Engagement", value: "72%", change: "+5%", icon: Users, color: "#F59E0B" },
-                  { label: "Scheduled", value: "15", change: "+3%", icon: Calendar, color: "#8B5CF6" }
-                ].map((stat, index) => {
+                {
+                  (stats ? [
+                    { label: "Total Content", value: stats.total.toString(), change: "+12%", icon: FileText, color: "#20B2AA" },
+                    { label: "Live Content", value: stats.byStatus?.find((s: any) => s.status === 'Live')?.count.toString() || "0", change: "+8%", icon: BarChart3, color: "#10B981" },
+                    { label: "Avg. Engagement", value: "72%", change: "+5%", icon: Users, color: "#F59E0B" },
+                    { label: "Draft", value: stats.byStatus?.find((s: any) => s.status === 'Draft')?.count.toString() || "0", change: "+3%", icon: Calendar, color: "#8B5CF6" }
+                  ] : [
+                    { label: "Total Content", value: "-", change: "-", icon: FileText, color: "#20B2AA" },
+                    { label: "Live Content", value: "-", change: "-", icon: BarChart3, color: "#10B981" },
+                    { label: "Avg. Engagement", value: "-", change: "-", icon: Users, color: "#F59E0B" },
+                    { label: "Draft", value: "-", change: "-", icon: Calendar, color: "#8B5CF6" }
+                  ]).map((stat, index) => {
                   const Icon = stat.icon;
                   return (
                     <div key={index} className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
@@ -332,8 +344,17 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
               {/* Results Count */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-4 gap-3">
                 <div className="text-sm text-gray-600">
-                  Showing <span className="font-semibold text-[#1C3B5E]">{filteredContent.length}</span> of{" "}
-                  <span className="font-semibold text-[#1C3B5E]">{contentList.length}</span> content items
+                  {isLoading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Loading...
+                    </span>
+                  ) : error ? (
+                    <span className="text-red-600">{error}</span>
+                  ) : (
+                    <>Showing <span className="font-semibold text-[#1C3B5E]">{contentList.length}</span> of{" "}
+                    <span className="font-semibold text-[#1C3B5E]">{pagination.total}</span> content items</>
+                  )}
                 </div>
               </div>
             </div>
@@ -368,7 +389,58 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredContent.map((content, index) => (
+                    {isLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="py-16 text-center">
+                          <div className="flex flex-col items-center justify-center">
+                            <Loader2 className="w-8 h-8 animate-spin mb-4" style={{ color: "#20B2AA" }} />
+                            <p className="text-lg font-semibold text-gray-600 mb-2">Loading content...</p>
+                            <p className="text-sm text-gray-500">Please wait while we fetch your data</p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : error ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="py-16 text-center">
+                          <div className="flex flex-col items-center justify-center">
+                            <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+                              <Trash2 className="w-8 h-8 text-red-500" />
+                            </div>
+                            <p className="text-lg font-semibold text-red-600 mb-2">Error loading content</p>
+                            <p className="text-sm text-gray-500 max-w-md mx-auto">{error}</p>
+                            <Button 
+                              onClick={() => fetchContent(1, searchQuery, categoryFilter, statusFilter)}
+                              className="mt-4 rounded-xl bg-[#20B2AA] hover:bg-[#1C9B94] text-white"
+                            >
+                              Try Again
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : transformedContent.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="py-16 text-center">
+                          <div className="flex flex-col items-center justify-center">
+                            <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+                              <Search className="w-8 h-8 text-gray-400" />
+                            </div>
+                            <p className="text-lg font-semibold text-gray-600 mb-2">
+                              No content found
+                            </p>
+                            <p className="text-sm text-gray-500 max-w-md mx-auto">
+                              Try adjusting your search criteria or filters to find what you're looking for.
+                            </p>
+                            <Button 
+                              onClick={handleAddNew}
+                              className="mt-4 rounded-xl bg-[#20B2AA] hover:bg-[#1C9B94] text-white"
+                            >
+                              Create Your First Content
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      transformedContent.map((content, index) => (
                       <TableRow
                         key={content.id}
                         className={`border-b border-gray-50 transition-all duration-200 group ${
@@ -471,6 +543,7 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
                             </button>
 
                             <button
+                              onClick={() => handleDelete(content.id)}
                               className="p-2 rounded-xl transition-all duration-200 hover:shadow-md hover:scale-105 group"
                               style={{ backgroundColor: "#D9534F10" }}
                               title="Delete Content"
@@ -480,66 +553,67 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))}
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </div>
 
-              {/* No Results Message */}
-              {filteredContent.length === 0 && (
-                <div className="py-16 text-center">
-                  <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
-                    <Search className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <p className="text-lg font-semibold text-gray-600 mb-2">
-                    No content found
-                  </p>
-                  <p className="text-sm text-gray-500 max-w-md mx-auto">
-                    Try adjusting your search criteria or filters to find what you're looking for.
-                  </p>
-                </div>
-              )}
-
               {/* Pagination */}
-              {filteredContent.length > 0 && (
+              {!isLoading && !error && transformedContent.length > 0 && (
                 <div className="px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gray-50/50">
                   <div className="text-sm text-gray-600">
-                    Page <span className="font-semibold text-[#1C3B5E]">1</span> of{" "}
-                    <span className="font-semibold text-[#1C3B5E]">3</span> •{" "}
-                    <span className="font-semibold text-[#1C3B5E]">{filteredContent.length}</span> items
+                    Page <span className="font-semibold text-[#1C3B5E]">{pagination.page}</span> of{" "}
+                    <span className="font-semibold text-[#1C3B5E]">{pagination.totalPages}</span> •{" "}
+                    <span className="font-semibold text-[#1C3B5E]">{pagination.total}</span> items
                   </div>
                   <div className="flex items-center gap-2">
                     <Button 
                       variant="outline" 
                       size="sm" 
                       className="rounded-xl border-gray-200 hover:border-[#20B2AA] hover:text-[#20B2AA] transition-all duration-200"
+                      onClick={() => handlePageChange(pagination.page - 1)}
+                      disabled={!pagination.hasPrev}
                     >
                       Previous
                     </Button>
-                    <Button 
-                      size="sm" 
-                      className="rounded-xl bg-[#20B2AA] text-white hover:bg-[#1C9B94] transition-all duration-200 shadow-md"
-                    >
-                      1
-                    </Button>
+                    
+                    {/* Page Numbers */}
+                    {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (pagination.totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (pagination.page <= 3) {
+                        pageNum = i + 1;
+                      } else if (pagination.page >= pagination.totalPages - 2) {
+                        pageNum = pagination.totalPages - 4 + i;
+                      } else {
+                        pageNum = pagination.page - 2 + i;
+                      }
+                      
+                      return (
+                        <Button 
+                          key={pageNum}
+                          size="sm" 
+                          variant={pageNum === pagination.page ? "default" : "outline"}
+                          className={`rounded-xl transition-all duration-200 ${
+                            pageNum === pagination.page 
+                              ? "bg-[#20B2AA] text-white shadow-md" 
+                              : "border-gray-200 hover:border-[#20B2AA] hover:text-[#20B2AA]"
+                          }`}
+                          onClick={() => handlePageChange(pageNum)}
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                    
                     <Button 
                       variant="outline" 
                       size="sm" 
                       className="rounded-xl border-gray-200 hover:border-[#20B2AA] hover:text-[#20B2AA] transition-all duration-200"
-                    >
-                      2
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="rounded-xl border-gray-200 hover:border-[#20B2AA] hover:text-[#20B2AA] transition-all duration-200"
-                    >
-                      3
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="rounded-xl border-gray-200 hover:border-[#20B2AA] hover:text-[#20B2AA] transition-all duration-200"
+                      onClick={() => handlePageChange(pagination.page + 1)}
+                      disabled={!pagination.hasNext}
                     >
                       Next
                     </Button>
@@ -682,6 +756,7 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
           if (!open) setEditContent(null);
         }}
         editContent={editContent}
+        onContentSaved={handleContentSaved}
       />
       <PreviewContentModal
         open={isPreviewModalOpen}

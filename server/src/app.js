@@ -1,7 +1,10 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import path from 'path';
 import authRoutes from './routes/auth.js';
+import userRoutes from './routes/user.js';
+import contentRoutes from './routes/contentRoutes.js';
 
 dotenv.config();
 
@@ -15,9 +18,13 @@ app.use(cors({
   credentials: true
 }));
 
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
+// API Routes
 app.use('/api/auth', authRoutes);
-import userRoutes from './routes/user.js';
 app.use('/api/users', userRoutes);
+app.use('/api/content', contentRoutes);
 
 app.get('/', (req, res) => {
   res.json({ status: 'API running' });
