@@ -11,44 +11,135 @@ import {
   SelectValue,
 } from "../ui/select";
 import { X, Upload, Image, Video, FileText, Calendar, Tag } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 interface AddContentModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editContent?: any;
+  onContentSaved?: (content: any) => void;
 }
 
-export function AddContentModal({ open, onOpenChange, editContent }: AddContentModalProps) {
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
+export function AddContentModal({ open, onOpenChange, editContent, onContentSaved }: AddContentModalProps) {
   const [title, setTitle] = useState(editContent?.title || "");
   const [category, setCategory] = useState(editContent?.category || "");
   const [description, setDescription] = useState(editContent?.description || "");
   const [content, setContent] = useState(editContent?.content || "");
   const [status, setStatus] = useState(editContent?.status || "Draft");
-  const [publishDate, setPublishDate] = useState(editContent?.publishDate || "");
-  const [endDate, setEndDate] = useState(editContent?.endDate || "");
-  const [mediaUrl, setMediaUrl] = useState(editContent?.mediaUrl || "");
-  const [tags, setTags] = useState(editContent?.tags || []);
+  const [publishDate, setPublishDate] = useState(editContent?.publish_date || "");
+  const [endDate, setEndDate] = useState(editContent?.end_date || "");
+  const [mediaUrl, setMediaUrl] = useState(editContent?.media_url || "");
+  const [tags, setTags] = useState(editContent?.tags?.join(', ') || "");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSave = () => {
-    console.log({
-      title,
-      category,
-      description,
-      content,
-      status,
-      publishDate,
-      endDate,
-      mediaUrl,
-      tags,
-    });
-    onOpenChange(false);
+  const handleSave = async () => {
+    setError(null);
+    
+    // Validation
+    if (!title.trim()) {
+      setError('Title is required');
+      return;
+    }
+    if (!category) {
+      setError('Category is required');
+      return;
+    }
+    if (!content.trim()) {
+      setError('Content is required');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      
+      const formData = new FormData();
+      formData.append('title', title.trim());
+      formData.append('category', category);
+      formData.append('description', description.trim());
+      formData.append('content', content.trim());
+      formData.append('status', status);
+      formData.append('publish_date', publishDate);
+      formData.append('end_date', endDate);
+      formData.append('media_url', mediaUrl);
+      
+      // Parse tags
+      const tagsArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+      formData.append('tags', JSON.stringify(tagsArray));
+      
+      // Add file if selected
+      if (selectedFile) {
+        formData.append('media', selectedFile);
+      }
+
+      const url = editContent?.id 
+        ? `${API_BASE_URL}/content/${editContent.id}`
+        : `${API_BASE_URL}/content`;
+      
+      const method = editContent?.id ? 'put' : 'post';
+      
+      const response = await axios[method](url, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.data.success) {
+        // Reset form
+        if (!editContent) {
+          setTitle("");
+          setCategory("");
+          setDescription("");
+          setContent("");
+          setStatus("Draft");
+          setPublishDate("");
+          setEndDate("");
+          setMediaUrl("");
+          setTags("");
+          setSelectedFile(null);
+        }
+        
+        // Call success callback if provided
+        if (onContentSaved) {
+          onContentSaved(response.data.data);
+        }
+        
+        onOpenChange(false);
+        
+        // Show success message (you could use a toast library here)
+        console.log(editContent ? 'Content updated successfully!' : 'Content created successfully!');
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to save content');
+      console.error('Error saving content:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Handle file upload logic here
+      // Validate file type and size
+      const allowedTypes = ['image/png', 'image/jpeg', 'video/mp4', 'application/pdf'];
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      
+      if (!allowedTypes.includes(file.type)) {
+        setError('Invalid file type. Only PNG, JPG, MP4, and PDF files are allowed.');
+        return;
+      }
+      
+      if (file.size > maxSize) {
+        setError('File size too large. Maximum size is 10MB.');
+        return;
+      }
+      
+      setSelectedFile(file);
+      setError(null);
       console.log("File selected:", file.name);
     }
   };
@@ -83,6 +174,12 @@ export function AddContentModal({ open, onOpenChange, editContent }: AddContentM
 
         {/* Content Form */}
         <div className="p-8 space-y-8 overflow-y-auto flex-1">
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-2xl p-4">
+              <p className="text-red-600 text-sm">{error}</p>
+            </div>
+          )}
           {/* Basic Information Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Left Column */}
@@ -162,11 +259,12 @@ export function AddContentModal({ open, onOpenChange, editContent }: AddContentM
                     onChange={handleFileUpload}
                     className="hidden"
                     id="file-upload"
+                    accept=".png,.jpg,.jpeg,.mp4,.pdf"
                   />
                   <label htmlFor="file-upload" className="cursor-pointer">
                     <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                     <p className="text-sm text-gray-600">
-                      Click to upload or drag and drop
+                      {selectedFile ? selectedFile.name : 'Click to upload or drag and drop'}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
                       PNG, JPG, MP4, PDF up to 10MB
@@ -226,6 +324,20 @@ export function AddContentModal({ open, onOpenChange, editContent }: AddContentM
                 </div>
               </div>
 
+              {/* Tags */}
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold text-[#1C3B5E] flex items-center gap-2">
+                  <Tag className="w-4 h-4" />
+                  Tags
+                </Label>
+                <Input
+                  value={tags}
+                  onChange={(e) => setTags(e.target.value)}
+                  placeholder="Enter tags separated by commas..."
+                  className="rounded-2xl border-gray-200 h-12"
+                />
+              </div>
+
               {/* Preview Card */}
               <div className="p-4 rounded-2xl border border-gray-200 bg-gray-50">
                 <h4 className="text-sm font-semibold text-[#1C3B5E] mb-2">Preview</h4>
@@ -269,12 +381,20 @@ export function AddContentModal({ open, onOpenChange, editContent }: AddContentM
             </Button>
             <Button
               onClick={handleSave}
-              className="px-8 py-3 rounded-2xl text-white transition-all duration-200 hover:shadow-lg shadow-md"
+              disabled={isLoading}
+              className="px-8 py-3 rounded-2xl text-white transition-all duration-200 hover:shadow-lg shadow-md disabled:opacity-50"
               style={{ 
                 background: "linear-gradient(135deg, #20B2AA 0%, #1C9B94 100%)"
               }}
             >
-              {editContent ? "Update Content" : "Publish Content"}
+              {isLoading ? (
+                <span className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  {editContent ? "Updating..." : "Publishing..."}
+                </span>
+              ) : (
+                editContent ? "Update Content" : "Publish Content"
+              )}
             </Button>
           </div>
         </div>
