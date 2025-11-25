@@ -17,8 +17,9 @@ import {
   TableRow,
 } from "../ui/table";
 import { UserDetailModal } from "./UserDetailModal";
-import { Search, Eye, Edit, Trash2, Send, Download, UserPlus, Filter, MoreVertical, Mail, Phone, Calendar, Activity, ChevronDown } from "lucide-react";
-import { useState } from "react";
+import { Search, Eye, Edit, Trash2, Send, Download, UserPlus, Filter, MoreVertical, Mail, Phone, Calendar, Activity, ChevronDown, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import userService from "../../services/userService";
 
 interface UserManagementProps {
   activeTab: string;
@@ -29,160 +30,127 @@ interface UserManagementProps {
 
 export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout }: UserManagementProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [addictionFilter, setAddictionFilter] = useState("all");
+  const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [progressFilter, setProgressFilter] = useState("all");
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
-
-  // Mock user data with additional fields
-  const users = [
-    {
-      id: 1,
-      name: "Sarah Mitchell",
-      email: "sarah.mitchell@email.com",
-      phone: "+1 (555) 123-4567",
-      age: 34,
-      fagerstrom: 7,
-      addictionLevel: "High",
-      status: "Active",
-      joinDate: "Jan 15, 2024",
-      lastLogin: "Oct 16, 2025",
-      progress: 65,
-      sessionsCompleted: 12,
-      streak: 7,
-    },
-    {
-      id: 2,
-      name: "James Thompson",
-      email: "james.t@email.com",
-      phone: "+1 (555) 234-5678",
-      age: 28,
-      fagerstrom: 4,
-      addictionLevel: "Moderate",
-      status: "Active",
-      joinDate: "Feb 22, 2024",
-      lastLogin: "Oct 15, 2025",
-      progress: 42,
-      sessionsCompleted: 8,
-      streak: 3,
-    },
-    {
-      id: 3,
-      name: "Maria Garcia",
-      email: "m.garcia@email.com",
-      phone: "+1 (555) 345-6789",
-      age: 41,
-      fagerstrom: 2,
-      addictionLevel: "Low",
-      status: "Quit",
-      joinDate: "Mar 10, 2024",
-      lastLogin: "Oct 14, 2025",
-      progress: 98,
-      sessionsCompleted: 20,
-      streak: 45,
-    },
-    {
-      id: 4,
-      name: "Robert Chen",
-      email: "robert.chen@email.com",
-      phone: "+1 (555) 456-7890",
-      age: 52,
-      fagerstrom: 8,
-      addictionLevel: "High",
-      status: "Active",
-      joinDate: "Apr 05, 2024",
-      lastLogin: "Oct 16, 2025",
-      progress: 28,
-      sessionsCompleted: 5,
-      streak: 2,
-    },
-    {
-      id: 5,
-      name: "Emily Brown",
-      email: "emily.brown@email.com",
-      phone: "+1 (555) 567-8901",
-      age: 31,
-      fagerstrom: 5,
-      addictionLevel: "Moderate",
-      status: "Relapsed",
-      joinDate: "May 18, 2024",
-      lastLogin: "Oct 12, 2025",
-      progress: 75,
-      sessionsCompleted: 15,
-      streak: 0,
-    },
-    {
-      id: 6,
-      name: "Michael Davis",
-      email: "m.davis@email.com",
-      phone: "+1 (555) 678-9012",
-      age: 45,
-      fagerstrom: 3,
-      addictionLevel: "Low",
-      status: "Active",
-      joinDate: "Jun 30, 2024",
-      lastLogin: "Oct 16, 2025",
-      progress: 88,
-      sessionsCompleted: 18,
-      streak: 21,
-    },
-    {
-      id: 7,
-      name: "Lisa Anderson",
-      email: "lisa.a@email.com",
-      phone: "+1 (555) 789-0123",
-      age: 38,
-      fagerstrom: 6,
-      addictionLevel: "Moderate",
-      status: "Active",
-      joinDate: "Jul 12, 2024",
-      lastLogin: "Oct 15, 2025",
-      progress: 55,
-      sessionsCompleted: 10,
-      streak: 5,
-    },
-    {
-      id: 8,
-      name: "David Wilson",
-      email: "d.wilson@email.com",
-      phone: "+1 (555) 890-1234",
-      age: 29,
-      fagerstrom: 9,
-      addictionLevel: "High",
-      status: "Active",
-      joinDate: "Aug 25, 2024",
-      lastLogin: "Oct 16, 2025",
-      progress: 15,
-      sessionsCompleted: 3,
-      streak: 1,
-    },
-  ];
-
-  // Filter logic
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.phone.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesAddiction =
-      addictionFilter === "all" || user.addictionLevel === addictionFilter;
-    const matchesStatus =
-      statusFilter === "all" || user.status === statusFilter;
-    const matchesProgress =
-      progressFilter === "all" || 
-      (progressFilter === "high" && user.progress >= 80) ||
-      (progressFilter === "medium" && user.progress >= 50 && user.progress < 80) ||
-      (progressFilter === "low" && user.progress < 50);
-    
-    return matchesSearch && matchesAddiction && matchesStatus && matchesProgress;
+  const [users, setUsers] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false
   });
 
-  const handleViewProfile = (user: any) => {
+  // Fetch users from API
+  const fetchUsers = async (page = 1, search = '', role = '', status = '') => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const result = await userService.getUsers({
+        page,
+        limit: 10,
+        search,
+        role,
+        status
+      });
+      
+      if (result.success) {
+        setUsers(result.data);
+        setPagination(result.pagination);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch users');
+      console.error('Error fetching users:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch statistics from API
+  const fetchStats = async () => {
+    try {
+      const result = await userService.getUserStats();
+      
+      if (result.success) {
+        setStats(result.data);
+      }
+    } catch (err: any) {
+      console.error('Error fetching stats:', err);
+    }
+  };
+
+  // Load data on component mount and when filters change
+  useEffect(() => {
+    fetchUsers(1, searchQuery, roleFilter, statusFilter);
+  }, [searchQuery, roleFilter, statusFilter]);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  // Handle pagination
+  const handlePageChange = (newPage: number) => {
+    fetchUsers(newPage, searchQuery, roleFilter, statusFilter);
+  };
+
+  // Handle user operations
+  const handleDelete = async (userId: string) => {
+    if (!confirm('Are you sure you want to delete this user?')) return;
+    
+    try {
+      await userService.deleteUser(userId);
+      // Refresh the user list
+      fetchUsers(1, searchQuery, roleFilter, statusFilter);
+      fetchStats();
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete user');
+      console.error('Error deleting user:', err);
+    }
+  };
+
+  const handleView = (user: any) => {
     setSelectedUser(user);
     setIsDetailModalOpen(true);
   };
+
+  const handleEdit = (user: any) => {
+    setSelectedUser(user);
+    setIsDetailModalOpen(true);
+  };
+
+  // Format date helper
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "-";
+    return new Date(dateString).toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
+
+  // Transform API data to match expected format
+  const transformedUsers = users.map((user) => ({
+    ...user,
+    name: user.name || 'Unknown',
+    phone: user.phone || '-',
+    age: user.age || '-',
+    fagerstrom: user.fagerstrom_score || '-',
+    addictionLevel: user.addiction_level || 'Unknown',
+    status: user.status || 'Unknown',
+    joinDate: formatDate(user.join_date),
+    lastLogin: formatDate(user.last_login),
+    progress: 0, // Backend doesn't track progress yet
+    sessionsCompleted: 0, // Backend doesn't track sessions yet
+    streak: 0, // Backend doesn't track streak yet
+  }));
 
   const getAddictionColor = (level: string) => {
     if (level === "High") return "#D9534F";
@@ -206,9 +174,9 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
 
   const selectAllRows = () => {
     setSelectedRows(
-      selectedRows.length === filteredUsers.length
+      selectedRows.length === transformedUsers.length
         ? []
-        : filteredUsers.map(user => user.id)
+        : transformedUsers.map(user => user.id)
     );
   };
 
@@ -267,10 +235,17 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
               {/* Stats Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 {[
-                  { label: "Total Users", value: "1,247", change: "+12%", icon: Activity, color: "#20B2AA" },
-                  { label: "Active Users", value: "892", change: "+8%", icon: Eye, color: "#10B981" },
-                  { label: "Success Rate", value: "68%", change: "+5%", icon: Calendar, color: "#F59E0B" },
-                  { label: "Avg. Progress", value: "72%", change: "+3%", icon: Mail, color: "#8B5CF6" }
+                  ...(stats ? [
+                    { label: "Total Users", value: stats.total.toString(), change: "+12%", icon: Activity, color: "#20B2AA" },
+                    { label: "Active Users", value: stats.byStatus?.find((s: any) => s.status === 'active')?.count.toString() || "0", change: "+8%", icon: Eye, color: "#10B981" },
+                    { label: "Admin Users", value: stats.byRole?.find((r: any) => r.role === 'admin')?.count.toString() || "0", change: "+5%", icon: Calendar, color: "#F59E0B" },
+                    { label: "Recent Join", value: stats.recentRegistrations.toString(), change: "+3%", icon: Mail, color: "#8B5CF6" }
+                  ] : [
+                    { label: "Total Users", value: "-", change: "-", icon: Activity, color: "#20B2AA" },
+                    { label: "Active Users", value: "-", change: "-", icon: Eye, color: "#10B981" },
+                    { label: "Admin Users", value: "-", change: "-", icon: Calendar, color: "#F59E0B" },
+                    { label: "Recent Join", value: "-", change: "-", icon: Mail, color: "#8B5CF6" }
+                  ])
                 ].map((stat, index) => {
                   const Icon = stat.icon;
                   return (
@@ -284,7 +259,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                           className="w-12 h-12 rounded-full flex items-center justify-center"
                           style={{ backgroundColor: `${stat.color}20` }}
                         >
-                          <Icon className="w-6 h-6" style={{ color: stat.color }} />
+                          {typeof Icon === 'function' ? <Icon className="w-6 h-6" style={{ color: stat.color }} /> : <div className="w-6 h-6" style={{ color: stat.color }} />}
                         </div>
                       </div>
                       <p className="text-xs text-green-600 mt-2 font-medium">{stat.change} from last month</p>
@@ -316,21 +291,20 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                   </div>
                 </div>
 
-                {/* Addiction Level Filter */}
+                {/* Role Filter */}
                 <div className="lg:col-span-2">
                   <label className="block text-sm font-semibold text-[#1C3B5E] mb-2">
-                    Addiction Level
+                    Role
                   </label>
-                  <Select value={addictionFilter} onValueChange={setAddictionFilter}>
+                  <Select value={roleFilter} onValueChange={setRoleFilter}>
                     <SelectTrigger className="h-12 rounded-2xl border-gray-200 focus:border-[#20B2AA] focus:ring-[#20B2AA]/20 bg-white">
-                      <SelectValue placeholder="All Levels" />
+                      <SelectValue placeholder="All Roles" />
                       <ChevronDown className="w-4 h-4 opacity-50" />
                     </SelectTrigger>
                     <SelectContent className="bg-white border border-gray-200 rounded-2xl shadow-xl">
-                      <SelectItem value="all" className="rounded-lg hover:bg-blue-50 focus:bg-blue-50">All Levels</SelectItem>
-                      <SelectItem value="Low" className="rounded-lg hover:bg-green-50 focus:bg-green-50">Low</SelectItem>
-                      <SelectItem value="Moderate" className="rounded-lg hover:bg-orange-50 focus:bg-orange-50">Moderate</SelectItem>
-                      <SelectItem value="High" className="rounded-lg hover:bg-red-50 focus:bg-red-50">High</SelectItem>
+                      <SelectItem value="all" className="rounded-lg hover:bg-blue-50 focus:bg-blue-50">All Roles</SelectItem>
+                      <SelectItem value="admin" className="rounded-lg hover:bg-purple-50 focus:bg-purple-50">Admin</SelectItem>
+                      <SelectItem value="user" className="rounded-lg hover:bg-cyan-50 focus:bg-cyan-50">User</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -354,25 +328,6 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                   </Select>
                 </div>
 
-                {/* Progress Filter */}
-                <div className="lg:col-span-2">
-                  <label className="block text-sm font-semibold text-[#1C3B5E] mb-2">
-                    Progress
-                  </label>
-                  <Select value={progressFilter} onValueChange={setProgressFilter}>
-                    <SelectTrigger className="h-12 rounded-2xl border-gray-200 focus:border-[#20B2AA] focus:ring-[#20B2AA]/20 bg-white">
-                      <SelectValue placeholder="All Progress" />
-                      <ChevronDown className="w-4 h-4 opacity-50" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border border-gray-200 rounded-2xl shadow-xl">
-                      <SelectItem value="all" className="rounded-lg hover:bg-blue-50 focus:bg-blue-50">All Progress</SelectItem>
-                      <SelectItem value="high" className="rounded-lg hover:bg-green-50 focus:bg-green-50">High (80%+)</SelectItem>
-                      <SelectItem value="medium" className="rounded-lg hover:bg-orange-50 focus:bg-orange-50">Medium (50-79%)</SelectItem>
-                      <SelectItem value="low" className="rounded-lg hover:bg-red-50 focus:bg-red-50">Low (0-49%)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
                 {/* Actions */}
                 <div className="lg:col-span-2 flex gap-2">
                   <Button
@@ -388,8 +343,19 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
               {/* Results Count and Bulk Actions */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-4 gap-3">
                 <div className="text-sm text-gray-600">
-                  Showing <span className="font-semibold text-[#1C3B5E]">{filteredUsers.length}</span> of{" "}
-                  <span className="font-semibold text-[#1C3B5E]">{users.length}</span> users
+                  {isLoading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Loading users...
+                    </span>
+                  ) : error ? (
+                    <span className="text-red-600">Error: {error}</span>
+                  ) : (
+                    <>
+                      Showing <span className="font-semibold text-[#1C3B5E]">{transformedUsers.length}</span> of{" "}
+                      <span className="font-semibold text-[#1C3B5E]">{pagination.total}</span> users
+                    </>
+                  )}
                 </div>
                 
                 {selectedRows.length > 0 && (
@@ -427,7 +393,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                       <TableHead className="w-12 py-4 pl-6">
                         <input
                           type="checkbox"
-                          checked={selectedRows.length === filteredUsers.length && filteredUsers.length > 0}
+                          checked={selectedRows.length === transformedUsers.length && transformedUsers.length > 0}
                           onChange={selectAllRows}
                           className="rounded border-gray-300 text-[#20B2AA] focus:ring-[#20B2AA] w-4 h-4"
                         />
@@ -459,7 +425,41 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredUsers.map((user, index) => (
+                    {isLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-12">
+                          <div className="flex flex-col items-center gap-4">
+                            <Loader2 className="w-8 h-8 animate-spin text-[#20B2AA]" />
+                            <p className="text-gray-600">Loading users...</p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : error ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-12">
+                          <div className="flex flex-col items-center gap-4">
+                            <p className="text-red-600 font-semibold">Error: {error}</p>
+                            <Button 
+                              onClick={() => fetchUsers(1, searchQuery, roleFilter, statusFilter)}
+                              variant="outline"
+                              className="rounded-xl"
+                            >
+                              Retry
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : transformedUsers.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-12">
+                          <div className="flex flex-col items-center gap-4">
+                            <p className="text-gray-600 font-semibold">No users found</p>
+                            <p className="text-gray-500 text-sm">Try adjusting your search or filters</p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      transformedUsers.map((user, index) => (
                       <TableRow
                         key={user.id}
                         className={`border-b border-gray-50 transition-all duration-200 group ${
@@ -567,115 +567,108 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                         <TableCell>
                           <div className="flex items-center justify-center gap-1">
                             <button
-                              onClick={() => handleViewProfile(user)}
+                              onClick={() => handleView(user)}
                               className="p-2 rounded-xl transition-all duration-200 hover:shadow-md hover:scale-105 group"
-                              style={{ backgroundColor: "#20B2AA10" }}
-                              title="View Detailed Profile"
+                              style={{ backgroundColor: "#20B2AA15" }}
+                              title="View User Details"
                             >
                               <Eye className="w-4 h-4 group-hover:scale-110 transition-transform" style={{ color: "#20B2AA" }} />
                             </button>
-
                             <button
-                              className="p-2 rounded-xl transition-all duration-200 hover:shadow-md hover:scale-105 hover:bg-gray-100 group"
+                              onClick={() => handleEdit(user)}
+                              className="p-2 rounded-xl transition-all duration-200 hover:shadow-md hover:scale-105 group"
+                              style={{ backgroundColor: "#F59E0B15" }}
                               title="Edit User"
                             >
-                              <Edit className="w-4 h-4 group-hover:scale-110 transition-transform text-gray-600" />
+                              <Edit className="w-4 h-4 group-hover:scale-110 transition-transform" style={{ color: "#F59E0B" }} />
                             </button>
-
                             <button
+                              onClick={() => handleDelete(user.id)}
                               className="p-2 rounded-xl transition-all duration-200 hover:shadow-md hover:scale-105 group"
-                              style={{ backgroundColor: "#20B2AA10" }}
-                              title="Send Message"
+                              style={{ backgroundColor: "#D9534F10" }}
+                              title="Delete User"
                             >
-                              <Send className="w-4 h-4 group-hover:scale-110 transition-transform" style={{ color: "#20B2AA" }} />
-                            </button>
-
-                            <button
-                              className="p-2 rounded-xl transition-all duration-200 hover:shadow-md hover:scale-105 hover:bg-gray-100 group"
-                              title="More Options"
-                            >
-                              <MoreVertical className="w-4 h-4 group-hover:scale-110 transition-transform text-gray-600" />
+                              <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform" style={{ color: "#D9534F" }} />
                             </button>
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))}
+                    )))}
                   </TableBody>
                 </Table>
               </div>
 
-              {/* No Results Message */}
-              {filteredUsers.length === 0 && (
-                <div className="py-16 text-center">
-                  <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
-                    <Search className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <p className="text-lg font-semibold text-gray-600 mb-2">
-                    No users found
-                  </p>
-                  <p className="text-sm text-gray-500 max-w-md mx-auto">
-                    Try adjusting your search criteria or filters to find what you're looking for.
-                  </p>
-                </div>
-              )}
-
               {/* Pagination */}
-              {filteredUsers.length > 0 && (
+              {!isLoading && !error && transformedUsers.length > 0 && (
                 <div className="px-6 py-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gray-50/50">
                   <div className="text-sm text-gray-600">
-                    Page <span className="font-semibold text-[#1C3B5E]">1</span> of{" "}
-                    <span className="font-semibold text-[#1C3B5E]">5</span> •{" "}
-                    <span className="font-semibold text-[#1C3B5E]">{filteredUsers.length}</span> users
+                    Page <span className="font-semibold text-[#1C3B5E]">{pagination.page}</span> of{" "}
+                    <span className="font-semibold text-[#1C3B5E]">{pagination.totalPages}</span> •{" "}
+                    <span className="font-semibold text-[#1C3B5E]">{pagination.total}</span> users
                   </div>
                   <div className="flex items-center gap-2">
                     <Button 
                       variant="outline" 
                       size="sm" 
                       className="rounded-xl border-gray-200 hover:border-[#20B2AA] hover:text-[#20B2AA] transition-all duration-200"
+                      onClick={() => handlePageChange(pagination.page - 1)}
+                      disabled={!pagination.hasPrev}
                     >
                       Previous
                     </Button>
-                    <Button 
-                      size="sm" 
-                      className="rounded-xl bg-[#20B2AA] text-white hover:bg-[#1C9B94] transition-all duration-200 shadow-md"
-                    >
-                      1
-                    </Button>
+                    
+                    {/* Page numbers */}
+                    {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (pagination.totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (pagination.page <= 3) {
+                        pageNum = i + 1;
+                      } else if (pagination.page >= pagination.totalPages - 2) {
+                        pageNum = pagination.totalPages - 4 + i;
+                      } else {
+                        pageNum = pagination.page - 2 + i;
+                      }
+                      
+                      return (
+                        <Button 
+                          key={pageNum}
+                          size="sm" 
+                          variant={pageNum === pagination.page ? "default" : "outline"}
+                          className={`rounded-xl transition-all duration-200 ${
+                            pageNum === pagination.page 
+                              ? "bg-[#20B2AA] text-white shadow-md" 
+                              : "border-gray-200 hover:border-[#20B2AA] hover:text-[#20B2AA]"
+                          }`}
+                          onClick={() => handlePageChange(pageNum)}
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                    
                     <Button 
                       variant="outline" 
                       size="sm" 
                       className="rounded-xl border-gray-200 hover:border-[#20B2AA] hover:text-[#20B2AA] transition-all duration-200"
-                    >
-                      2
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="rounded-xl border-gray-200 hover:border-[#20B2AA] hover:text-[#20B2AA] transition-all duration-200"
-                    >
-                      3
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="rounded-xl border-gray-200 hover:border-[#20B2AA] hover:text-[#20B2AA] transition-all duration-200"
+                      onClick={() => handlePageChange(pagination.page + 1)}
+                      disabled={!pagination.hasNext}
                     >
                       Next
                     </Button>
                   </div>
                 </div>
               )}
+              {/* User Detail Modal */}
+              <UserDetailModal 
+                open={isDetailModalOpen}
+                onOpenChange={setIsDetailModalOpen}
+                user={selectedUser}
+              />
             </div>
           </div>
         </div>
       </div>
-
-      {/* User Detail Modal */}
-      <UserDetailModal
-        open={isDetailModalOpen}
-        onOpenChange={setIsDetailModalOpen}
-        user={selectedUser}
-      />
     </div>
   );
 }
