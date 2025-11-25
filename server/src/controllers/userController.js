@@ -22,6 +22,103 @@ export async function updateMyProfile(req, res, next) {
   }
 }
 
+// Dedicated profile endpoints
+export async function getProfile(req, res, next) {
+  try {
+    const user = await UserModel.findById(req.user.userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    // Return only profile-safe fields
+    const profile = {
+      id: user.id,
+      email: user.email,
+      full_name: user.full_name,
+      phone: user.phone,
+      age: user.age,
+      gender: user.gender,
+      country: user.country,
+      bio: user.bio,
+      avatar_url: user.avatar_url,
+      created_at: user.created_at
+    };
+    
+    res.json({ success: true, data: profile });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function updateProfile(req, res, next) {
+  try {
+    const allowedFields = ['full_name', 'phone', 'age', 'gender', 'country', 'bio'];
+    const updateData = {};
+    
+    allowedFields.forEach(field => {
+      if (req.body[field] !== undefined) {
+        updateData[field] = req.body[field];
+      }
+    });
+    
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No valid profile fields provided' 
+      });
+    }
+    
+    const updated = await UserModel.updateProfile(req.user.userId, updateData);
+    if (!updated) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Failed to update profile' 
+      });
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Profile updated successfully', 
+      data: updated 
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function logout(req, res, next) {
+  try {
+    // For JWT tokens, client-side token removal is sufficient
+    // Server could implement token blacklisting if needed
+    res.json({ 
+      success: true, 
+      message: 'Logout successful' 
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function uploadAvatar(req, res, next) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No file uploaded' 
+      });
+    }
+    
+    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+    const updated = await UserModel.updateProfile(req.user.userId, { avatar_url: avatarUrl });
+    
+    res.json({ 
+      success: true, 
+      message: 'Avatar uploaded successfully', 
+      data: { avatar_url: avatarUrl, profile: updated } 
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 // Admin user management endpoints
 export async function createUser(req, res, next) {
   try {

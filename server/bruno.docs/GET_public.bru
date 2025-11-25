@@ -1,0 +1,13 @@
+{
+  "meta": { "name": "Get Public Content", "type": "http" },
+  "method": "GET",
+  "url": "{{baseUrl}}/content/public",
+  "params": [
+    { "name": "type", "value": "", "type": "query", "enabled": false },
+    { "name": "page", "value": "1", "type": "query", "enabled": true },
+    { "name": "limit", "value": "10", "type": "query", "enabled": true }
+  ],
+  "tests": [
+    { "script": { "type": "javascript", "source": "bru.assert.ok(res.status===200,'Status 200');" } }
+  ]
+}

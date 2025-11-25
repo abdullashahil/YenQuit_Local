@@ -1,0 +1,8 @@
+{
+  "meta": { "name": "Get Public Images", "type": "http" },
+  "method": "GET",
+  "url": "{{baseUrl}}/content/public?type=image&page=1&limit=10",
+  "tests": [
+    { "script": { "type": "javascript", "source": "bru.assert.ok(res.status===200,'Status 200');" } }
+  ]
+}

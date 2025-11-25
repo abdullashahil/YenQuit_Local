@@ -189,6 +189,92 @@ export const userService = {
       console.error('Stats error status:', error.response?.status);
       throw new Error(error.response?.data?.message || 'Failed to fetch user statistics');
     }
+  },
+
+  // Profile management methods
+  getProfile: async () => {
+    try {
+      const headers = getAuthHeaders();
+      const response = await axios.get(
+        `${API_BASE_URL}/users/profile`,
+        { headers }
+      );
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        localStorage.removeItem('accessToken');
+        window.location.href = '/login';
+      }
+      throw new Error(error.response?.data?.message || 'Failed to fetch profile');
+    }
+  },
+
+  updateProfile: async (profileData) => {
+    try {
+      const headers = getAuthHeaders();
+      const response = await axios.put(
+        `${API_BASE_URL}/users/profile`,
+        profileData,
+        { headers }
+      );
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        localStorage.removeItem('accessToken');
+        window.location.href = '/login';
+      }
+      throw new Error(error.response?.data?.message || 'Failed to update profile');
+    }
+  },
+
+  uploadAvatar: async (file) => {
+    try {
+      const headers = getAuthHeadersForUpload();
+      const formData = new FormData();
+      formData.append('avatar', file);
+
+      const response = await axios.post(
+        `${API_BASE_URL}/users/upload-avatar`,
+        formData,
+        { 
+          headers: {
+            ...headers,
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        localStorage.removeItem('accessToken');
+        window.location.href = '/login';
+      }
+      throw new Error(error.response?.data?.message || 'Failed to upload avatar');
+    }
+  },
+
+  logout: async () => {
+    try {
+      const headers = getAuthHeaders();
+      const response = await axios.post(
+        `${API_BASE_URL}/users/logout`,
+        {},
+        { headers }
+      );
+      
+      // Clear local storage
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('user');
+      sessionStorage.clear();
+      
+      return response.data;
+    } catch (error) {
+      // Clear local storage even if server logout fails
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('user');
+      sessionStorage.clear();
+      throw error;
+    }
   }
 };
 

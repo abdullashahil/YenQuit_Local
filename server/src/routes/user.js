@@ -10,6 +10,12 @@ const router = express.Router();
 router.get('/me', authenticateJWT, userController.getMe);
 router.put('/me/profile', authenticateJWT, userController.updateMyProfile);
 
+// User profile routes (dedicated endpoints)
+router.get('/profile', authenticateJWT, userController.getProfile);
+router.put('/profile', authenticateJWT, userController.updateProfile);
+router.post('/logout', authenticateJWT, userController.logout);
+router.post('/upload-avatar', authenticateJWT, uploadAvatar, userController.uploadAvatar);
+
 // Admin user management routes (admin only)
 router.use('/admin', requireAdmin); // Apply admin middleware to all /admin routes
 

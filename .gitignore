@@ -140,7 +140,7 @@ large-avatar.*
 # Bruno files
 *.bruno.json
 bruno-export/
-server/bruno.docs/
+# server/bruno.docs/
 
 # Development databases
 *.sqlite

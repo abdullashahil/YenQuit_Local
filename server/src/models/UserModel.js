@@ -520,6 +520,19 @@ class UserModel {
       return result.rows[0];
     }
   }
+
+  // Get profile by user ID (for fiveaController compatibility)
+  static async getProfileByUserId(userId) {
+    const query = 'SELECT * FROM profiles WHERE user_id = $1';
+    
+    try {
+      const result = await pool.query(query, [userId]);
+      return result.rows[0];
+    } catch (error) {
+      console.error('Error getting profile by user ID:', error);
+      throw error;
+    }
+  }
 }
 
 export default UserModel;
