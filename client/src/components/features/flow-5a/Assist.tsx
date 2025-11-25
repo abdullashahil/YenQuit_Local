@@ -27,7 +27,7 @@ const copingStrategies = [
   'Positive self-talk'
 ];
 
-export function FiveA_Assist({ onNext }: FiveA_AssistProps) {
+export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
   const router = useRouter();
   const [quitDate, setQuitDate] = useState<Date | undefined>(undefined);
   const [selectedStrategies, setSelectedStrategies] = useState<string[]>([]);
@@ -155,7 +155,7 @@ export function FiveA_Assist({ onNext }: FiveA_AssistProps) {
             <Button
               variant="outline"
               className="rounded-2xl md:rounded-3xl p-6 md:p-8 lg:p-10 brand-btn-outline-accent hover:opacity-90"
-              onClick={() => router.push('/5a/arrange')}
+              onClick={() => onComplete()}
             >
               Connect with a Counselor
             </Button>
@@ -309,11 +309,11 @@ export function FiveA_Assist({ onNext }: FiveA_AssistProps) {
             <Button
               onClick={() => {
                 handleNext();
-                router.push('/app');
+                onComplete();
               }}
               className="px-8 py-6 rounded-2xl bg-[#1C3B5E] hover:bg-[#1C3B5E]/90 text-white"
             >
-              Go to Dashboard
+              Continue
             </Button>
           </div>
         </div>

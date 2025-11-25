@@ -6,8 +6,8 @@ export async function registerUserWithProfile({ email, password, role, profile }
   try {
     await client.query('BEGIN');
     const password_hash = await bcrypt.hash(password, 10);
-    const userInsertText = `INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3) RETURNING id, email, role, created_at, updated_at`;
-    const userRes = await client.query(userInsertText, [email, password_hash, role || 'user']);
+    const userInsertText = `INSERT INTO users (email, password_hash, role, onboarding_step, onboarding_completed) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, role, onboarding_step, onboarding_completed, created_at, updated_at`;
+    const userRes = await client.query(userInsertText, [email, password_hash, role || 'user', 0, false]);
     const user = userRes.rows[0];
     const profileInsertText = `INSERT INTO profiles (user_id, full_name, first_name, last_name, phone, age, gender, tobacco_type, metadata) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`;
     const profileRes = await client.query(profileInsertText, [

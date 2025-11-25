@@ -5,7 +5,13 @@ import { HesitationLink } from '../flow-shared/HesitationLink';
 import { Play } from 'lucide-react';
 import { FiveA_AdviseProps } from '../../../types/fiveAFlow';
 
-export function FiveA_Advise({ onNext, userData }: FiveA_AdviseProps) {
+interface ExtendedFiveAAdviseProps extends FiveA_AdviseProps {
+  video?: string;
+  quote?: string;
+  ai_message?: string;
+}
+
+export function FiveA_Advise({ onNext, userData = {}, video, quote, ai_message }: ExtendedFiveAAdviseProps) {
   return (
     <div className="min-h-screen p-4 md:p-6 lg:p-8" style={{ backgroundColor: '#FFFFFF' }}>
       <div className="max-w-4xl mx-auto">
@@ -42,18 +48,38 @@ export function FiveA_Advise({ onNext, userData }: FiveA_AdviseProps) {
               boxShadow: '0 4px 12px rgba(28, 59, 94, 0.15)'
             }}
           >
-            <div className="text-center" style={{ color: '#FFFFFF' }}>
-              <div 
-                className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 transition-transform duration-200 hover:scale-110 cursor-pointer"
-                style={{ backgroundColor: '#20B2AA' }}
-              >
-                <Play size={32} fill="white" />
-              </div>
-              <p className="mb-2">Short Video Message from Doctor/Dentist</p>
-              <p style={{ fontSize: '0.875rem', opacity: 0.75 }}>
-                Expert advice tailored to your needs
-              </p>
+            {video ? (
+            <div className="w-full h-full">
+              {video.includes('youtube.com') || video.includes('youtu.be') ? (
+                <iframe
+                  src={video.includes('youtube.com') ? video.replace('watch?v=', 'embed/') : video.replace('youtu.be/', 'www.youtube.com/embed/')}
+                  className="w-full h-full"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  title="Advise Video"
+                />
+              ) : (
+                <video controls className="w-full h-full">
+                  <source src={video} type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+              )}
             </div>
+          ) : (
+              <div className="text-center" style={{ color: '#FFFFFF' }}>
+                <div 
+                  className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 transition-transform duration-200 hover:scale-110 cursor-pointer"
+                  style={{ backgroundColor: '#20B2AA' }}
+                >
+                  <Play size={32} fill="white" />
+                </div>
+                <p className="mb-2">Short Video Message from Doctor/Dentist</p>
+                <p style={{ fontSize: '0.875rem', opacity: 0.75 }}>
+                  Expert advice tailored to your needs
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Motivational Message */}
@@ -75,7 +101,7 @@ export function FiveA_Advise({ onNext, userData }: FiveA_AdviseProps) {
               className="mb-3"
               style={{ fontSize: '1.25rem', lineHeight: '1.6' }}
             >
-              "Quitting now reverses oral tissue changes within weeks!"
+              "{quote || 'Quitting now improves lung capacity within weeks!'}"
             </p>
             <p style={{ opacity: 0.9 }}>
               Your body begins healing immediately after your last cigarette.
@@ -110,20 +136,13 @@ export function FiveA_Advise({ onNext, userData }: FiveA_AdviseProps) {
                 >
                   Personalized Insight
                 </p>
-                <p 
-                  className="mb-3"
-                  style={{ color: '#333333', lineHeight: '1.6' }}
-                >
-                  As a <strong>{userData?.age || '25'}-year-old</strong> user, 
-                  quitting now may add <strong>10 healthy years</strong> to your life. Studies show that people who quit 
-                  before age 40 reduce their risk of dying from smoking-related disease by about 90%.
-                </p>
-                <p 
-                  style={{ color: '#333333', opacity: 0.85, lineHeight: '1.6' }}
-                >
-                  Your investment in health today will compound over the years, giving you more time 
-                  with loved ones and greater quality of life.
-                </p>
+                <div style={{ color: '#333333', lineHeight: '1.6' }}>
+                  <p className="mb-3">{ai_message || 'As a 25-year-old user, quitting now may add 10 healthy years to your life. Studies show that people who quit before age 40 reduce their risk of dying from smoking-related disease by about 90%.'}</p>
+                  <p style={{ color: '#333333', opacity: 0.85, lineHeight: '1.6' }}>
+                    Your investment in health today will compound over the years, giving you more time 
+                    with loved ones and greater quality of life.
+                  </p>
+                </div>
               </div>
             </div>
           </div>

@@ -3,6 +3,9 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import path from 'path';
 import authRoutes from './routes/auth.js';
+import onboardingRoutes from './routes/onboarding.js';
+import fiveaRoutes from './routes/fivea.js';
+import fagerstromRoutes from './routes/fagerstrom.js';
 import userRoutes from './routes/user.js';
 import contentRoutes from './routes/contentRoutes.js';
 
@@ -24,6 +27,9 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/onboarding', onboardingRoutes);
+app.use('/api/fivea', fiveaRoutes);
+app.use('/api/fagerstrom', fagerstromRoutes);
 app.use('/api/content', contentRoutes);
 
 app.get('/', (req, res) => {

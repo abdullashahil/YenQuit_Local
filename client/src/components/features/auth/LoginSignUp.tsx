@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/router';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
 import { Eye, EyeOff } from 'lucide-react';
+import { InitialOnboarding, OnboardingData } from '../onboarding/InitialOnboarding';
 
 interface LoginSignUpProps {
   onLogin: (userType: 'admin' | 'standard') => void;
@@ -20,6 +22,28 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
     confirmPassword: '',
     fullName: ''
   });
+  const [stage, setStage] = useState<'auth' | 'onboarding'>('auth');
+  const router = useRouter();
+  const [showToast, setShowToast] = useState(false);
+  const [toastMsg, setToastMsg] = useState('');
+  const [countdown, setCountdown] = useState(5);
+
+  const startRedirectToLogin = (message: string) => {
+    setToastMsg(message);
+    setShowToast(true);
+    setCountdown(5);
+    const interval = setInterval(() => {
+      setCountdown((c) => {
+        if (c <= 1) {
+          clearInterval(interval);
+          setShowToast(false);
+          setIsLogin(true);
+          setStage('auth');
+        }
+        return c - 1;
+      });
+    }, 1000);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +61,24 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
         localStorage.setItem('user', JSON.stringify(data.user));
       }
       const userType: 'admin' | 'standard' = data?.user?.role === 'admin' ? 'admin' : 'standard';
+      // Onboarding redirect guard
+      const requires = !!data?.requiresOnboarding;
+      const step = typeof data?.currentStep === 'number' ? data.currentStep : 0;
+      if (requires) {
+        const path = step <= 0
+          ? '/5a/ask'
+          : step === 1
+            ? '/5a/advise'
+            : step === 2
+              ? '/5a/assess'
+              : step === 3
+                ? '/5a/assist'
+                : step === 4
+                  ? '/5a/arrange'
+                  : '/app';
+        router.push(path);
+        return;
+      }
       onLogin(userType);
     } catch (err: any) {
       alert(err?.message || 'Login failed');
@@ -50,22 +92,71 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
       alert('Passwords do not match!');
       return;
     }
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('signupEmail', formData.email);
+      sessionStorage.setItem('signupPassword', formData.password);
+      sessionStorage.setItem('signupFullName', formData.fullName);
+    }
+    setStage('onboarding');
+  };
+
+  const handleEmbeddedOnboardingComplete = async (data: OnboardingData, pathway: '5As' | '5Rs') => {
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    const signupEmail = (typeof window !== 'undefined' && sessionStorage.getItem('signupEmail')) || data.email;
+    const signupPassword = typeof window !== 'undefined' ? sessionStorage.getItem('signupPassword') : null;
+    const signupFullName = (typeof window !== 'undefined' && sessionStorage.getItem('signupFullName')) || data.name;
+
+    if (!signupEmail || !signupPassword) {
+      alert('Missing signup credentials. Please start from the Sign Up page again.');
+      return;
+    }
+
+    const profile = {
+      full_name: signupFullName || data.name || '',
+      phone: data.contactNumber || null,
+      age: data.age ? parseInt(data.age as any, 10) : null,
+      gender: data.gender || null,
+      tobacco_type: data.tobaccoType || null,
+      metadata: {
+        isStudent: data.isStudent,
+        yearOfStudy: data.yearOfStudy,
+        streamOfStudy: data.streamOfStudy,
+        place: data.place,
+        setting: data.setting,
+        smokerType: data.smokerType,
+        systemicHealthIssue: data.systemicHealthIssue,
+        providedEmail: data.email
+      }
+    };
+
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/register`, {
+      const res = await fetch(`${API_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
+          email: signupEmail,
+          password: signupPassword,
           role: 'user',
-          profile: { full_name: formData.fullName }
+          profile
         })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || 'Sign up failed');
-      onSignUp();
+      if (!res.ok) {
+        const dataErr = await res.json().catch(() => ({}));
+        if (res.status === 409) {
+          startRedirectToLogin('Account already exists. Please log in to continue.');
+          return;
+        }
+        throw new Error(dataErr?.error || 'Registration failed');
+      } else {
+        if (typeof window !== 'undefined') {
+          sessionStorage.removeItem('signupPassword');
+        }
+        startRedirectToLogin('You have successfully signed up. Please log in to continue.');
+        return;
+      }
     } catch (err: any) {
-      alert(err?.message || 'Sign up failed');
+      alert(err?.message || 'Registration failed');
+      return;
     }
   };
 
@@ -92,7 +183,8 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
       </div>
 
       {/* Right Side - Login/Sign Up Form */}
-      <div className="w-full lg:w-1/2 lg:ml-auto flex items-center justify-center p-4 md:p-8">
+      <div className={`w-full lg:w-1/2 lg:ml-auto ${stage === 'onboarding' ? 'flex p-0' : 'flex items-center justify-center p-4 md:p-8'}`}>
+        {stage === 'auth' && (
         <div className="w-full max-w-md">
           {/* Back to Landing */}
           <button
@@ -102,10 +194,11 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
             ← Back to Home
           </button>
 
-          {/* Form Container */}
           <div 
             className="p-6 md:p-8 rounded-2xl md:rounded-3xl bg-white shadow-[0_10px_40px_rgba(28,59,94,0.12)] auth-panel"
           >
+            {stage === 'auth' && (
+             <>
             {/* Toggle Tabs */}
             <div className="flex gap-2 mb-6 md:mb-8 p-1 rounded-2xl auth-tabs">
               <button
@@ -147,7 +240,7 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
                     type="text"
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                    className="mt-2 h-12 rounded-xl border-2 brand-border"
+                    className="mt-2 h-12 rounded-xl border-2 brand-border placeholder:text-gray-400"
                     placeholder="Enter your full name"
                     required={!isLogin}
                   />
@@ -164,7 +257,7 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="mt-2 h-12 rounded-xl border-2 brand-border"
+                  className="mt-2 h-12 rounded-xl border-2 brand-border placeholder:text-gray-400"
                   placeholder="your.email@example.com"
                   required
                 />
@@ -186,7 +279,7 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="h-12 rounded-xl border-2 pr-12 brand-border"
+                    className="h-12 rounded-xl border-2 pr-12 brand-border placeholder:text-gray-400"
                     placeholder="Enter your password"
                     required
                   />
@@ -211,7 +304,7 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
                     type={showPassword ? 'text' : 'password'}
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    className="mt-2 h-12 rounded-xl border-2 brand-border"
+                    className="mt-2 h-12 rounded-xl border-2 brand-border placeholder:text-gray-400"
                     placeholder="Re-enter your password"
                     required={!isLogin}
                   />
@@ -236,7 +329,7 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
                 variant={null as any}
                 className="w-full h-12 rounded-xl text-white brand-btn"
               >
-                {isLogin ? 'Login' : 'Get Started'}
+                {isLogin ? 'Login' : 'Continue'}
               </Button>
             </form>
 
@@ -291,9 +384,26 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
                 {isLogin ? 'Sign Up' : 'Login'}
               </button>
             </p>
+             </>
+            )}
           </div>
         </div>
+        )}
+
+        {stage === 'onboarding' && (
+          <div className="w-full min-h-screen">
+            <InitialOnboarding embedded onComplete={handleEmbeddedOnboardingComplete} />
+          </div>
+        )}
       </div>
+      {showToast && (
+        <div className="fixed top-4 right-4 z-50">
+          <div className="rounded-xl bg-[#1C3B5E] text-white px-4 py-3 shadow-lg max-w-sm">
+            <div className="font-medium">{toastMsg}</div>
+            <div className="text-sm opacity-80">Redirecting in {countdown}s</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
