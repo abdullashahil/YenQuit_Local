@@ -61,24 +61,15 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
         localStorage.setItem('user', JSON.stringify(data.user));
       }
       const userType: 'admin' | 'standard' = data?.user?.role === 'admin' ? 'admin' : 'standard';
+      // Redirect admins to admin dashboard
+      if (userType === 'admin') {
+        router.push('/admin');
+        return;
+      }
       // Onboarding redirect guard
       const requires = !!data?.requiresOnboarding;
       const step = typeof data?.currentStep === 'number' ? data.currentStep : 0;
-      if (requires) {
-        const path = step <= 0
-          ? '/5a/ask'
-          : step === 1
-            ? '/5a/advise'
-            : step === 2
-              ? '/5a/assess'
-              : step === 3
-                ? '/5a/assist'
-                : step === 4
-                  ? '/5a/arrange'
-                  : '/app';
-        router.push(path);
-        return;
-      }
+     
       onLogin(userType);
     } catch (err: any) {
       alert(err?.message || 'Login failed');

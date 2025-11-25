@@ -47,6 +47,108 @@ class ContentModel {
       throw new Error(`Error creating content: ${error.message}`);
     }
   }
+  // Get only public (Live) content with optional category/type filter and pagination
+  static async findPublic(options = {}) {
+    const {
+      page = 1,
+      limit = 10,
+      type // expected values: 'video' | 'podcast' | 'image'
+    } = options;
+
+    const categoryMap = {
+      video: 'Video',
+      podcast: 'Podcast',
+      image: 'Image'
+    };
+
+    const offset = (page - 1) * limit;
+    let whereConditions = ['status = $1'];
+    let params = ['Live'];
+    let paramIndex = 2;
+
+    if (type && categoryMap[type]) {
+      whereConditions.push(`category = $${paramIndex}`);
+      params.push(categoryMap[type]);
+      paramIndex++;
+    }
+
+    const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
+
+    const query = `
+      SELECT * FROM contents
+      ${whereClause}
+      ORDER BY COALESCE(publish_date, created_at) DESC
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `;
+
+    const countQuery = `
+      SELECT COUNT(*) as total FROM contents
+      ${whereClause}
+    `;
+
+    params.push(limit, offset);
+
+    try {
+      const [result, countResult] = await Promise.all([
+        pool.query(query, params),
+        pool.query(countQuery, params.slice(0, -2))
+      ]);
+
+      const total = parseInt(countResult.rows[0].total);
+      const totalPages = Math.ceil(total / limit);
+
+      return {
+        data: result.rows,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNext: page < totalPages,
+          hasPrev: page > 1
+        }
+      };
+    } catch (error) {
+      throw new Error(`Error fetching public contents: ${error.message}`);
+    }
+  }
+
+  // Group public content by type (videos, podcasts, images)
+  static async findPublicGrouped(options = {}) {
+    const { page = 1, limit = 10 } = options;
+    // Fetch each type in parallel with its own pagination
+    const [videos, podcasts, images] = await Promise.all([
+      this.findPublic({ page, limit, type: 'video' }),
+      this.findPublic({ page, limit, type: 'podcast' }),
+      this.findPublic({ page, limit, type: 'image' })
+    ]);
+
+    return {
+      videos: videos.data,
+      podcasts: podcasts.data,
+      images: images.data,
+      pagination: {
+        videos: videos.pagination,
+        podcasts: podcasts.pagination,
+        images: images.pagination
+      }
+    };
+  }
+
+  // Get a single public content by id, only if Live
+  static async findPublicById(id) {
+    const query = `
+      SELECT * FROM contents
+      WHERE id = $1 AND status = 'Live'
+      LIMIT 1
+    `;
+    try {
+      const result = await pool.query(query, [id]);
+      return result.rows[0] || null;
+    } catch (error) {
+      throw new Error(`Error fetching public content: ${error.message}`);
+    }
+  }
 
   // Get all content with pagination, search, and filtering
   static async findAll(options = {}) {
