@@ -9,8 +9,17 @@ export default function Admin() {
   useEffect(() => {
     // Check if user is authenticated as admin
     if (typeof window !== 'undefined') {
-      const userType = sessionStorage.getItem('userType')
-      if (userType !== 'admin') {
+      const userData = localStorage.getItem('user')
+      if (userData) {
+        try {
+          const user = JSON.parse(userData)
+          if (user.role !== 'admin') {
+            router.push('/login')
+          }
+        } catch {
+          router.push('/login')
+        }
+      } else {
         router.push('/login')
       }
     }
