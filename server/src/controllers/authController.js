@@ -32,8 +32,12 @@ export async function login(req, res, next) {
     if (!match) return res.status(401).json({ error: 'Invalid credentials' });
     const accessToken = generateAccessToken({ userId: user.id, role: user.role });
     const refreshToken = generateRefreshToken({ userId: user.id, role: user.role });
-delete user.password_hash;
-res.json({ user, accessToken, refreshToken });
+    delete user.password_hash;
+    const completed = !!user.onboarding_completed;
+    const rawStep = user.onboarding_step;
+    const step = completed ? 5 : (Number.isInteger(rawStep) ? rawStep : 0);
+    const requiresOnboarding = !completed && step < 5;
+    res.json({ user, accessToken, refreshToken, requiresOnboarding, currentStep: step });
   } catch (err) {
     next(err);
   }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 
 interface InitialOnboardingProps {
   onComplete: (data: OnboardingData, pathway: '5As' | '5Rs') => void;
+  embedded?: boolean;
 }
 
 export interface OnboardingData {
@@ -25,7 +26,7 @@ export interface OnboardingData {
   systemicHealthIssue: string;
 }
 
-export const InitialOnboarding: React.FC<InitialOnboardingProps> = ({ onComplete }) => {
+export const InitialOnboarding: React.FC<InitialOnboardingProps> = ({ onComplete, embedded }) => {
   const [formData, setFormData] = useState<OnboardingData>({
     name: '',
     age: '',
@@ -41,6 +42,20 @@ export const InitialOnboarding: React.FC<InitialOnboardingProps> = ({ onComplete
     smokerType: '',
     systemicHealthIssue: '',
   });
+
+  const [step, setStep] = useState<1 | 2>(1);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const prefillName = sessionStorage.getItem('signupFullName') || '';
+      const prefillEmail = sessionStorage.getItem('signupEmail') || '';
+      setFormData(prev => ({
+        ...prev,
+        name: prev.name || prefillName,
+        email: prev.email || prefillEmail,
+      }));
+    }
+  }, []);
 
   const handleInputChange = (field: keyof OnboardingData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -91,8 +106,18 @@ export const InitialOnboarding: React.FC<InitialOnboardingProps> = ({ onComplete
     return true;
   };
 
+  // Basic info (Step 1) completeness checker
+  const isBasicInfoComplete = () => {
+    const basic = ['name', 'age', 'gender', 'isStudent', 'email', 'contactNumber', 'place', 'setting'];
+    if (!basic.every(field => formData[field as keyof OnboardingData]?.trim())) return false;
+    if (formData.isStudent === 'yes') {
+      if (!formData.yearOfStudy?.trim() || !formData.streamOfStudy?.trim()) return false;
+    }
+    return true;
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 md:p-6 lg:p-8" style={{ backgroundColor: '#FFFFFF' }}>
+    <div className={`${embedded ? '' : 'min-h-screen'} flex items-center justify-center p-4 md:p-6 lg:p-8`} style={{ backgroundColor: '#FFFFFF' }}>
       <div 
         className="w-full max-w-4xl p-6 md:p-8 lg:p-10 rounded-2xl md:rounded-3xl"
         style={{ 
@@ -113,7 +138,7 @@ export const InitialOnboarding: React.FC<InitialOnboardingProps> = ({ onComplete
           </p>
         </div>
 
-        {/* Demographics Collection */}
+        {step === 1 && (
         <div className="mb-6 md:mb-8">
           <h2 
             className="text-xl md:text-2xl mb-4 md:mb-6"
@@ -130,7 +155,7 @@ export const InitialOnboarding: React.FC<InitialOnboardingProps> = ({ onComplete
                 type="text"
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
-                className="mt-2 rounded-xl border-2"
+                className="mt-2 rounded-xl border-2 placeholder:text-gray-400"
                 style={{ borderColor: '#E0E0E0' }}
                 placeholder="Enter your full name"
               />
@@ -143,7 +168,7 @@ export const InitialOnboarding: React.FC<InitialOnboardingProps> = ({ onComplete
                 type="number"
                 value={formData.age}
                 onChange={(e) => handleInputChange('age', e.target.value)}
-                className="mt-2 rounded-xl border-2"
+                className="mt-2 rounded-xl border-2 placeholder:text-gray-400"
                 style={{ borderColor: '#E0E0E0' }}
                 placeholder="Enter your age"
               />
@@ -248,7 +273,7 @@ export const InitialOnboarding: React.FC<InitialOnboardingProps> = ({ onComplete
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
-                className="mt-2 rounded-xl border-2"
+                className="mt-2 rounded-xl border-2 placeholder:text-gray-400"
                 style={{ borderColor: '#E0E0E0' }}
                 placeholder="your.email@example.com"
               />
@@ -261,9 +286,9 @@ export const InitialOnboarding: React.FC<InitialOnboardingProps> = ({ onComplete
                 type="tel"
                 value={formData.contactNumber}
                 onChange={(e) => handleInputChange('contactNumber', e.target.value)}
-                className="mt-2 rounded-xl border-2"
+                className="mt-2 rounded-xl border-2 placeholder:text-gray-400"
                 style={{ borderColor: '#E0E0E0' }}
-                placeholder="+1 (555) 000-0000"
+                placeholder="8989898989"
               />
             </div>
           </div>
@@ -276,7 +301,7 @@ export const InitialOnboarding: React.FC<InitialOnboardingProps> = ({ onComplete
                 type="text"
                 value={formData.place}
                 onChange={(e) => handleInputChange('place', e.target.value)}
-                className="mt-2 rounded-xl border-2"
+                className="mt-2 rounded-xl border-2 placeholder:text-gray-400"
                 style={{ borderColor: '#E0E0E0' }}
                 placeholder="City, State/Country"
               />
@@ -302,9 +327,16 @@ export const InitialOnboarding: React.FC<InitialOnboardingProps> = ({ onComplete
               ))}
             </div>
           </div>
-        </div>
 
-        {/* Status Identification */}
+          <div className="flex justify-end">
+            <Button onClick={() => setStep(2)} disabled={!isBasicInfoComplete()} className="h-12 rounded-xl text-white" style={{ backgroundColor: '#20B2AA' }}>
+              Continue
+            </Button>
+          </div>
+        </div>
+        )}
+
+        {step === 2 && (
         <div className="mb-8">
           <h2 
             className="mb-6"
@@ -409,8 +441,9 @@ export const InitialOnboarding: React.FC<InitialOnboardingProps> = ({ onComplete
             </div>
           </div>
         </div>
+        )}
 
-        {/* The Decision Point */}
+        {step === 2 && (
         <div 
           className="pt-8 mt-8"
           style={{ 
@@ -457,6 +490,7 @@ export const InitialOnboarding: React.FC<InitialOnboardingProps> = ({ onComplete
             </button>
           </div>
         </div>
+        )}
       </div>
     </div>
   );

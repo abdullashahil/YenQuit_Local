@@ -32,10 +32,34 @@ const defaultFiveAData: FiveAData = {
   arrange: {}
 };
 
+const hasUserCompletedStep = async (step: Step, fiveAData: FiveAData): Promise<boolean> => {
+  try {
+    // For step > 0, verify via API that previous step has answers
+    const stepIndex = STEPS.indexOf(step);
+    if (stepIndex > 0) {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+      if (!token) return false;
+      const prevStepNum = stepIndex; // steps are 0-based in API
+      const res = await fetch(`${API_URL}/api/fivea/answers/${prevStepNum}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return false;
+      const data = await res.json();
+      return data.answers && data.answers.length > 0;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export default function FiveAFlow() {
   const router = useRouter();
   const { fiveAData = defaultFiveAData, setFiveAData } = useAppContext();
   const [currentStep, setCurrentStep] = useState<Step>('ask');
+  const [allowed, setAllowed] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Update current step based on URL query parameter
   useEffect(() => {
@@ -44,6 +68,27 @@ export default function FiveAFlow() {
       setCurrentStep(step as Step);
     }
   }, [router.query]);
+
+  useEffect(() => {
+    const checkPrevious = async () => {
+      try {
+        const allowed = await hasUserCompletedStep(currentStep, fiveAData);
+        if (!allowed && STEPS.indexOf(currentStep) > 0) {
+          const prevStep = STEPS[STEPS.indexOf(currentStep) - 1];
+          setError(`Please complete the ${prevStep.toUpperCase()} step before proceeding.`);
+          // Redirect back to previous incomplete step after a short delay
+          setTimeout(() => {
+            router.replace(`/5a?step=${prevStep}`, undefined, { shallow: true });
+          }, 2000);
+        }
+        setAllowed(allowed);
+      } catch (e: any) {
+        console.error(e);
+        setError('Failed to verify step completion');
+      }
+    };
+    checkPrevious();
+  }, [currentStep, fiveAData, router]);
 
   // Handle moving to the next step
   const handleNext = (data: any) => {
@@ -134,8 +179,13 @@ export default function FiveAFlow() {
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-4xl mx-auto px-4 py-8">
+        {error && (
+          <div style={{ padding: 16, marginBottom: 16, backgroundColor: '#fee', border: '1px solid #fcc', borderRadius: 8, color: '#c00' }}>
+            {error}
+          </div>
+        )}
         <ProgressBar />
-        {renderStep()}
+        {allowed ? renderStep() : <div style={{ padding: 32 }}>Verifying previous step completion…</div>}
       </div>
     </div>
   );

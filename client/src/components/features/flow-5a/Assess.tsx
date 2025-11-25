@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../../ui/button';
 import { Label } from '../../ui/label';
 import { RadioGroup, RadioGroupItem } from '../../ui/radio-group';
@@ -6,156 +6,211 @@ import { Slider } from '../../ui/slider';
 import { OnboardingProgressBar } from '../flow-shared/OnboardingProgressBar';
 import { HesitationLink } from '../flow-shared/HesitationLink';
 import { FiveA_AssessProps } from '../../../types/fiveAFlow';
+import { getFagerstromQuestions, FagerstromQuestion } from '../../../services/fagerstromService';
 
-const fagerstromQuestions = [
-  {
-    id: 'q1',
-    question: 'Do you currently smoke cigarettes?',
-    options: ['Yes', 'No'],
-  },
-  {
-    id: 'q2',
-    question: 'How soon after you wake up do you smoke your first cigarette?',
-    options: ['Within 5 minutes', '6-30 minutes', '31-60 minutes', 'After 60 minutes'],
-  },
-  {
-    id: 'q3',
-    question: 'Do you find it difficult to refrain from smoking in places where it is forbidden (e.g., church, library, cinema)?',
-    options: ['Yes', 'No'],
-  },
-  {
-    id: 'q4',
-    question: 'Which cigarette would you hate to give up the most?',
-    options: ['The first one in the morning', 'Any other'],
-  },
-  {
-    id: 'q5',
-    question: 'How many cigarettes per day do you smoke?',
-    options: ['10 or less', '11-20', '21-30', '31 or more'],
-  },
-  {
-    id: 'q6',
-    question: 'Do you smoke more frequently during the first hours after waking than during the rest of the day?',
-    options: ['Yes', 'No'],
-  },
-  {
-    id: 'q7',
-    question: 'Do you smoke when you are so ill that you are in bed most of the day?',
-    options: ['Yes', 'No'],
-  },
-];
+interface AssessQuestion {
+  id: number;
+  step: string;
+  question_text: string;
+  options: string[] | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+async function fetchAssessQuestions(): Promise<AssessQuestion[]> {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  if (!token) throw new Error('Unauthorized');
+  const res = await fetch(`${API_URL}/api/fivea/questions/assess`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error('Failed to load assess questions');
+  const data = await res.json();
+  return data.questions;
+}
 
 export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
   const [readiness, setReadiness] = useState<number[]>([5]);
   const [quitTimeline, setQuitTimeline] = useState('');
+  const [fagerstromQuestions, setFagerstromQuestions] = useState<FagerstromQuestion[]>([]);
   const [fagerstromAnswers, setFagerstromAnswers] = useState<Record<string, string>>({});
+  const [assessQuestions, setAssessQuestions] = useState<AssessQuestion[]>([]);
+  const [assessAnswers, setAssessAnswers] = useState<Record<string, number | string>>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [fagerstromData, assessData] = await Promise.all([
+          getFagerstromQuestions(1, 100, true),
+          fetchAssessQuestions(),
+        ]);
+        setFagerstromQuestions(fagerstromData.questions);
+        setAssessQuestions(assessData);
+        // Debug: log what we received
+        console.log('Assess questions from API:', assessData);
+        // Initialize assessAnswers: for slider questions default to 5, for radio empty
+        const initial: Record<string, number | string> = {};
+        assessData.forEach(q => {
+          console.log(`Question ${q.id}: options =`, q.options);
+          if (q.options === null || q.options.length === 0) {
+            initial[`assess_${q.id}`] = 5;
+          }
+        });
+        setAssessAnswers(initial);
+      } catch (e: any) {
+        setError(e.message || 'Failed to load questions');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
 
   const handleFagerstromAnswer = (questionId: string, value: string) => {
     setFagerstromAnswers(prev => ({ ...prev, [questionId]: value }));
   };
 
-  const isFagerstromComplete = Object.keys(fagerstromAnswers).length === fagerstromQuestions.length;
+  const handleAssessAnswer = (questionId: string, value: number | string) => {
+    setAssessAnswers(prev => ({ ...prev, [`assess_${questionId}`]: value }));
+  };
 
-  const handleNext = () => {
+  const isFagerstromComplete = fagerstromQuestions.length > 0 && fagerstromQuestions.every(q => fagerstromAnswers[`q${q.id}`]);
+  const isAssessComplete = assessQuestions.every(q => {
+    const key = `assess_${q.id}`;
+    const val = assessAnswers[key];
+    if (q.options === null || q.options.length === 0) {
+      return typeof val === 'number' && val >= 1 && val <= 10;
+    } else {
+      return typeof val === 'string' && val !== '';
+    }
+  });
+
+  const handleNext = async () => {
+    // Save Fagerström answers (existing endpoint)
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+      if (token) {
+        // Save assess answers to fivea_user_answers
+        const assessPayload = assessQuestions.map(q => ({
+          question_id: q.id,
+          answer: assessAnswers[`assess_${q.id}`]?.toString() || '',
+        }));
+        await fetch(`${API_URL}/api/fivea/answers`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ answers: assessPayload }),
+        });
+        // Update onboarding step to 3 (assist)
+        await fetch(`${API_URL}/api/onboarding/progress`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ step: 3 }),
+        });
+      }
+    } catch (e) {
+      // ignore and still navigate
+    }
     onNext({
-      readinessScore: readiness[0],
+      readinessScore: assessQuestions.find(q => q.options === null || q.options.length === 0) ? assessAnswers[`assess_${assessQuestions.find(q => q.options === null || q.options.length === 0)!.id}`] as number : readiness[0],
       quitTimeline,
       fagerstromAnswers,
     });
   };
 
+  if (loading) return <div style={{ padding: 32 }}>Loading assessment questions…</div>;
+  if (error) return <div style={{ padding: 32, color: 'red' }}>Error: {error}</div>;
+
   return (
-    <div className="min-h-screen p-4 md:p-6 lg:p-8 bg-white">
+    <div className="min-h-screen p-4 md:p-6 lg:p-8" style={{ backgroundColor: '#FFFFFF' }}>
       <div className="max-w-4xl mx-auto">
         <OnboardingProgressBar
           steps={['ASK', 'ADVISE', 'ASSESS', 'ASSIST', 'ARRANGE']}
           currentStep={2}
         />
 
-        <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg p-6 md:p-8 lg:p-10 border border-gray-100">
-          <h1 className="text-2xl md:text-3xl lg:text-4xl text-[#1C3B5E] mb-2">
-            Step 3: ASSESS
+        <div
+          className="rounded-2xl md:rounded-3xl p-6 md:p-8 lg:p-10"
+          style={{
+            backgroundColor: '#FFFFFF',
+            boxShadow: '0 10px 40px rgba(28, 59, 94, 0.12)'
+          }}
+        >
+          <h1
+            className="text-2xl md:text-3xl lg:text-4xl mb-2"
+            style={{ color: '#1C3B5E' }}
+          >
+            Step 3: Assess – Your Nicotine Dependence
           </h1>
-          <p className="text-sm md:text-base text-[#333333] mb-6 md:mb-8">
-            Let's determine your readiness and dependency level.
+          <p
+            className="text-sm md:text-base mb-6 md:mb-8 lg:mb-10"
+            style={{ color: '#333333', opacity: 0.7 }}
+          >
+            Evaluate your nicotine dependence and readiness to quit
           </p>
 
-          {/* Readiness Slider */}
-          <div className="mb-12">
-            <Label className="text-[#333333] block mb-4">
-              How ready are you to quit tobacco?
-            </Label>
-            <div className="bg-gray-50 rounded-2xl p-8">
-              <div className="flex justify-between mb-4 text-sm text-[#333333]">
-                <span>1 - Low Readiness</span>
-                <span className="text-[#20B2AA]">Current: {readiness[0]}</span>
-                <span>10 - High Readiness</span>
-              </div>
-              <Slider
-                value={readiness}
-                onValueChange={setReadiness}
-                min={1}
-                max={10}
-                step={1}
-                className="[&_[role=slider]]:bg-[#20B2AA] [&_[role=slider]]:border-[#20B2AA]"
-              />
-              <div className="flex justify-between mt-2 text-xs text-gray-500">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
-                  <span key={num}>{num}</span>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Quit Timeline */}
-          <div className="mb-12">
-            <Label className="text-sm md:text-base block mb-4">
-              When do you plan to quit?
-            </Label>
-            <RadioGroup
-              value={quitTimeline}
-              onValueChange={setQuitTimeline}
-              className="space-y-3"
-            >
-              {[
-                { id: '1 month', label: 'Within next month' },
-                { id: '2 month', label: 'Within next 2 months' },
-                { id: 'notsure', label: 'Not sure yet' },
-              ].map(({ id, label }) => (
-                <div key={id} className="flex items-center bg-gray-50 p-4 rounded-xl">
-                  <RadioGroupItem value={id} id={id} />
-                  <Label htmlFor={id} className="ml-3 cursor-pointer flex-1">
-                    {label}
-                  </Label>
-                </div>
-              ))}
-            </RadioGroup>
-          </div>
-
-          {/* Fagerström Questionnaire */}
-          <div className="mt-12">
-            <h2 className="text-xl md:text-2xl font-semibold text-[#1C3B5E] mb-4">
-              Fagerström Questionnaire
-            </h2>
-            <p className="text-sm text-[#333333] mb-8 opacity-80">
-              This short questionnaire helps assess your level of nicotine dependence.
-            </p>
-
-            <div className="space-y-4">
-              {fagerstromQuestions.map((q, index) => (
-                <div
-                  key={q.id}
-                  className="rounded-xl border border-gray-200 p-4 md:p-6 shadow-sm"
+          {/* Dynamic Assess Questions (slider or radio) */}
+          <div className="space-y-4 md:space-y-5">
+            {assessQuestions.map((q, index) => (
+              <div
+                key={q.id}
+                className="rounded-2xl p-6"
+                style={{
+                  backgroundColor: '#FFFFFF',
+                  border: '2px solid #E0E0E0',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
+                }}
+              >
+                <Label
+                  className="block mb-5"
+                  style={{
+                    color: '#1C3B5E',
+                    fontSize: '1.05rem',
+                    lineHeight: '1.5'
+                  }}
                 >
-                  <Label
-                    className="block mb-5"
-                    style={{ color: '#1C3B5E', fontSize: '1.05rem' }}
-                  >
-                    {index + 1}. {q.question}
-                  </Label>
+                  {index + 1}. {q.question_text}
+                </Label>
+
+                {/* Slider if options is null/empty */}
+                {(q.options === null || q.options.length === 0) ? (
+                  <div>
+                    <Slider
+                      value={[assessAnswers[`assess_${q.id}`] as number || 5]}
+                      onValueChange={(val) => handleAssessAnswer(q.id.toString(), val[0])}
+                      min={1}
+                      max={10}
+                      step={1}
+                      className="mb-4"
+                    />
+                    <div
+                      className="flex justify-between text-sm"
+                      style={{ color: '#666666' }}
+                    >
+                      <span>1</span>
+                      <span
+                        className="font-bold px-3 py-1 rounded-full text-white"
+                        style={{ backgroundColor: '#20B2AA' }}
+                      >
+                        {assessAnswers[`assess_${q.id}`] || 5}
+                      </span>
+                      <span>10</span>
+                    </div>
+                  </div>
+                ) : (
+                  // Radio options if options array provided
                   <RadioGroup
-                    value={fagerstromAnswers[q.id] || ''}
-                    onValueChange={(value) => handleFagerstromAnswer(q.id, value)}
+                    value={typeof assessAnswers[`assess_${q.id}`] === 'string' ? assessAnswers[`assess_${q.id}`] : ''}
+                    onValueChange={(value) => handleAssessAnswer(q.id.toString(), value)}
                     className="space-y-3"
                   >
                     {q.options.map((option) => (
@@ -163,25 +218,23 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
                         key={option}
                         className="flex items-center p-4 rounded-xl transition-all duration-200"
                         style={{
-                          backgroundColor:
-                            fagerstromAnswers[q.id] === option
-                              ? 'rgba(32, 178, 170, 0.08)'
-                              : 'transparent',
-                          border: `2px solid ${
-                            fagerstromAnswers[q.id] === option ? '#20B2AA' : 'transparent'
-                          }`,
-                          cursor: 'pointer',
+                          backgroundColor: typeof assessAnswers[`assess_${q.id}`] === 'string' && assessAnswers[`assess_${q.id}`] === option ? 'rgba(32, 178, 170, 0.08)' : 'transparent',
+                          border: `2px solid ${typeof assessAnswers[`assess_${q.id}`] === 'string' && assessAnswers[`assess_${q.id}`] === option ? '#20B2AA' : 'transparent'}`,
+                          cursor: 'pointer'
                         }}
-                        onClick={() => handleFagerstromAnswer(q.id, option)}
+                        onClick={() => handleAssessAnswer(q.id.toString(), option)}
                       >
                         <RadioGroupItem
                           value={option}
-                          id={`${q.id}-${option}`}
+                          id={`assess-${q.id}-${option}`}
                           className="w-5 h-5"
-                          style={{ borderColor: '#20B2AA', color: '#20B2AA' }}
+                          style={{
+                            borderColor: '#20B2AA',
+                            color: '#20B2AA'
+                          }}
                         />
                         <Label
-                          htmlFor={`${q.id}-${option}`}
+                          htmlFor={`assess-${q.id}-${option}`}
                           className="ml-4 cursor-pointer flex-1"
                           style={{ color: '#333333' }}
                         >
@@ -190,20 +243,86 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
                       </div>
                     ))}
                   </RadioGroup>
-                </div>
-              ))}
-            </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Fagerström Test Questions */}
+          <div className="space-y-4 md:space-y-5 mt-6">
+            <h2 className="text-xl md:text-2xl font-semibold text-[#1C3B5E] mb-4"> Fagerström Questionnaire </h2> <p className="text-sm text-[#333333] mb-8 opacity-80"> This short questionnaire helps assess your level of nicotine dependence. </p>
+            {fagerstromQuestions.map((q, index) => (
+              <div
+                key={q.id}
+                className="rounded-2xl p-6"
+                style={{
+                  backgroundColor: '#FFFFFF',
+                  border: '2px solid #E0E0E0',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
+                }}
+              >
+                <Label
+                  className="block mb-5"
+                  style={{
+                    color: '#1C3B5E',
+                    fontSize: '1.05rem',
+                    lineHeight: '1.5'
+                  }}
+                >
+                  {index + 1}. {q.question_text}
+                </Label>
+                <RadioGroup
+                  value={fagerstromAnswers[`q${q.id}`] || ''}
+                  onValueChange={(value) => handleFagerstromAnswer(`q${q.id}`, value)}
+                  className="space-y-3"
+                >
+                  {q.options.map((option) => (
+                    <div
+                      key={option}
+                      className="flex items-center p-4 rounded-xl transition-all duration-200"
+                      style={{
+                        backgroundColor: fagerstromAnswers[`q${q.id}`] === option ? 'rgba(32, 178, 170, 0.08)' : 'transparent',
+                        border: `2px solid ${fagerstromAnswers[`q${q.id}`] === option ? '#20B2AA' : 'transparent'}`,
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => handleFagerstromAnswer(`q${q.id}`, option)}
+                    >
+                      <RadioGroupItem
+                        value={option}
+                        id={`fagerstrom-${q.id}-${option}`}
+                        className="w-5 h-5"
+                        style={{
+                          borderColor: '#20B2AA',
+                          color: '#20B2AA'
+                        }}
+                      />
+                      <Label
+                        htmlFor={`fagerstrom-${q.id}-${option}`}
+                        className="ml-4 cursor-pointer flex-1"
+                        style={{ color: '#333333' }}
+                      >
+                        {option}
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
+            ))}
           </div>
 
           <HesitationLink />
 
-          <div className="mt-8 flex justify-center">
+          <div className="mt-4 flex justify-end">
             <Button
               onClick={handleNext}
-              disabled={!quitTimeline || !isFagerstromComplete}
-              className="px-12 py-6 text-lg rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 disabled:opacity-50 text-white shadow-lg"
+              disabled={!isFagerstromComplete || !isAssessComplete}
+              className="px-8 py-6 rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                backgroundColor: isFagerstromComplete && isAssessComplete ? '#20B2AA' : '#cccccc',
+                color: '#FFFFFF'
+              }}
             >
-              Assess Me
+              Next: Get Personalized Assistance
             </Button>
           </div>
         </div>
