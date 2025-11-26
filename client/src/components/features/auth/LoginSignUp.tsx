@@ -69,7 +69,23 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
       // Onboarding redirect guard
       const requires = !!data?.requiresOnboarding;
       const step = typeof data?.currentStep === 'number' ? data.currentStep : 0;
-     
+      
+      // If onboarding is required, redirect to appropriate step
+      if (requires) {
+        const stepRoutes: { [key: number]: string } = {
+          0: '/5a/ask',
+          1: '/5a/advise', 
+          2: '/5a/assess',
+          3: '/5a/assist',
+          4: '/5a/arrange'
+        };
+        const targetRoute = stepRoutes[step] || stepRoutes[0];
+        router.push(targetRoute);
+        return;
+      }
+      
+      // If onboarding is complete, redirect to dashboard
+      router.push('/app');
       onLogin(userType);
     } catch (err: any) {
       alert(err?.message || 'Login failed');
