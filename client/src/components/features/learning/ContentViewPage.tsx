@@ -3,32 +3,11 @@ import { PodcastCard } from "./PodcastCard";
 import { ImageCard } from "./ImageCard";
 import { ArrowLeft } from "lucide-react";
 import { RecommendedSidebar } from "./RecommendedSidebar";
-
-interface Video {
-  thumbnail: string;
-  title: string;
-  description: string;
-  duration: string;
-  instructor: string;
-}
-
-interface Podcast {
-  artwork: string;
-  title: string;
-  description: string;
-  duration: string;
-  episode: string;
-}
-
-interface Image {
-  image: string;
-  caption: string;
-  category: string;
-}
+import { PublicContentItem } from "../../../services/contentService";
 
 interface ContentViewPageProps {
   contentType: "video" | "podcast" | "image";
-  items: Video[] | Podcast[] | Image[];
+  items: PublicContentItem[];
   onBack: () => void;
 }
 
@@ -94,23 +73,37 @@ export function ContentViewPage({ contentType, items, onBack }: ContentViewPageP
           {/* Content Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-5 lg:gap-6">
             {contentType === "video" &&
-              (items as Video[]).map((video, index) => (
+              items.map((item, index) => (
                 <div key={index} className="transition-transform hover:scale-[1.02] duration-200 [&>*]:!w-full [&>*]:!flex-shrink">
-                  <VideoCard {...video} />
+                  <VideoCard 
+                    thumbnail={item.media_url || ""}
+                    title={item.title}
+                    description={item.description || ""}
+                    duration={""}
+                  />
                 </div>
               ))}
 
             {contentType === "podcast" &&
-              (items as Podcast[]).map((podcast, index) => (
+              items.map((item, index) => (
                 <div key={index} className="transition-transform hover:scale-[1.02] duration-200 [&>*]:!w-full [&>*]:!flex-shrink">
-                  <PodcastCard {...podcast} />
+                  <PodcastCard 
+                    artwork={item.media_url || ""}
+                    title={item.title}
+                    description={item.description || ""}
+                    duration={""}
+                  />
                 </div>
               ))}
 
             {contentType === "image" &&
-              (items as Image[]).map((image, index) => (
+              items.map((item, index) => (
                 <div key={index} className="transition-transform hover:scale-[1.02] duration-200 [&>*]:!w-full [&>*]:!flex-shrink">
-                  <ImageCard {...image} />
+                  <ImageCard 
+                    image={item.media_url || ""}
+                    caption={item.title}
+                    category={item.description || ""}
+                  />
                 </div>
               ))}
           </div>

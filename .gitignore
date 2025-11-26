@@ -137,9 +137,10 @@ fake-avatar.*
 oversized.*
 large-avatar.*
 
-# Bruno export files
+# Bruno files
 *.bruno.json
 bruno-export/
+# server/bruno.docs/
 
 # Development databases
 *.sqlite

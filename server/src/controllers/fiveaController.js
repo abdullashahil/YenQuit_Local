@@ -1,6 +1,6 @@
 import * as fiveaService from '../services/fiveaService.js';
 import * as userService from '../services/userService.js';
-import * as profileService from '../services/profileService.js';
+import UserModel from '../models/UserModel.js';
 
 export async function getQuestionsByStep(req, res, next) {
   try {
@@ -124,7 +124,7 @@ export async function getAdvise(req, res, next) {
     if (!content) return res.status(404).json({ error: 'Advise content not found for this severity level.' });
     
     // Fetch user profile to get actual age
-    const profile = await profileService.getProfileByUserId(userId);
+    const profile = await UserModel.getProfileByUserId(userId);
     const userAge = profile?.age || '20'; 
     // Template interpolation for ai_message with actual user age
     const aiMessage = content.ai_message_template.replace('{{age}}', userAge.toString());

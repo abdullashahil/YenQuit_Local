@@ -1,0 +1,8 @@
+{
+  "meta": { "name": "Get Public Content By ID", "type": "http" },
+  "method": "GET",
+  "url": "{{baseUrl}}/content/public/{{contentId}}",
+  "tests": [
+    { "script": { "type": "javascript", "source": "bru.assert.ok([200,404].includes(res.status),'Status 200 or 404');" } }
+  ]
+}
