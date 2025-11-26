@@ -8,6 +8,7 @@ import fiveaRoutes from './routes/fivea.js';
 import fagerstromRoutes from './routes/fagerstrom.js';
 import userRoutes from './routes/user.js';
 import contentRoutes from './routes/contentRoutes.js';
+import assistRoutes from './routes/assistRoutes.js';
 import publicContentRoutes from './routes/publicContentRoutes.js';
 
 dotenv.config();
@@ -34,6 +35,7 @@ app.use('/api/fagerstrom', fagerstromRoutes);
 // Register public content routes BEFORE admin content routes so /public doesn't hit the generic /:id handler
 app.use('/api/content', publicContentRoutes);
 app.use('/api/content', contentRoutes);
+app.use('/api/assist', assistRoutes);
 
 app.get('/', (req, res) => {
   res.json({ status: 'API running' });
