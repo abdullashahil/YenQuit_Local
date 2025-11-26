@@ -231,9 +231,8 @@ jspm_packages/
 !migrations/*.sql
 
 # Documentation files (keep README.md)
-**/*.md
+# **/*.md
 !README.md
-!client/docs/*.md
-!server/docs/*.md
-
-/docs
+# !client/docs/*.md
+# !server/docs/*.md
+# /docs

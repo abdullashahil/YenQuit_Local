@@ -1,16 +1,8 @@
-
 import { Card } from "../ui/card";
 import { Button } from "../ui/button";
-import { Dialog, DialogContent } from "../ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
 import {
   Table,
   TableBody,
@@ -19,78 +11,137 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
-import { Shield, UserPlus, X, Search, Filter } from "lucide-react";
-import { useState } from "react";
+import { Shield, Search, Users, Crown, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { roleManagementService } from "../../services/roleManagementService";
+
+interface Admin {
+  id: string;
+  email: string;
+  role: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  full_name?: string;
+  avatar_url?: string;
+}
+
+interface User {
+  id: string;
+  email: string;
+  role: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  full_name?: string;
+  avatar_url?: string;
+}
 
 export function RoleManagement() {
-  const [isAddAdminModalOpen, setIsAddAdminModalOpen] = useState(false);
-  const [newAdminName, setNewAdminName] = useState("");
-  const [newAdminEmail, setNewAdminEmail] = useState("");
-  const [newAdminRole, setNewAdminRole] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [adminSearchTerm, setAdminSearchTerm] = useState("");
+  const [admins, setAdmins] = useState<Admin[]>([]);
+  const [searchedUser, setSearchedUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [userSearchLoading, setUserSearchLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  const admins = [
-    {
-      id: 1,
-      name: "John Smith",
-      email: "john.smith@admin.com",
-      role: "Admin",
-      addedDate: "Jan 15, 2025",
-      status: "Active",
-      lastActive: "2 hours ago"
-    },
-    {
-      id: 2,
-      name: "Sarah Johnson",
-      email: "sarah.j@admin.com",
-      role: "Co-Admin",
-      addedDate: "Mar 10, 2025",
-      status: "Active",
-      lastActive: "30 minutes ago"
-    },
-    {
-      id: 3,
-      name: "Michael Chen",
-      email: "m.chen@admin.com",
-      role: "Admin",
-      addedDate: "Jun 5, 2025",
-      status: "Away",
-      lastActive: "1 day ago"
-    },
-    {
-      id: 4,
-      name: "Emily Davis",
-      email: "emily.d@admin.com",
-      role: "Co-Admin",
-      addedDate: "Aug 20, 2025",
-      status: "Active",
-      lastActive: "5 hours ago"
-    },
-  ];
+  // Load admins on component mount
+  useEffect(() => {
+    loadAdmins();
+  }, []);
+
+  const loadAdmins = async () => {
+    try {
+      setLoading(true);
+      const response = await roleManagementService.getAdmins();
+      if (response.success) {
+        setAdmins(response.data);
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to load admins");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const searchUser = async (email: string) => {
+    if (!email) {
+      setSearchedUser(null);
+      return;
+    }
+
+    try {
+      setUserSearchLoading(true);
+      setError("");
+      
+      // Get all non-admin users and filter by email
+      const response = await roleManagementService.getNonAdminUsers();
+      if (response.success) {
+        const user = response.data.find(u => u.email.toLowerCase() === email.toLowerCase());
+        setSearchedUser(user || null);
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to search user");
+      setSearchedUser(null);
+    } finally {
+      setUserSearchLoading(false);
+    }
+  };
+
+  const handlePromoteUser = async (userId: string) => {
+  try {
+    setLoading(true);
+    setError("");
+    
+    const response = await roleManagementService.promoteUser(userId);
+    
+    if (response.success) {
+      setSuccess("User promoted to admin successfully!");
+      setSearchedUser(null);
+      loadAdmins();
+    }
+  } catch (err: any) {
+    setError(err.message || "Failed to promote user");
+  } finally {
+    setLoading(false);
+  }
+};
+
+  const handleDemoteAdmin = async (adminId: string) => {
+    if (!confirm("Are you sure you want to demote this admin to a regular user?")) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError("");
+      
+      const response = await roleManagementService.demoteAdmin(adminId);
+      
+      if (response.success) {
+        setSuccess("Admin demoted to user successfully!");
+        loadAdmins();
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to demote admin");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredAdmins = admins.filter(admin =>
-    admin.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    admin.email.toLowerCase().includes(searchTerm.toLowerCase())
+    admin.email.toLowerCase().includes(adminSearchTerm.toLowerCase()) ||
+    (admin.full_name && admin.full_name.toLowerCase().includes(adminSearchTerm.toLowerCase()))
   );
 
-  const handleAddAdmin = () => {
-    console.log({ newAdminName, newAdminEmail, newAdminRole });
-    setIsAddAdminModalOpen(false);
-    setNewAdminName("");
-    setNewAdminEmail("");
-    setNewAdminRole("");
-  };
-
-  const getRoleColor = (role: string) => {
-    if (role === "Admin") return "#1C3B5E";
-    if (role === "Co-Admin") return "#20B2AA";
-    return "#20B2AA";
-  };
-
-  const getStatusColor = (status: string) => {
-    if (status === "Active") return "#8BC34A";
-    if (status === "Away") return "#FFA500";
-    return "#D9534F";
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   };
 
   return (
@@ -102,267 +153,197 @@ export function RoleManagement() {
             Role Management
           </h2>
           <p className="text-lg" style={{ color: "#333333", opacity: 0.7 }}>
-            Manage admin accounts and their access levels
+            Manage admin roles and permissions
           </p>
         </div>
 
-        {/* Role Descriptions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="p-6 rounded-3xl border-0 shadow-lg hover:shadow-xl transition-shadow">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 rounded-2xl" style={{ backgroundColor: "#1C3B5E20" }}>
-                <Shield className="w-6 h-6" style={{ color: "#1C3B5E" }} />
-              </div>
-              <div>
-                <h4 className="text-lg font-semibold" style={{ color: "#1C3B5E" }}>
-                  Admin
-                </h4>
-                <p className="text-sm mt-1" style={{ color: "#333333", opacity: 0.7 }}>
-                  Full system access including user management, content, and all settings
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-6 rounded-3xl border-0 shadow-lg hover:shadow-xl transition-shadow">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 rounded-2xl" style={{ backgroundColor: "#20B2AA20" }}>
-                <Shield className="w-6 h-6" style={{ color: "#20B2AA" }} />
-              </div>
-              <div>
-                <h4 className="text-lg font-semibold" style={{ color: "#20B2AA" }}>
-                  Co-Admin
-                </h4>
-                <p className="text-sm mt-1" style={{ color: "#333333", opacity: 0.7 }}>
-                  Limited access to content management and user support functions
-                </p>
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        {/* Admin List */}
-        <Card className="rounded-3xl border-0 shadow-xl overflow-hidden">
-          <div className="p-8 border-b border-gray-100 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl" style={{ backgroundColor: "#20B2AA20" }}>
-                <Shield className="w-6 h-6" style={{ color: "#20B2AA" }} />
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold" style={{ color: "#1C3B5E" }}>
-                  Admin Accounts
-                </h3>
-                <p className="text-sm mt-1" style={{ color: "#333333", opacity: 0.7 }}>
-                  {admins.length} active administrators in the system
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-              <div className="relative">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <Input
-                  placeholder="Search admins..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 rounded-2xl border-gray-200 h-12 w-full lg:w-64"
-                />
-              </div>
-              <Button
-                onClick={() => setIsAddAdminModalOpen(true)}
-                className="px-6 py-3 rounded-2xl text-white font-semibold transition-all hover:scale-105 hover:shadow-lg active:scale-95"
-                style={{ backgroundColor: "#20B2AA" }}
-              >
-                <UserPlus className="w-5 h-5 mr-2" />
-                Add New Admin
-              </Button>
+        {/* Error and Success Messages */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5" />
+              {error}
             </div>
           </div>
+        )}
 
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b border-gray-100" style={{ backgroundColor: "#f8f8f8" }}>
-                  <TableHead className="text-left py-6 font-semibold" style={{ color: "#1C3B5E" }}>
-                    Administrator
-                  </TableHead>
-                  <TableHead className="text-left font-semibold" style={{ color: "#1C3B5E" }}>
-                    Role
-                  </TableHead>
-                  <TableHead className="text-center font-semibold" style={{ color: "#1C3B5E" }}>
-                    Status
-                  </TableHead>
-                  <TableHead className="text-center font-semibold" style={{ color: "#1C3B5E" }}>
-                    Added Date
-                  </TableHead>
-                  <TableHead className="text-center font-semibold" style={{ color: "#1C3B5E" }}>
-                    Actions
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredAdmins.map((admin, index) => (
-                  <TableRow
-                    key={admin.id}
-                    className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
-                  >
-                    <TableCell className="py-5">
-                      <div>
-                        <p className="text-base font-semibold" style={{ color: "#1C3B5E" }}>
-                          {admin.name}
-                        </p>
-                        <p className="text-sm mt-1" style={{ color: "#333333", opacity: 0.7 }}>
-                          {admin.email}
-                        </p>
-                        <p className="text-xs mt-1" style={{ color: "#333333", opacity: 0.5 }}>
-                          Last active: {admin.lastActive}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div
-                        className="inline-flex items-center px-4 py-2 rounded-2xl text-sm font-medium"
-                        style={{
-                          backgroundColor: `${getRoleColor(admin.role)}20`,
-                          color: getRoleColor(admin.role),
-                        }}
-                      >
-                        {admin.role}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex justify-center">
-                        <div
-                          className="inline-flex items-center px-3 py-1 rounded-xl text-xs font-medium"
-                          style={{
-                            backgroundColor: `${getStatusColor(admin.status)}20`,
-                            color: getStatusColor(admin.status),
-                          }}
-                        >
-                          <div 
-                            className="w-2 h-2 rounded-full mr-2"
-                            style={{ backgroundColor: getStatusColor(admin.status) }}
-                          />
-                          {admin.status}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <p className="text-sm font-medium" style={{ color: "#333333", opacity: 0.8 }}>
-                        {admin.addedDate}
-                      </p>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex justify-center gap-2">
-                        <Select defaultValue={admin.role}>
-                          <SelectTrigger className="w-40 h-10 rounded-2xl border-gray-200 focus:border-[#20B2AA] transition-colors">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Admin">Admin</SelectItem>
-                            <SelectItem value="Co-Admin">Co-Admin</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </TableCell>
+        {success && (
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl">
+            {success}
+          </div>
+        )}
+
+        {/* Search and Actions */}
+        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Input
+              type="text"
+              placeholder="Search admins..."
+              value={adminSearchTerm}
+              onChange={(e) => setAdminSearchTerm(e.target.value)}
+              className="pl-10 rounded-2xl h-12"
+              style={{ borderColor: "#D9534F40" }}
+            />
+          </div>
+        </div>
+
+        {/* Admins Table */}
+        <Card className="rounded-2xl border-0 shadow-lg">
+          <div className="p-6 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-[#1C3B5E20]">
+                <Shield className="w-5 h-5 text-[#1C3B5E]" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-[#1C3B5E]">Administrators</h3>
+                <p className="text-sm text-gray-600">{filteredAdmins.length} admin(s) total</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="p-6">
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="text-gray-500">Loading...</div>
+              </div>
+            ) : filteredAdmins.length === 0 ? (
+              <div className="text-center py-8">
+                <Shield className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500">No admins found</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Admin</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Added</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredAdmins.map((admin) => (
+                    <TableRow key={admin.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-[#1C3B5E20] flex items-center justify-center">
+                            <Shield className="w-5 h-5 text-[#1C3B5E]" />
+                          </div>
+                          <div>
+                            <div className="font-medium">{admin.full_name || 'Unknown'}</div>
+                            <div className="text-sm text-gray-500">ID: {admin.id}</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{admin.email}</TableCell>
+                      <TableCell>
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-[#1C3B5E20] text-[#1C3B5E]">
+                          {admin.role}
+                        </span>
+                      </TableCell>
+                      <TableCell>{formatDate(admin.created_at)}</TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          admin.status === 'active' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {admin.status}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          onClick={() => handleDemoteAdmin(admin.id)}
+                          variant="outline"
+                          size="sm"
+                          className="rounded-xl text-red-600 border-red-200 hover:bg-red-50"
+                        >
+                          Demote
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </div>
         </Card>
 
-        {/* Save Button */}
-        <div className="flex justify-center">
-          <Button
-            className="px-12 py-6 rounded-2xl text-white font-semibold text-lg transition-all hover:scale-105 hover:shadow-xl active:scale-95 shadow-lg"
-            style={{ backgroundColor: "#20B2AA" }}
-          >
-            Save Changes
-          </Button>
-        </div>
+        {/* User Search Section */}
+        <Card className="rounded-2xl border-0 shadow-lg">
+          <div className="p-6 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-[#20B2AA20]">
+                <Crown className="w-5 h-5 text-[#20B2AA]" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-[#1C3B5E]">Promote User to Admin</h3>
+                <p className="text-sm text-gray-600">Search for a user to promote to admin role</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="p-6 space-y-4">
+            <div className="space-y-3">
+              <Label className="text-sm font-medium text-[#1C3B5E]">User Email</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <Input
+                  type="email"
+                  placeholder="user@example.com"
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    searchUser(e.target.value);
+                  }}
+                  className="pl-10 rounded-2xl h-12"
+                  style={{ borderColor: "#D9534F40" }}
+                />
+              </div>
+            </div>
+
+            {userSearchLoading && (
+              <div className="text-center py-4">
+                <div className="text-gray-500">Searching...</div>
+              </div>
+            )}
+
+            {searchedUser && (
+              <div className="border border-gray-200 rounded-xl p-4 bg-gray-50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-[#20B2AA20] flex items-center justify-center">
+                      <Users className="w-5 h-5 text-[#20B2AA]" />
+                    </div>
+                    <div>
+                      <div className="font-medium">{searchedUser.full_name || 'Unknown'}</div>
+                      <div className="text-sm text-gray-500">{searchedUser.email}</div>
+                      <div className="text-xs text-gray-400">ID: {searchedUser.id}</div>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => handlePromoteUser(searchedUser.id)}
+                    size="sm"
+                    className="rounded-xl"
+                    style={{ backgroundColor: "#20B2AA" }}
+                  >
+                    Promote to Admin
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {searchTerm && !userSearchLoading && !searchedUser && (
+              <div className="text-center py-4">
+                <p className="text-gray-500">No user found with this email address</p>
+              </div>
+            )}
+          </div>
+        </Card>
       </div>
-
-      {/* Add Admin Modal */}
-      <Dialog open={isAddAdminModalOpen} onOpenChange={setIsAddAdminModalOpen}>
-        <DialogContent className="max-w-2xl p-0 rounded-3xl border-0 overflow-hidden shadow-2xl">
-          <div className="p-8 border-b border-gray-100 flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold mb-2" style={{ color: "#1C3B5E" }}>
-                Add New Admin
-              </h2>
-              <p className="text-lg" style={{ color: "#333333", opacity: 0.7 }}>
-                Create a new administrator account
-              </p>
-            </div>
-            <button
-              onClick={() => setIsAddAdminModalOpen(false)}
-              className="p-3 rounded-2xl hover:bg-gray-100 transition-all"
-            >
-              <X className="w-6 h-6" style={{ color: "#333333" }} />
-            </button>
-          </div>
-
-          <div className="p-8 space-y-6">
-            <div className="space-y-3">
-              <Label className="text-sm font-semibold" style={{ color: "#1C3B5E" }}>
-                Full Name <span style={{ color: "#D9534F" }}>*</span>
-              </Label>
-              <Input
-                value={newAdminName}
-                onChange={(e) => setNewAdminName(e.target.value)}
-                placeholder="Enter admin name"
-                className="rounded-2xl border-gray-200 h-12 focus:border-[#20B2AA] transition-colors"
-              />
-            </div>
-
-            <div className="space-y-3">
-              <Label className="text-sm font-semibold" style={{ color: "#1C3B5E" }}>
-                Email Address <span style={{ color: "#D9534F" }}>*</span>
-              </Label>
-              <Input
-                type="email"
-                value={newAdminEmail}
-                onChange={(e) => setNewAdminEmail(e.target.value)}
-                placeholder="admin@example.com"
-                className="rounded-2xl border-gray-200 h-12 focus:border-[#20B2AA] transition-colors"
-              />
-            </div>
-
-            <div className="space-y-3">
-              <Label className="text-sm font-semibold" style={{ color: "#1C3B5E" }}>
-                Assign Role <span style={{ color: "#D9534F" }}>*</span>
-              </Label>
-              <Select value={newAdminRole} onValueChange={setNewAdminRole}>
-                <SelectTrigger className="h-12 rounded-2xl border-gray-200 focus:border-[#20B2AA] transition-colors">
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Admin">Admin</SelectItem>
-                  <SelectItem value="Co-Admin">Co-Admin</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="p-8 border-t border-gray-100 flex items-center justify-between bg-gray-50">
-            <Button
-              onClick={() => setIsAddAdminModalOpen(false)}
-              className="px-8 py-4 rounded-2xl bg-white hover:bg-gray-100 transition-all border border-gray-200 font-semibold"
-              style={{ color: "#333333" }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAddAdmin}
-              className="px-8 py-4 rounded-2xl text-white font-semibold transition-all hover:scale-105 hover:shadow-lg active:scale-95 shadow-md"
-              style={{ backgroundColor: "#20B2AA" }}
-            >
-              Add Administrator
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

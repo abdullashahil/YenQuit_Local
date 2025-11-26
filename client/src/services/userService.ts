@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { handleApiError } from '../utils/authErrorHandler';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
@@ -61,7 +62,7 @@ export const userService = {
       console.error('Full error:', error);
       console.error('Error response:', error.response?.data);
       console.error('Error status:', error.response?.status);
-      throw new Error(error.response?.data?.message || 'Failed to fetch users');
+      handleApiError(error, 'Failed to fetch users');
     }
   },
 
@@ -187,7 +188,7 @@ export const userService = {
       console.error('Full stats error:', error);
       console.error('Stats error response:', error.response?.data);
       console.error('Stats error status:', error.response?.status);
-      throw new Error(error.response?.data?.message || 'Failed to fetch user statistics');
+      handleApiError(error, 'Failed to fetch user statistics');
     }
   },
 
