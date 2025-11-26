@@ -8,7 +8,11 @@ import {
   ArrowLeft,
   LogOut,
   Menu,
-  Shield
+  Shield,
+  Users,
+  Heart,
+  Clock,
+  History
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
 import { useState } from "react";
@@ -25,6 +29,10 @@ export function AdminSidebar({ activeTab, setActiveTab, onExitAdmin, onLogout }:
 
   const navItems = [
     { id: "admin-dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/admin", badge: null },
+    { id: "user-management", label: "User Management", icon: Users, href: "/admin/users", badge: null },
+    { id: "coping-strategies", label: "Coping Strategies", icon: Heart, href: "/admin/coping-strategies", badge: null },
+    { id: "notification-templates", label: "Notification Templates", icon: Clock, href: "/admin/notification-templates", badge: null },
+    { id: "assist-history", label: "Assist History", icon: History, href: "/admin/assist-history", badge: null },
     { id: "content-management", label: "Content Management", icon: FileText, href: "/admin/content", badge: null },
     { id: "system-settings", label: "System Settings", icon: Settings, href: "/admin/settings", badge: null },
   ];

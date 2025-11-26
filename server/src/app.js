@@ -8,6 +8,7 @@ import fiveaRoutes from './routes/fivea.js';
 import fagerstromRoutes from './routes/fagerstrom.js';
 import userRoutes from './routes/user.js';
 import contentRoutes from './routes/contentRoutes.js';
+import assistRoutes from './routes/assistRoutes.js';
 
 dotenv.config();
 
@@ -31,6 +32,7 @@ app.use('/api/onboarding', onboardingRoutes);
 app.use('/api/fivea', fiveaRoutes);
 app.use('/api/fagerstrom', fagerstromRoutes);
 app.use('/api/content', contentRoutes);
+app.use('/api/assist', assistRoutes);
 
 app.get('/', (req, res) => {
   res.json({ status: 'API running' });
