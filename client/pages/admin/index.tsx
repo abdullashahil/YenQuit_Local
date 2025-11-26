@@ -26,9 +26,9 @@ export default function Admin() {
   }, [router])
 
   return (
-    <AdminLayout activeTab="user-management">
+    <AdminLayout activeTab="admin-dashboard">
       <UserManagement 
-        activeTab="user-management" 
+        activeTab="admin-dashboard" 
         setActiveTab={() => {}} 
         onExitAdmin={() => router.push('/app')}
         onLogout={() => {

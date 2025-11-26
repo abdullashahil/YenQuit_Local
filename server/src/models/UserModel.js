@@ -533,6 +533,218 @@ class UserModel {
       throw error;
     }
   }
+
+  // Find user by ID with password (for password change)
+  static async findByIdWithPassword(id) {
+    const query = `
+      SELECT 
+        u.id,
+        u.email,
+        u.password_hash,
+        u.role,
+        u.status,
+        u.created_at,
+        u.updated_at,
+        p.full_name,
+        p.avatar_url,
+        p.bio,
+        p.phone,
+        p.age
+      FROM users u
+      LEFT JOIN profiles p ON u.id = p.user_id
+      WHERE u.id = $1
+    `;
+    
+    try {
+      const result = await pool.query(query, [id]);
+      return result.rows[0];
+    } catch (error) {
+      console.error('Error finding user by ID with password:', error);
+      throw error;
+    }
+  }
+
+  // Update user password
+  static async updatePassword(userId, hashedPassword) {
+    const query = `
+      UPDATE users 
+      SET password_hash = $2, updated_at = NOW() 
+      WHERE id = $1 
+      RETURNING id, email, role, status, updated_at
+    `;
+    
+    try {
+      const result = await pool.query(query, [userId, hashedPassword]);
+      return result.rows[0];
+    } catch (error) {
+      console.error('Error updating password:', error);
+      throw error;
+    }
+  }
+
+  // Role Management Methods
+  
+  // Get all admins
+  static async getAllAdmins() {
+    const query = `
+      SELECT 
+        u.id,
+        u.email,
+        u.role,
+        u.status,
+        u.created_at,
+        u.updated_at,
+        p.full_name,
+        p.avatar_url
+      FROM users u
+      LEFT JOIN profiles p ON u.id = p.user_id
+      WHERE u.role = 'admin'
+      ORDER BY u.created_at DESC
+    `;
+    
+    try {
+      const result = await pool.query(query);
+      return result.rows;
+    } catch (error) {
+      console.error('Error fetching all admins:', error);
+      throw error;
+    }
+  }
+
+  // Promote user to admin
+  static async promoteUser(userId) {
+    const query = `
+      UPDATE users 
+      SET role = 'admin', updated_at = NOW() 
+      WHERE id = $1 AND role = 'user'
+      RETURNING id, email, role, status, updated_at
+    `;
+    
+    try {
+      const result = await pool.query(query, [userId]);
+      return result.rows[0];
+    } catch (error) {
+      console.error('Error promoting user:', error);
+      throw error;
+    }
+  }
+
+  // Demote admin to user
+  static async demoteAdmin(userId) {
+    const query = `
+      UPDATE users 
+      SET role = 'user', updated_at = NOW() 
+      WHERE id = $1 AND role = 'admin'
+      RETURNING id, email, role, status, updated_at
+    `;
+    
+    try {
+      const result = await pool.query(query, [userId]);
+      return result.rows[0];
+    } catch (error) {
+      console.error('Error demoting admin:', error);
+      throw error;
+    }
+  }
+
+  // Get users for promotion (non-admin users)
+  static async getNonAdminUsers() {
+    const query = `
+      SELECT 
+        u.id,
+        u.email,
+        u.role,
+        u.status,
+        u.created_at,
+        u.updated_at,
+        p.full_name,
+        p.avatar_url
+      FROM users u
+      LEFT JOIN profiles p ON u.id = p.user_id
+      WHERE u.role = 'user'
+      ORDER BY u.created_at DESC
+    `;
+    
+    try {
+      const result = await pool.query(query);
+      return result.rows;
+    } catch (error) {
+      console.error('Error fetching non-admin users:', error);
+      throw error;
+    }
+  }
+
+  // Update user basic info (for admin profile)
+  static async update(userId, updateData) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      
+      // Update users table
+      const userFields = [];
+      const userValues = [];
+      let paramIndex = 1;
+
+      if (updateData.email !== undefined) {
+        userFields.push(`email = $${paramIndex}`);
+        userValues.push(updateData.email);
+        paramIndex++;
+      }
+      
+      if (updateData.role !== undefined) {
+        userFields.push(`role = $${paramIndex}`);
+        userValues.push(updateData.role);
+        paramIndex++;
+      }
+      
+      if (updateData.status !== undefined) {
+        userFields.push(`status = $${paramIndex}`);
+        userValues.push(updateData.status);
+        paramIndex++;
+      }
+      
+      if (userFields.length > 0) {
+        userFields.push('updated_at = NOW()');
+        userValues.push(userId);
+        
+        const userQuery = `
+          UPDATE users 
+          SET ${userFields.join(', ')}
+          WHERE id = $${paramIndex}
+          RETURNING id, email, role, status, created_at, updated_at
+        `;
+        
+        await client.query(userQuery, userValues);
+      }
+      
+      // Update profiles table if full_name is provided
+      if (updateData.full_name !== undefined) {
+        const profileQuery = `
+          INSERT INTO profiles (user_id, full_name, updated_at)
+          VALUES ($1, $2, NOW())
+          ON CONFLICT (user_id) 
+          DO UPDATE SET 
+            full_name = $2,
+            updated_at = NOW()
+          RETURNING user_id, full_name
+        `;
+        
+        await client.query(profileQuery, [userId, updateData.full_name]);
+      }
+      
+      await client.query('COMMIT');
+      
+      // Return updated user data
+      const result = await this.findById(userId);
+      return result;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('Error updating user:', error);
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
 }
 
 export default UserModel;

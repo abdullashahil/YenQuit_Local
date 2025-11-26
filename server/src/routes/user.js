@@ -28,4 +28,15 @@ router.put('/admin/users/:id', userController.updateUser);
 router.put('/admin/users/:id/avatar', uploadAvatar, userController.updateUser);
 router.delete('/admin/users/:id', userController.deleteUser);
 
+// Admin profile routes (authenticated admin)
+router.get('/admin/profile', authenticateJWT, userController.getAdminProfile);
+router.put('/admin/profile', authenticateJWT, userController.updateAdminProfile);
+router.put('/admin/change-password', authenticateJWT, userController.changeAdminPassword);
+
+// Role Management endpoints
+router.get('/admins', authenticateJWT, requireAdmin, userController.getAdmins);
+router.patch('/user/:id/promote', authenticateJWT, requireAdmin, userController.promoteUser);
+router.patch('/admin/:id/demote', authenticateJWT, requireAdmin, userController.demoteAdmin);
+router.get('/non-admin-users', authenticateJWT, requireAdmin, userController.getNonAdminUsers);
+
 export default router;

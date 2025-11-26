@@ -1,4 +1,4 @@
-import { User, Bell, Shield, Settings, Lock } from "lucide-react";
+import { User, Shield } from "lucide-react";
 
 interface SettingsTabBarProps {
   activeSection: string;
@@ -8,10 +8,7 @@ interface SettingsTabBarProps {
 export function SettingsTabBar({ activeSection, onSectionChange }: SettingsTabBarProps) {
   const tabs = [
     { id: "profile", label: "Profile Settings", icon: User },
-    { id: "notifications", label: "Notification Preferences", icon: Bell },
     { id: "roles", label: "Role Management", icon: Shield },
-    { id: "configuration", label: "System Configuration", icon: Settings },
-    { id: "security", label: "Security Logs", icon: Lock },
   ];
 
   return (

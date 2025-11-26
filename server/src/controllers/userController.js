@@ -358,3 +358,258 @@ export async function getUserStats(req, res, next) {
     next(error);
   }
 }
+
+// Admin profile endpoints
+export async function getAdminProfile(req, res, next) {
+  try {
+    const user = await UserModel.findById(req.user.userId);
+    if (!user) return res.status(404).json({ error: 'Admin not found' });
+    
+    // Return admin profile data
+    const adminProfile = {
+      id: user.id,
+      name: user.full_name || 'Admin',
+      email: user.email,
+      created_at: user.created_at,
+      updated_at: user.updated_at
+    };
+    
+    res.json({
+      success: true,
+      data: adminProfile
+    });
+  } catch (error) {
+    console.error('Error fetching admin profile:', error);
+    next(error);
+  }
+}
+
+export async function updateAdminProfile(req, res, next) {
+  try {
+    const { name, email } = req.body;
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (email && !emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid email format'
+      });
+    }
+    
+    // Check if email already exists for another user
+    if (email && email !== req.user.email) {
+      const existingUser = await UserModel.findByEmail(email);
+      if (existingUser) {
+        return res.status(409).json({
+          success: false,
+          message: 'Email already exists'
+        });
+      }
+    }
+    
+    // Update admin profile
+    const updateData = {};
+    if (name !== undefined) updateData.full_name = name;
+    if (email !== undefined) updateData.email = email;
+    
+    const updated = await UserModel.update(req.user.userId, updateData);
+    if (!updated) {
+      return res.status(400).json({
+        success: false,
+        message: 'No fields updated'
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: {
+        id: updated.id,
+        name: updated.full_name || 'Admin',
+        email: updated.email,
+        created_at: updated.created_at,
+        updated_at: updated.updated_at
+      }
+    });
+  } catch (error) {
+    console.error('Error updating admin profile:', error);
+    next(error);
+  }
+}
+
+export async function changeAdminPassword(req, res, next) {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    
+    // Validate inputs
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password and new password are required'
+      });
+    }
+    
+    // Validate password rules
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+      });
+    }
+    
+    // Get current user with password
+    const user = await UserModel.findByIdWithPassword(req.user.userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!isCurrentPasswordValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password is incorrect'
+      });
+    }
+    
+    // Hash new password
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    
+    // Update password
+    await UserModel.updatePassword(req.user.userId, hashedNewPassword);
+    
+    res.json({
+      success: true,
+      message: 'Password changed successfully'
+    });
+  } catch (error) {
+    console.error('Error changing admin password:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to change password'
+    });
+  }
+};
+
+// Role Management Controllers
+
+// Get all admins
+export async function getAdmins(req, res, next) {
+  try {
+    const admins = await UserModel.getAllAdmins();
+    
+    res.json({
+      success: true,
+      data: admins,
+      count: admins.length
+    });
+  } catch (error) {
+    console.error('Error fetching admins:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch admins'
+    });
+  }
+}
+
+// Promote user to admin
+export async function promoteUser(req, res, next) {
+  try {
+    const { id } = req.params;
+    
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID is required'
+      });
+    }
+    
+    const promotedUser = await UserModel.promoteUser(id);
+    
+    if (!promotedUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found or already an admin'
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'User promoted to admin successfully',
+      data: promotedUser
+    });
+  } catch (error) {
+    console.error('Error promoting user:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to promote user'
+    });
+  }
+}
+
+// Demote admin to user
+export async function demoteAdmin(req, res, next) {
+  try {
+    const { id } = req.params;
+    
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Admin ID is required'
+      });
+    }
+    
+    // Prevent admin from demoting themselves
+    if (req.user.userId === id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot demote yourself'
+      });
+    }
+    
+    const demotedAdmin = await UserModel.demoteAdmin(id);
+    
+    if (!demotedAdmin) {
+      return res.status(404).json({
+        success: false,
+        message: 'Admin not found or already a user'
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Admin demoted to user successfully',
+      data: demotedAdmin
+    });
+  } catch (error) {
+    console.error('Error demoting admin:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to demote admin'
+    });
+  }
+}
+
+// Get non-admin users for promotion
+export async function getNonAdminUsers(req, res, next) {
+  try {
+    const users = await UserModel.getNonAdminUsers();
+    
+    res.json({
+      success: true,
+      data: users,
+      count: users.length
+    });
+  } catch (error) {
+    console.error('Error fetching non-admin users:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch users'
+    });
+  }
+}

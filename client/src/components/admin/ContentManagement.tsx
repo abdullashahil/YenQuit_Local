@@ -20,7 +20,8 @@ import { AddContentModal } from "./AddContentModal";
 import { PreviewContentModal } from "./PreviewContentModal";
 import { CampaignScheduler } from "./CampaignScheduler";
 import { InsightsNotifications } from "../features/community/InsightsNotifications";
-import { Search, Plus, Edit, Trash2, Eye, Filter, ChevronDown, BarChart3, Users, Calendar, FileText, MessageSquare, Bell, Loader2 } from "lucide-react";
+import { SystemConfiguration } from "./SystemConfiguration";
+import { Search, Plus, Edit, Trash2, Eye, Filter, ChevronDown, BarChart3, Users, Calendar, FileText, MessageSquare, Bell, Loader2, Settings } from "lucide-react";
 import { useState, useEffect } from "react";
 import axios from "axios";
 
@@ -34,6 +35,7 @@ interface ContentManagementProps {
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogout }: ContentManagementProps) {
+  const [activeContentTab, setActiveContentTab] = useState("content");
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -53,6 +55,11 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
     hasNext: false,
     hasPrev: false
   });
+
+  const contentTabs = [
+    { id: "content", label: "Content", icon: FileText },
+    { id: "configuration", label: "System Configuration", icon: Settings },
+  ];
 
   // Fetch content from API
   const fetchContent = async (page = 1, search = '', category = '', status = '') => {
@@ -199,39 +206,70 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
           <div className="max-w-full mx-auto">
             {/* Page Header with Stats */}
             <div className="mb-6 md:mb-8">
-              <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
-                <div>
-                  <h1 className="text-2xl md:text-3xl font-bold mb-2 text-[#1C3B5E]">
-                    Content Management
-                  </h1>
-                  <p className="text-sm md:text-base text-gray-600">
-                    Manage all public-facing content, campaigns, and user communications
-                  </p>
-                </div>
-                <div className="flex items-center gap-3 mt-4 md:mt-0">
-                  <Button
-                    className="h-12 rounded-2xl flex items-center gap-2 px-6 shadow-lg hover:shadow-xl transition-all duration-200"
-                    style={{ 
-                      background: "linear-gradient(135deg, #20B2AA 0%, #1C9B94 100%)",
-                      color: "white" 
-                    }}
-                    onClick={handleAddNew}
-                  >
-                    <Plus className="w-5 h-5" />
-                    <span>Create Content</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="h-12 rounded-2xl flex items-center gap-2 px-6 border-gray-200 hover:border-[#20B2AA] hover:text-[#20B2AA] transition-all duration-200"
-                  >
-                    <FileText className="w-5 h-5" />
-                    <span className="hidden sm:inline">Export</span>
-                  </Button>
+              {/* Tab Navigation */}
+              <div className="w-full bg-white border-b border-gray-200 mb-6">
+                <div className="flex items-center gap-0 overflow-x-auto">
+                  {contentTabs.map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = activeContentTab === tab.id;
+
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveContentTab(tab.id)}
+                        className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-all duration-200 ${
+                          isActive
+                            ? "border-[#20B2AA] text-[#20B2AA]"
+                            : "border-transparent text-gray-600 hover:text-gray-800"
+                        }`}
+                      >
+                        <Icon className="w-4 h-4" />
+                        <span className="font-medium">{tab.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Stats Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-bold mb-2 text-[#1C3B5E]">
+                    {activeContentTab === "content" ? "Content Management" : "System Configuration"}
+                  </h1>
+                  <p className="text-sm md:text-base text-gray-600">
+                    {activeContentTab === "content" 
+                      ? "Manage all public-facing content, campaigns, and user communications"
+                      : "Configure system settings, API keys, and global preferences"
+                    }
+                  </p>
+                </div>
+                {activeContentTab === "content" && (
+                  <div className="flex items-center gap-3 mt-4 md:mt-0">
+                    <Button
+                      className="h-12 rounded-2xl flex items-center gap-2 px-6 shadow-lg hover:shadow-xl transition-all duration-200"
+                      style={{ 
+                        background: "linear-gradient(135deg, #20B2AA 0%, #1C9B94 100%)",
+                        color: "white" 
+                      }}
+                      onClick={handleAddNew}
+                    >
+                      <Plus className="w-5 h-5" />
+                      <span>Create Content</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-12 rounded-2xl flex items-center gap-2 px-6 border-gray-200 hover:border-[#20B2AA] hover:text-[#20B2AA] transition-all duration-200"
+                    >
+                      <FileText className="w-5 h-5" />
+                      <span className="hidden sm:inline">Export</span>
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {/* Stats Cards - Only show for content tab */}
+              {activeContentTab === "content" && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 {
                   (stats ? [
                     { label: "Total Content", value: stats.total.toString(), change: "+12%", icon: FileText, color: "#20B2AA" },
@@ -264,10 +302,14 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
                   );
                 })}
               </div>
+              )}
             </div>
 
-            {/* Search & Filters Bar */}
-            <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg border-0 p-4 md:p-6 mb-6">
+            {/* Conditional Content Rendering */}
+            {activeContentTab === "content" ? (
+              <>
+                {/* Search & Filters Bar */}
+                <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg border-0 p-4 md:p-6 mb-6">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
                 {/* Search Input */}
                 <div className="lg:col-span-4">
@@ -744,6 +786,10 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
                 </div>
               </div>
             </div>
+              </>
+            ) : (
+              <SystemConfiguration />
+            )}
           </div>
         </div>
       </div>

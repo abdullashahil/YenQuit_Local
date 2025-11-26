@@ -1,10 +1,7 @@
 import { AdminSidebar } from "./AdminSidebar";
 import { SettingsTabBar } from "./SettingsTabBar";
 import { ProfileSettings } from "./ProfileSettings";
-import { NotificationPreferences } from "./NotificationPreferences";
 import { RoleManagement } from "./RoleManagement";
-import { SystemConfiguration } from "./SystemConfiguration";
-import { SecurityLogs } from "./SecurityLogs";
 import { useState } from "react";
 
 interface SystemSettingsProps {
@@ -20,14 +17,8 @@ export function SystemSettings({ activeTab, setActiveTab, onExitAdmin }: SystemS
     switch (activeSettingsSection) {
       case "profile":
         return <ProfileSettings />;
-      case "notifications":
-        return <NotificationPreferences />;
       case "roles":
         return <RoleManagement />;
-      case "configuration":
-        return <SystemConfiguration />;
-      case "security":
-        return <SecurityLogs />;
       default:
         return <ProfileSettings />;
     }
