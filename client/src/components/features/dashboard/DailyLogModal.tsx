@@ -4,20 +4,76 @@ import { Input } from "../../ui/input";
 import { Label } from "../../ui/label";
 import { Textarea } from "../../ui/textarea";
 import { CravingSlider } from "./CravingSlider";
-import { X, Calendar, Shield, AlertTriangle, CheckCircle2, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { X, Calendar, Shield, AlertTriangle, CheckCircle2, Sparkles, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import quitTrackerService from "../../../services/quitTrackerService";
 
 interface DailyLogModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onLogChange?: () => void;
+  quitDate?: string | null;
 }
 
-export function DailyLogModal({ open, onOpenChange }: DailyLogModalProps) {
+interface LogData {
+  log_date: string;
+  smoked: boolean;
+  cigarettes_count?: number;
+  cravings_level?: number;
+  mood?: number;
+  notes?: string;
+}
+
+export function DailyLogModal({ open, onOpenChange, onLogChange, quitDate }: DailyLogModalProps) {
   const [cigaretteCount, setCigaretteCount] = useState<number>(0);
   const [cravingLevel, setCravingLevel] = useState<number>(5);
+  const [mood, setMood] = useState<number>(5);
   const [notes, setNotes] = useState("");
-  const [quitDate, setQuitDate] = useState("2025-10-05");
+  const [selectedQuitDate, setSelectedQuitDate] = useState("");
   const [showSmokeFreeConfirmation, setShowSmokeFreeConfirmation] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [existingLog, setExistingLog] = useState<LogData | null>(null);
+
+  // Set today's date as default
+  const today = new Date().toISOString().split('T')[0];
+
+  // Initialize form data
+  useEffect(() => {
+    if (open) {
+      setSelectedQuitDate(quitDate || "");
+      setCigaretteCount(0);
+      setCravingLevel(5);
+      setMood(5);
+      setNotes("");
+      setError(null);
+      setShowSmokeFreeConfirmation(false);
+      
+      // Load existing log for today if any
+      loadTodayLog();
+    }
+  }, [open, quitDate]);
+
+  const loadTodayLog = async () => {
+    try {
+      const logsResult = await quitTrackerService.getLogs({
+        startDate: today,
+        endDate: today,
+        limit: 1
+      });
+      
+      if (logsResult.logs.length > 0) {
+        const log = logsResult.logs[0];
+        setExistingLog(log);
+        setCigaretteCount(log.cigarettes_count || 0);
+        setCravingLevel(log.cravings_level || 5);
+        setMood(log.mood || 5);
+        setNotes(log.notes || "");
+      }
+    } catch (err) {
+      console.error('Error loading today\'s log:', err);
+    }
+  };
 
   const currentDate = new Date().toLocaleDateString("en-US", {
     weekday: "long",
@@ -36,15 +92,47 @@ export function DailyLogModal({ open, onOpenChange }: DailyLogModalProps) {
     setTimeout(() => setShowSmokeFreeConfirmation(false), 3000);
   };
 
-  const handleSave = () => {
-    // Save logic would go here
-    console.log({
-      cigaretteCount,
-      cravingLevel,
-      notes,
-      quitDate,
-    });
-    onOpenChange(false);
+  const handleSave = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // Validate required fields
+      if (cravingLevel < 1 || cravingLevel > 10) {
+        setError('Craving level must be between 1 and 10');
+        return;
+      }
+
+      // Prepare log data
+      const logData: LogData = {
+        log_date: today,
+        smoked: cigaretteCount > 0,
+        cigarettes_count: cigaretteCount > 0 ? cigaretteCount : null,
+        cravings_level: cravingLevel,
+        mood: mood,
+        notes: notes.trim() || null
+      };
+
+      // Save log
+      await quitTrackerService.createOrUpdateLog(logData);
+
+      // Update quit date if changed
+      if (selectedQuitDate && selectedQuitDate !== quitDate) {
+        await quitTrackerService.updateQuitDate(selectedQuitDate);
+      }
+
+      // Close modal and notify parent
+      onOpenChange(false);
+      if (onLogChange) {
+        onLogChange();
+      }
+
+    } catch (err: any) {
+      setError(err.message || 'Failed to save log');
+      console.error('Error saving log:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Determine shield status based on input
@@ -71,6 +159,14 @@ export function DailyLogModal({ open, onOpenChange }: DailyLogModalProps) {
     return "#D9534F";
   };
 
+  // Calculate mood color
+  const getMoodColor = (value: number) => {
+    if (value <= 3) return "#D9534F";
+    if (value <= 5) return "#FFA726";
+    if (value <= 7) return "#20B2AA";
+    return "#8BC34A";
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl p-0 rounded-3xl border-0 overflow-hidden shadow-2xl bg-white">
@@ -79,22 +175,26 @@ export function DailyLogModal({ open, onOpenChange }: DailyLogModalProps) {
           <div className="flex items-start justify-between">
             <div>
               <h2 className="text-2xl mb-2" style={{ color: "#1C3B5E" }}>
-                Log Today's Progress
+                {existingLog ? 'Update Today\'s Progress' : 'Log Today\'s Progress'}
               </h2>
               <p className="text-sm" style={{ color: "#333333", opacity: 0.7 }}>
                 {currentDate} at {currentTime}
+                {existingLog && " • Updating existing entry"}
               </p>
             </div>
-            {/* <button
-              onClick={() => onOpenChange(false)}
-            >
-              <X className="w-5 h-5" style={{ color: "#333333" }} />
-            </button> */}
           </div>
         </div>
 
         {/* Content */}
         <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
+          {/* Error Message */}
+          {error && (
+            <div className="p-4 rounded-xl flex items-center gap-2" style={{ backgroundColor: "#D9534F20" }}>
+              <AlertTriangle className="w-4 h-4" style={{ color: "#D9534F" }} />
+              <span className="text-sm" style={{ color: "#D9534F" }}>{error}</span>
+            </div>
+          )}
+
           {/* Progress Visualization */}
           <div
             className="p-6 rounded-2xl flex items-center gap-4 transition-all"
@@ -205,6 +305,41 @@ export function DailyLogModal({ open, onOpenChange }: DailyLogModalProps) {
             </p>
           </div>
 
+          {/* Optional: Mood Level */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm" style={{ color: "#1C3B5E" }}>
+                Today's Mood
+              </Label>
+              <div
+                className="px-4 py-2 rounded-xl text-lg"
+                style={{
+                  backgroundColor: `${getMoodColor(mood)}20`,
+                  color: getMoodColor(mood),
+                }}
+              >
+                {mood}/10
+              </div>
+            </div>
+
+            <div className="px-2">
+              <CravingSlider
+                value={mood}
+                onChange={setMood}
+                min={1}
+                max={10}
+              />
+              <div className="flex justify-between mt-2 text-xs" style={{ color: "#333333", opacity: 0.6 }}>
+                <span>😔 Low</span>
+                <span>😐 Neutral</span>
+                <span>😊 High</span>
+              </div>
+            </div>
+            <p className="text-xs" style={{ color: "#333333", opacity: 0.6 }}>
+              How was your overall mood today?
+            </p>
+          </div>
+
           {/* Required Field 3: Quit Date */}
           <div className="space-y-3">
             <Label className="text-sm" style={{ color: "#1C3B5E" }}>
@@ -215,16 +350,16 @@ export function DailyLogModal({ open, onOpenChange }: DailyLogModalProps) {
                 <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: "#20B2AA" }} />
                 <Input
                   type="date"
-                  value={quitDate}
-                  onChange={(e) => setQuitDate(e.target.value)}
+                  value={selectedQuitDate}
+                  onChange={(e) => setSelectedQuitDate(e.target.value)}
                   className="rounded-2xl border-gray-200 h-14 pl-12"
                 />
               </div>
             </div>
-            {quitDate && (
+            {selectedQuitDate && (
               <div className="p-3 rounded-xl" style={{ backgroundColor: "#20B2AA10" }}>
                 <p className="text-xs" style={{ color: "#20B2AA" }}>
-                  ✓ Quit date set: {new Date(quitDate).toLocaleDateString("en-US", {
+                  ✓ Quit date set: {new Date(selectedQuitDate).toLocaleDateString("en-US", {
                     month: "long",
                     day: "numeric",
                     year: "numeric",
@@ -257,6 +392,7 @@ export function DailyLogModal({ open, onOpenChange }: DailyLogModalProps) {
             onClick={() => onOpenChange(false)}
             className="px-6 py-3 rounded-2xl text-sm transition-all hover:bg-gray-100"
             style={{ color: "#333333" }}
+            disabled={isLoading}
           >
             Cancel
           </button>
@@ -264,8 +400,16 @@ export function DailyLogModal({ open, onOpenChange }: DailyLogModalProps) {
             onClick={handleSave}
             className="px-8 py-6 rounded-2xl text-white transition-all hover:opacity-90 shadow-md"
             style={{ backgroundColor: "#20B2AA" }}
+            disabled={isLoading}
           >
-            Save and Continue
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              existingLog ? 'Update Progress' : 'Save and Continue'
+            )}
           </Button>
         </div>
       </DialogContent>
