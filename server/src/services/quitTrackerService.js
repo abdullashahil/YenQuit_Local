@@ -1,4 +1,4 @@
-import { query } from '../db/index.js';
+import { query, getClient } from '../db/index.js';
 
 class QuitTrackerService {
   // Get user's quit date from profile
@@ -10,17 +10,51 @@ class QuitTrackerService {
 
   // Update user's quit date
   static async updateQuitDate(userId, quitDate) {
-    const sql = `
-      INSERT INTO profiles (user_id, quit_date, created_at, updated_at)
-      VALUES ($1, $2, NOW(), NOW())
-      ON CONFLICT (user_id) 
-      DO UPDATE SET 
-        quit_date = EXCLUDED.quit_date,
-        updated_at = NOW()
-      RETURNING quit_date
-    `;
-    const result = await query(sql, [userId, quitDate]);
-    return result.rows[0].quit_date;
+    const client = await getClient();
+    
+    try {
+      await client.query('BEGIN');
+      
+      // Update profiles table
+      const profileSql = `
+        INSERT INTO profiles (user_id, quit_date, created_at, updated_at)
+        VALUES ($1, $2, NOW(), NOW())
+        ON CONFLICT (user_id) 
+        DO UPDATE SET 
+          quit_date = EXCLUDED.quit_date,
+          updated_at = NOW()
+        RETURNING quit_date
+      `;
+      const profileResult = await client.query(profileSql, [userId, quitDate]);
+      
+      // Update or create fivea_assist_plans entry with NEW start date
+      const assistPlanSql = `
+        INSERT INTO fivea_assist_plans (user_id, quit_date, updated_at, created_at)
+        VALUES ($1, $2, NOW(), NOW())
+        ON CONFLICT (user_id) 
+        DO UPDATE SET 
+          quit_date = EXCLUDED.quit_date,
+          updated_at = NOW(),  -- This sets the NEW start date for the tracker
+          created_at = CASE 
+            WHEN fivea_assist_plans.quit_date IS NULL THEN EXCLUDED.created_at 
+            ELSE fivea_assist_plans.created_at 
+          END
+        RETURNING id, quit_date, updated_at, created_at
+      `;
+      const assistPlanResult = await client.query(assistPlanSql, [userId, quitDate]);
+      
+      console.log('🗓️ Updated quit date in profiles:', profileResult.rows[0]);
+      console.log('🗓️ Updated/created assist plan with NEW start date:', assistPlanResult.rows[0]);
+      
+      await client.query('COMMIT');
+      return profileResult.rows[0].quit_date;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('❌ Error updating quit date:', error);
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   // Create or update daily log (upsert)
@@ -134,17 +168,60 @@ class QuitTrackerService {
   static async getProgress(userId, options = {}) {
     const { startDate, endDate, goalDays = 30 } = options;
     
-    // Get user's quit date
-    const quitDate = await this.getUserQuitDate(userId);
+    console.log('🔍 getProgress called for userId:', userId);
     
-    // Default date range: last 90 days or since quit date
+    // Get user's quit date from profile
+    let quitDate = await this.getUserQuitDate(userId);
+    console.log('📅 User quit date:', quitDate);
+    
+    // Get assist plan data for start date and quit date
+    let assistPlanData = null;
+    
+    // First try to get assist plan data by user_id (most recent)
+    const assistPlanRes = await query(`
+      SELECT quit_date, updated_at, created_at
+      FROM fivea_assist_plans 
+      WHERE user_id = $1
+      ORDER BY updated_at DESC
+      LIMIT 1
+    `, [userId]);
+    
+    assistPlanData = assistPlanRes.rows[0];
+    console.log('🎯 Assist plan data found:', assistPlanData);
+    
+    // If assist plan exists, use its quit_date for consistency
+    if (assistPlanData && assistPlanData.quit_date) {
+      console.log('🔄 Using assist plan quit_date instead of profile quit_date');
+      console.log('📅 Profile quit_date was:', quitDate);
+      console.log('📅 Assist plan quit_date is:', assistPlanData.quit_date);
+      // Override the quitDate with the one from assist plan for consistency
+      quitDate = assistPlanData.quit_date;
+    }
+    
+    // Default date range: last 90 days or since assist plan start date
     const today = new Date();
-    const defaultStartDate = quitDate ? 
-      new Date(Math.max(quitDate, new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000))) :
+    const assistPlanStartDate = assistPlanData?.updated_at ? 
+      new Date(assistPlanData.updated_at) : 
       new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
+    
+    const defaultStartDate = new Date(Math.min(assistPlanStartDate, new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000)));
     
     const queryStartDate = startDate || defaultStartDate.toISOString().split('T')[0];
     const queryEndDate = endDate || today.toISOString().split('T')[0];
+    
+    // Fix date range order
+    const finalStartDate = new Date(Math.min(new Date(queryStartDate), new Date(queryEndDate)));
+    const finalEndDate = new Date(Math.max(new Date(queryStartDate), new Date(queryEndDate)));
+    
+    console.log('📊 Query date range (fixed):', { 
+      assistPlanStartDate: assistPlanStartDate.toISOString().split('T')[0],
+      defaultStartDate: defaultStartDate.toISOString().split('T')[0],
+      original: { queryStartDate, queryEndDate },
+      fixed: { 
+        queryStartDate: finalStartDate.toISOString().split('T')[0], 
+        queryEndDate: finalEndDate.toISOString().split('T')[0] 
+      } 
+    });
     
     // Get logs in date range
     const logsSql = `
@@ -153,36 +230,70 @@ class QuitTrackerService {
       ORDER BY log_date DESC
     `;
     
-    const logsResult = await query(logsSql, [userId, queryStartDate, queryEndDate]);
+    const logsResult = await query(logsSql, [userId, finalStartDate.toISOString().split('T')[0], finalEndDate.toISOString().split('T')[0]]);
     const logs = logsResult.rows;
+    console.log('📋 Found logs:', logs.length, 'logs');
     
     // Calculate metrics
     let daysSmokeFree = 0;
     let successRate = 0;
     let lastEntry = null;
     
-    if (quitDate) {
-      // Find last lapse (smoked = true) since quit date
-      const lastLapseSql = `
-        SELECT log_date FROM daily_logs 
-        WHERE user_id = $1 AND smoked = true AND log_date >= $2
-        ORDER BY log_date DESC 
-        LIMIT 1
-      `;
-      const lastLapseResult = await query(lastLapseSql, [userId, quitDate]);
-      const lastLapseDate = lastLapseResult.rows[0]?.log_date;
+    // Calculate smoke-free days only between start date and current date
+    if (logs.length > 0) {
+      console.log('🚭 Calculating smoke-free days between start date and current date');
       
-      // Calculate days smoke-free (continuous streak)
-      const startDateForCount = lastLapseDate ? 
-        new Date(new Date(lastLapseDate).getTime() + 24 * 60 * 60 * 1000) : // day after last lapse
-        new Date(quitDate);
+      // Filter logs to only include dates from start date onwards
+      const startDate = new Date(assistPlanData?.updated_at || today.getTime() - 90 * 24 * 60 * 60 * 1000);
+      // Set start date to beginning of day to ensure inclusion
+      startDate.setHours(0, 0, 0, 0);
       
-      const todayForCount = new Date();
-      todayForCount.setHours(0, 0, 0, 0); // start of today
-      startDateForCount.setHours(0, 0, 0, 0); // start of start date
+      // Only count logs from start date to today (inclusive)
+      const filteredLogs = logs.filter(log => {
+        const logDate = new Date(log.log_date);
+        logDate.setHours(0, 0, 0, 0); // Normalize to start of day
+        return logDate >= startDate && logDate <= today;
+      });
       
-      if (startDateForCount <= todayForCount) {
-        daysSmokeFree = Math.floor((todayForCount - startDateForCount) / (24 * 60 * 60 * 1000)) + 1;
+      console.log(`📋 Filtered logs between ${startDate.toISOString().split('T')[0]} and ${today.toISOString().split('T')[0]}: ${filteredLogs.length} logs`);
+      
+      // Count smoke-free days in the filtered range
+      const smokeFreeLogs = filteredLogs.filter(log => !log.smoked);
+      daysSmokeFree = smokeFreeLogs.length;
+      
+      console.log(`🚭 Smoke-free days in range: ${daysSmokeFree} / ${filteredLogs.length} total days`);
+      
+      // Debug: Show each filtered log with date comparison
+      filteredLogs.forEach(log => {
+        const logDate = new Date(log.log_date);
+        console.log(`📋 ${log.log_date}: smoked=${log.smoked}, cigarettes=${log.cigarettes_count}, logDate>=startDate=${logDate >= startDate}`);
+      });
+      
+      // Also show any logs that were excluded for debugging
+      const excludedLogs = logs.filter(log => {
+        const logDate = new Date(log.log_date);
+        logDate.setHours(0, 0, 0, 0);
+        return !(logDate >= startDate && logDate <= today);
+      });
+      
+      if (excludedLogs.length > 0) {
+        console.log(`📋 Excluded logs (${excludedLogs.length}):`);
+        excludedLogs.forEach(log => {
+          const logDate = new Date(log.log_date);
+          console.log(`📋 ❌ ${log.log_date}: smoked=${log.smoked}, logDate>=startDate=${logDate >= startDate}`);
+        });
+      }
+    } else if (quitDate) {
+      // Fallback to quit date calculation if no logs
+      console.log('🚭 No logs found, using quit date calculation');
+      
+      const quitDateObj = new Date(quitDate);
+      const todayObj = new Date();
+      todayObj.setHours(0, 0, 0, 0);
+      quitDateObj.setHours(0, 0, 0, 0);
+      
+      if (quitDateObj <= todayObj) {
+        daysSmokeFree = Math.floor((todayObj - quitDateObj) / (24 * 60 * 60 * 1000)) + 1;
       }
     }
     
@@ -202,23 +313,118 @@ class QuitTrackerService {
       successRate = Math.round((smokeFreeDays / recentLogs.length) * 100);
     }
     
-    // Get last entry
+    // Get last entry (use log_date instead of created_at for better user experience)
     if (logs.length > 0) {
-      lastEntry = logs[0].created_at;
+      lastEntry = logs[0].log_date; // Use log_date instead of created_at
     }
     
-    // Calculate progress percentage
-    const progressPercentage = goalDays > 0 ? Math.round((daysSmokeFree / goalDays) * 100) : 0;
+    // Calculate progress percentage based on actual smoking progress within date range
+    let progressPercentage = 0;
+    if (quitDate && assistPlanData) {
+      const targetDate = new Date(quitDate);
+      const currentDate = new Date();
+      const startDate = new Date(assistPlanData.updated_at);
+      
+      // Normalize dates to start of day for consistent comparison
+      startDate.setHours(0, 0, 0, 0);
+      currentDate.setHours(0, 0, 0, 0);
+      
+      console.log('📈 Progress calculation:', { startDate, targetDate, currentDate, daysSmokeFree });
+      
+      // Calculate progress based on the journey from start date to current date
+      if (targetDate > currentDate) {
+        // Future quit date: progress based on preparation time + smoking performance
+        const totalJourneyDays = Math.floor((targetDate - startDate) / (24 * 60 * 60 * 1000)) + 1;
+        const daysPassed = Math.floor((currentDate - startDate) / (24 * 60 * 60 * 1000)) + 1;
+        const prepProgress = totalJourneyDays > 0 ? (daysPassed / totalJourneyDays) * 100 : 0;
+        
+        // Smoking progress: how many smoke-free days out of days logged from start date
+        const logsInRange = logs.filter(log => {
+          const logDate = new Date(log.log_date);
+          logDate.setHours(0, 0, 0, 0); // Normalize to start of day
+          return logDate >= startDate && logDate <= currentDate;
+        });
+        
+        // Fix: For new trackers with few days of data, use preparation progress primarily
+        let smokingProgress = 0;
+        if (logsInRange.length >= 3) {
+          // Only consider smoking performance if we have at least 3 days of data
+          smokingProgress = (daysSmokeFree / logsInRange.length) * 100;
+        } else {
+          // For new trackers (less than 3 days), use a conservative estimate
+          smokingProgress = daysSmokeFree > 0 ? 50 : 0; // Conservative 50% if smoke-free, 0% if smoked
+        }
+        
+        // Adjust weighting: Use more preparation progress for new trackers
+        let prepWeight, smokingWeight;
+        if (daysPassed <= 3) {
+          // First 3 days: 90% preparation, 10% smoking
+          prepWeight = 0.9;
+          smokingWeight = 0.1;
+        } else if (daysPassed <= 7) {
+          // First week: 80% preparation, 20% smoking  
+          prepWeight = 0.8;
+          smokingWeight = 0.2;
+        } else {
+          // After first week: 70% preparation, 30% smoking (original)
+          prepWeight = 0.7;
+          smokingWeight = 0.3;
+        }
+        
+        progressPercentage = Math.round((prepProgress * prepWeight) + (smokingProgress * smokingWeight));
+        
+        console.log('📈 Future quit date calculation:', { 
+          totalJourneyDays, 
+          daysPassed, 
+          prepProgress: Math.round(prepProgress), 
+          smokingProgress: Math.round(smokingProgress),
+          prepWeight,
+          smokingWeight,
+          combinedProgress: progressPercentage 
+        });
+      } else {
+        // Past quit date: progress based on actual smoke-free performance
+        // Only count days from start date to current date
+        const logsInRange = logs.filter(log => {
+          const logDate = new Date(log.log_date);
+          logDate.setHours(0, 0, 0, 0); // Normalize to start of day
+          return logDate >= startDate && logDate <= currentDate;
+        });
+        
+        progressPercentage = logsInRange.length > 0 ? 
+          Math.round((daysSmokeFree / logsInRange.length) * 100) : 0;
+        
+        console.log('📈 Past quit date calculation:', { 
+          logsInRange: logsInRange.length, 
+          daysSmokeFree, 
+          progressPercentage 
+        });
+      }
+      
+      // Cap at 100%
+      progressPercentage = Math.min(progressPercentage, 100);
+      
+    } else if (goalDays > 0) {
+      // Fallback to 30-day goal calculation
+      progressPercentage = Math.round((daysSmokeFree / goalDays) * 100);
+      progressPercentage = Math.min(progressPercentage, 100);
+      console.log('📈 Fallback goal calculation:', { goalDays, daysSmokeFree, progressPercentage });
+    }
     
-    return {
+    const result = {
       quitDate: quitDate || null,
       daysSmokeFree,
-      totalGoal: goalDays,
+      totalGoal: goalDays, // Keep for backward compatibility
       progressPercentage,
       lastEntry,
       successRate,
-      logs
+      logs,
+      assistPlanData // Include for frontend use
     };
+    
+    console.log('🔍 Final progress result:', result);
+    
+    return result;
   }
 
   // Get a specific log by ID

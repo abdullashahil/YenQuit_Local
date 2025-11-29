@@ -6,7 +6,14 @@ import {
   updateLog,
   deleteLog,
   getLogs,
-  updateQuitDate
+  updateQuitDate,
+  getQuestionnaire,
+  getUserQuestionnaireResponses,
+  saveQuestionnaireResponses,
+  savePostSelfEfficacyResponsesHandler,
+  getSettings,
+  updateSettings,
+  getAllLogs
 } from '../controllers/quitTrackerController.js';
 
 const router = express.Router();
@@ -14,22 +21,27 @@ const router = express.Router();
 // All routes require authentication
 router.use(authenticateJWT);
 
-// GET /api/quit-tracker/progress - Get user's quit tracker progress
+// Progress endpoints
 router.get('/progress', getProgress);
 
-// POST /api/quit-tracker/log - Create or update daily log
+// Questionnaire endpoints
+router.get('/questionnaire', getQuestionnaire);
+router.get('/questionnaire/responses', getUserQuestionnaireResponses);
+router.post('/questionnaire/responses', saveQuestionnaireResponses);
+router.post('/post-self-efficacy/responses', savePostSelfEfficacyResponsesHandler);
+
+// Settings endpoints
+router.get('/settings', getSettings);
+router.put('/settings', updateSettings);
+
+// Log endpoints
 router.post('/log', createOrUpdateLog);
-
-// PUT /api/quit-tracker/log/:id - Update a specific log
 router.put('/log/:id', updateLog);
-
-// DELETE /api/quit-tracker/log/:id - Delete a specific log
 router.delete('/log/:id', deleteLog);
-
-// GET /api/quit-tracker/logs - Get logs with pagination
 router.get('/logs', getLogs);
+router.get('/all-logs', getAllLogs); // New endpoint for modal view
 
-// PUT /api/quit-tracker/quit-date - Update quit date
+// Quit date endpoint
 router.put('/quit-date', updateQuitDate);
 
 export default router;

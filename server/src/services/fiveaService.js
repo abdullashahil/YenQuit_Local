@@ -60,12 +60,17 @@ export async function getQuestionById(id) {
 }
 
 export async function saveUserAnswers(userId, answers) {
+  // Ensure userId is a valid UUID string
+  if (!userId || typeof userId !== 'string') {
+    throw new Error('Invalid userId: must be a UUID string');
+  }
+  
   const client = await getClient();
   try {
     await client.query('BEGIN');
     for (const { question_id, answer } of answers) {
       await client.query(
-        `INSERT INTO fivea_user_answers (user_id, question_id, answer_text) VALUES ($1, $2, $3)
+        `INSERT INTO fivea_user_answers (user_id, question_id, answer_text) VALUES ($1::uuid, $2, $3)
          ON CONFLICT (user_id, question_id) DO UPDATE SET answer_text = EXCLUDED.answer_text, updated_at = NOW()
          RETURNING id, user_id, question_id, answer_text, created_at, updated_at`,
         [userId, question_id, answer]
@@ -81,11 +86,16 @@ export async function saveUserAnswers(userId, answers) {
 }
 
 export async function getUserAnswers(userId, step) {
+  // Ensure userId is a valid UUID string
+  if (!userId || typeof userId !== 'string') {
+    throw new Error('Invalid userId: must be a UUID string');
+  }
+  
   const res = await query(
     `SELECT a.id, a.question_id, a.answer_text, a.created_at, a.updated_at, q.step, q.question_text
        FROM fivea_user_answers a
        JOIN fivea_questions q ON a.question_id = q.id
-       WHERE a.user_id = $1 AND q.step = $2
+       WHERE a.user_id = $1::uuid AND q.step = $2
        ORDER BY q.id ASC`,
     [userId, step]
   );
@@ -119,7 +129,7 @@ export async function saveAskAnswers(userId, answers) {
     const severity = calculateSeverity(answers);
     // Store severity
     await client.query(
-      `INSERT INTO fivea_severity_assessment (user_id, severity_level, score) VALUES ($1, $2, $3)
+      `INSERT INTO fivea_severity_assessment (user_id, severity_level, score) VALUES ($1::uuid, $2, $3)
        ON CONFLICT (user_id) DO UPDATE SET severity_level = EXCLUDED.severity_level, score = EXCLUDED.score, created_at = NOW()`,
       [userId, severity.level, severity.score]
     );
@@ -148,7 +158,12 @@ function calculateSeverity(answers) {
 }
 
 export async function getSeverityForUser(userId) {
-  const res = await query('SELECT severity_level, score, created_at FROM fivea_severity_assessment WHERE user_id = $1', [userId]);
+  // Ensure userId is a valid UUID string
+  if (!userId || typeof userId !== 'string') {
+    throw new Error('Invalid userId: must be a UUID string');
+  }
+  
+  const res = await query('SELECT severity_level, score, created_at FROM fivea_severity_assessment WHERE user_id = $1::uuid', [userId]);
   return res.rows[0];
 }
 
