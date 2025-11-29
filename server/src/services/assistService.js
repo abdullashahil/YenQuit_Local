@@ -1,4 +1,5 @@
 import { query, getClient } from '../db/index.js';
+import { createUserIdWhereClause, createUserIdValuesClause } from '../utils/userIdHelper.js';
 
 // Coping Strategies
 export async function getCopingStrategies(isActiveOnly = true) {
@@ -109,6 +110,13 @@ export async function softDeleteNotificationTemplate(id) {
 
 // User Assist Plan
 export async function getUserAssistPlan(userId) {
+  // Ensure userId is provided
+  if (!userId) {
+    throw new Error('User ID is required');
+  }
+  
+  // Since we're joining tables with user_id columns, we need to be specific
+  // We'll filter on the main table (fivea_assist_plans) and let the JOIN handle the rest
   const res = await query(
     `SELECT 
        ap.id, ap.quit_date, ap.triggers, ap.created_at, ap.updated_at,
@@ -147,8 +155,9 @@ export async function createOrUpdateUserAssistPlan(userId, { quitDate, triggers,
     await client.query('BEGIN');
     
     // Check if plan exists for this user
+    const userWhereClause = createUserIdWhereClause();
     const existingPlanRes = await client.query(
-      'SELECT id FROM fivea_assist_plans WHERE user_id = $1',
+      `SELECT id FROM fivea_assist_plans WHERE ${userWhereClause}`,
       [userId]
     );
     
@@ -156,25 +165,26 @@ export async function createOrUpdateUserAssistPlan(userId, { quitDate, triggers,
     if (existingPlanRes.rows.length > 0) {
       // Update existing plan
       const updateRes = await client.query(
-        'UPDATE fivea_assist_plans SET quit_date = $1, triggers = $2, updated_at = NOW() WHERE user_id = $3 RETURNING id, quit_date, triggers, created_at, updated_at',
+        `UPDATE fivea_assist_plans SET quit_date = $1, triggers = $2, updated_at = NOW() WHERE ${userWhereClause} RETURNING id, quit_date, triggers, created_at, updated_at`,
         [quitDate || null, triggers || null, userId]
       );
       planId = updateRes.rows[0].id;
     } else {
       // Insert new plan
       const insertRes = await client.query(
-        'INSERT INTO fivea_assist_plans (user_id, quit_date, triggers) VALUES ($1, $2, $3) RETURNING id, quit_date, triggers, created_at, updated_at',
+        `INSERT INTO fivea_assist_plans (user_id, quit_date, triggers) VALUES ($1, $2, $3) RETURNING id, quit_date, triggers, created_at, updated_at`,
         [userId, quitDate || null, triggers || null]
       );
       planId = insertRes.rows[0].id;
     }
     
     // Delete existing strategy selections for this user
-    await client.query('DELETE FROM user_coping_strategies WHERE user_id = $1', [userId]);
+    await client.query(`DELETE FROM user_coping_strategies WHERE ${createUserIdWhereClause()}`, [userId]);
     
     // Insert new strategy selections
     if (selectedStrategyIds && selectedStrategyIds.length > 0) {
-      const strategyValues = selectedStrategyIds.map((strategyId, index) => 
+      // Create VALUES clause for multiple strategy insertions
+      const strategyValues = selectedStrategyIds.map((_, index) => 
         `($1, $${index + 2})`
       ).join(', ');
       
@@ -182,6 +192,14 @@ export async function createOrUpdateUserAssistPlan(userId, { quitDate, triggers,
         `INSERT INTO user_coping_strategies (user_id, strategy_id) 
          VALUES ${strategyValues}`,
         [userId, ...selectedStrategyIds]
+      );
+    }
+    
+    // Also update the quit_date in the profiles table
+    if (quitDate) {
+      await client.query(
+        'UPDATE profiles SET quit_date = $1, updated_at = NOW() WHERE user_id = $2',
+        [quitDate, userId]
       );
     }
     
@@ -199,6 +217,12 @@ export async function createOrUpdateUserAssistPlan(userId, { quitDate, triggers,
 
 // User Notifications
 export async function getUserNotifications(userId) {
+  // Ensure userId is provided
+  if (!userId) {
+    throw new Error('User ID is required');
+  }
+  
+  // Simple query without complex joins to avoid ambiguity
   const res = await query(
     `SELECT 
        un.id, un.enabled, un.time, un.created_at, un.updated_at,
@@ -213,6 +237,11 @@ export async function getUserNotifications(userId) {
 }
 
 export async function upsertUserNotifications(userId, notifications) {
+  // Ensure userId is provided
+  if (!userId) {
+    throw new Error('User ID is required');
+  }
+  
   const client = await getClient();
   try {
     await client.query('BEGIN');

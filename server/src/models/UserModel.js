@@ -316,7 +316,7 @@ class UserModel {
           const profileQuery = `
             UPDATE profiles 
             SET ${profileFields.join(', ')}
-            WHERE user_id = $${profileIndex}
+            WHERE user_id = $${profileIndex}::uuid
             RETURNING *
           `;
           await client.query(profileQuery, profileValues);
@@ -344,7 +344,7 @@ class UserModel {
       await client.query('BEGIN');
       
       // Delete profile first (due to foreign key constraint)
-      await client.query('DELETE FROM profiles WHERE user_id = $1', [id]);
+      await client.query('DELETE FROM profiles WHERE user_id = $1::uuid', [id]);
       
       // Delete user
       const result = await client.query('DELETE FROM users WHERE id = $1 RETURNING *', [id]);
@@ -411,7 +411,7 @@ class UserModel {
     } = profileData;
 
     // Check if profile exists
-    const checkQuery = 'SELECT id FROM profiles WHERE user_id = $1';
+    const checkQuery = 'SELECT id FROM profiles WHERE user_id = $1::uuid';
     const checkResult = await pool.query(checkQuery, [userId]);
     
     if (checkResult.rows.length === 0) {
@@ -505,7 +505,7 @@ class UserModel {
       const updateQuery = `
         UPDATE profiles 
         SET ${updateFields.join(', ')}
-        WHERE user_id = $1
+        WHERE user_id = $1::uuid
         RETURNING *
       `;
       
@@ -516,7 +516,7 @@ class UserModel {
 
   // Get profile by user ID (for fiveaController compatibility)
   static async getProfileByUserId(userId) {
-    const query = 'SELECT * FROM profiles WHERE user_id = $1';
+    const query = 'SELECT * FROM profiles WHERE user_id = $1::uuid';
     
     try {
       const result = await pool.query(query, [userId]);

@@ -107,13 +107,7 @@ dist-ssr/
 .turbo
 
 #server
-/server/migrations
-/server/CONTENT_MANAGEMENT_README.md
-/server/MANUAL_TEST_GUIDE.md
-/server/API_DOCUMENTATION.md
 /server/uploads
-/server/uploads/avatars/
-/server/uploads/content/
 /server/logs/
 /server/*.log
 
