@@ -42,6 +42,11 @@ interface ProgressResponse {
   lastEntry: string | null;
   successRate: number;
   logs: any[];
+  needsQuestionnaire?: boolean;
+  hasCompletedPreSelfEfficacy?: boolean;
+  hasCompletedPostSelfEfficacy?: boolean;
+  isQuitDatePassed?: boolean;
+  assistPlanData?: any;
 }
 
 interface LogResponse {
@@ -73,19 +78,31 @@ const quitTrackerService = {
   // Get user's quit tracker progress
   async getProgress(options: ProgressOptions = {}): Promise<ProgressResponse> {
     try {
+      console.log('🔍 Service - getProgress called with options:', options);
+      
       const params = new URLSearchParams();
       
       if (options.startDate) params.append('startDate', options.startDate);
       if (options.endDate) params.append('endDate', options.endDate);
       if (options.goalDays) params.append('goalDays', options.goalDays.toString());
       
+      const url = `${API_BASE_URL}/quit-tracker/progress${params.toString() ? '?' + params.toString() : ''}`;
+      console.log('🔍 Service - Making request to:', url);
+      
       const response = await axios.get(
-        `${API_BASE_URL}/quit-tracker/progress?${params.toString()}`,
+        url,
         { headers: getAuthHeaders() }
       );
       
-      return response.data.data;
+      console.log('🔍 Service - Raw response:', response);
+      console.log('🔍 Service - Response data:', response.data);
+      
+      const progressData = response.data.data;
+      console.log('🔍 Service - Progress data extracted:', progressData);
+      
+      return progressData;
     } catch (error) {
+      console.error('🔍 Service - Error in getProgress:', error);
       handleApiError(error, 'Failed to fetch progress data');
     }
   },
@@ -181,6 +198,112 @@ const quitTrackerService = {
       return response.data.data;
     } catch (error) {
       handleApiError(error, 'Failed to update quit date');
+    }
+  },
+
+  // Get questionnaire questions
+  async getQuestionnaire(): Promise<{ data: any[] }> {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/quit-tracker/questionnaire`,
+        { headers: getAuthHeaders() }
+      );
+      
+      return response.data;
+    } catch (error) {
+      handleApiError(error, 'Failed to fetch questionnaire');
+    }
+  },
+
+  // Get user's questionnaire responses
+  async getQuestionnaireResponses(): Promise<{ data: any[] }> {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/quit-tracker/questionnaire/responses`,
+        { headers: getAuthHeaders() }
+      );
+      
+      return response.data;
+    } catch (error) {
+      handleApiError(error, 'Failed to fetch questionnaire responses');
+    }
+  },
+
+  // Save questionnaire responses
+  async saveQuestionnaireResponses(responses: { questionId: number; value: string }[]): Promise<void> {
+    try {
+      await axios.post(
+        `${API_BASE_URL}/quit-tracker/questionnaire/responses`,
+        { responses },
+        { headers: getAuthHeaders() }
+      );
+    } catch (error) {
+      handleApiError(error, 'Failed to save questionnaire responses');
+    }
+  },
+
+  // Save post self-efficacy responses
+  async savePostSelfEfficacyResponses(responses: { questionId: number; value: string }[]): Promise<void> {
+    try {
+      await axios.post(
+        `${API_BASE_URL}/quit-tracker/post-self-efficacy/responses`,
+        { responses },
+        { headers: getAuthHeaders() }
+      );
+    } catch (error) {
+      handleApiError(error, 'Failed to save post self-efficacy responses');
+    }
+  },
+
+  // Get user settings
+  async getSettings(): Promise<{ data: any }> {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/quit-tracker/settings`,
+        { headers: getAuthHeaders() }
+      );
+      
+      return response.data;
+    } catch (error) {
+      handleApiError(error, 'Failed to fetch settings');
+    }
+  },
+
+  // Update user settings
+  async updateSettings(settings: {
+    goalDays?: number;
+    reminderTime?: string;
+    isTrackingEnabled?: boolean;
+  }): Promise<{ data: any }> {
+    try {
+      const response = await axios.put(
+        `${API_BASE_URL}/quit-tracker/settings`,
+        settings,
+        { headers: getAuthHeaders() }
+      );
+      
+      return response.data;
+    } catch (error) {
+      handleApiError(error, 'Failed to update settings');
+    }
+  },
+
+  // Get all logs for modal view
+  async getAllLogs(options: { page?: number; limit?: number } = {}): Promise<LogsResponse> {
+    try {
+      const params = new URLSearchParams();
+      
+      if (options.page) params.append('page', options.page.toString());
+      if (options.limit) params.append('limit', options.limit.toString());
+      
+      const response = await axios.get(
+        `${API_BASE_URL}/quit-tracker/all-logs?${params.toString()}`,
+        { headers: getAuthHeaders() }
+      );
+      
+      return response.data.data;
+    } catch (error) {
+      handleApiError(error, 'Failed to fetch all logs');
     }
   }
 };

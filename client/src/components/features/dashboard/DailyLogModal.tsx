@@ -107,7 +107,7 @@ export function DailyLogModal({ open, onOpenChange, onLogChange, quitDate }: Dai
       const logData: LogData = {
         log_date: today,
         smoked: cigaretteCount > 0,
-        cigarettes_count: cigaretteCount > 0 ? cigaretteCount : null,
+        cigarettes_count: cigaretteCount > 0 ? cigaretteCount : 0,
         cravings_level: cravingLevel,
         mood: mood,
         notes: notes.trim() || null
@@ -344,6 +344,7 @@ export function DailyLogModal({ open, onOpenChange, onLogChange, quitDate }: Dai
           <div className="space-y-3">
             <Label className="text-sm" style={{ color: "#1C3B5E" }}>
               Official Quit Date
+              {quitDate && <span className="ml-2 text-xs" style={{ color: "#666666" }}>(Already set)</span>}
             </Label>
             <div className="flex items-center gap-3">
               <div className="relative flex-1">
@@ -352,7 +353,10 @@ export function DailyLogModal({ open, onOpenChange, onLogChange, quitDate }: Dai
                   type="date"
                   value={selectedQuitDate}
                   onChange={(e) => setSelectedQuitDate(e.target.value)}
-                  className="rounded-2xl border-gray-200 h-14 pl-12"
+                  disabled={!!quitDate}
+                  className={`rounded-2xl border-gray-200 h-14 pl-12 ${
+                    quitDate ? 'bg-gray-100 cursor-not-allowed' : ''
+                  }`}
                 />
               </div>
             </div>
@@ -360,6 +364,17 @@ export function DailyLogModal({ open, onOpenChange, onLogChange, quitDate }: Dai
               <div className="p-3 rounded-xl" style={{ backgroundColor: "#20B2AA10" }}>
                 <p className="text-xs" style={{ color: "#20B2AA" }}>
                   ✓ Quit date set: {new Date(selectedQuitDate).toLocaleDateString("en-US", {
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </p>
+              </div>
+            )}
+            {quitDate && !selectedQuitDate && (
+              <div className="p-3 rounded-xl" style={{ backgroundColor: "#F0F0F0" }}>
+                <p className="text-xs" style={{ color: "#666666" }}>
+                  Your quit date is already set: {new Date(quitDate).toLocaleDateString("en-US", {
                     month: "long",
                     day: "numeric",
                     year: "numeric",
