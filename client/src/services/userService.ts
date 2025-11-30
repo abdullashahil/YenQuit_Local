@@ -5,15 +5,10 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/a
 
 // Get auth token from localStorage
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('accessToken');
-  console.log('Token from localStorage:', token ? 'exists' : 'missing');
-  console.log('Full token value:', token);
+  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   
   if (!token) {
-    console.error('No access token found in localStorage');
-    return {
-      'Content-Type': 'application/json'
-    };
+    throw new Error('No authentication token found');
   }
   
   return {
@@ -275,6 +270,19 @@ export const userService = {
       localStorage.removeItem('user');
       sessionStorage.clear();
       throw error;
+    }
+  },
+
+  getUserAnswers: async () => {
+    try {
+      const headers = getAuthHeaders();
+      const response = await axios.get(
+        `${API_BASE_URL}/fivea/answers`,
+        { headers }
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch user answers');
     }
   }
 };

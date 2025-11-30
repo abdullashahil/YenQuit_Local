@@ -88,6 +88,17 @@ export async function getUserAnswers(req, res, next) {
   }
 }
 
+export async function getAllUserAnswersForUser(req, res, next) {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const answers = await fiveaService.getAllUserAnswersForUser(userId);
+    res.json({ success: true, data: answers });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function getAllUserAnswers(req, res, next) {
   try {
     const answers = await fiveaService.getAllUserAnswers();

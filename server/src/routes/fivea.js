@@ -11,6 +11,7 @@ router.get('/advise', authenticateJWT, fiveaController.getAdvise);
 router.post('/advise/complete', authenticateJWT, fiveaController.completeAdvise);
 router.post('/answers', authenticateJWT, fiveaController.saveAnswers);
 router.get('/answers/:step', authenticateJWT, fiveaController.getUserAnswers);
+router.get('/answers', authenticateJWT, fiveaController.getAllUserAnswersForUser);
 
 // Admin CRUD for questions
 router.get('/admin/questions', authenticateJWT, fiveaController.getAllQuestions);
