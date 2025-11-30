@@ -37,23 +37,15 @@ export function QuitTrackerCard() {
   // Fetch progress data
   const fetchProgress = async () => {
     try {
-      console.log('🔍 Frontend Component - fetchProgress called');
       setIsLoading(true);
       setError(null);
       
-      console.log('🔍 Frontend Component - Calling quitTrackerService.getProgress()');
       const progressData = await quitTrackerService.getProgress();
-      console.log('🔍 Frontend Component - Progress data received:', progressData);
-      console.log('🔍 Frontend Component - daysSmokeFree value:', progressData?.daysSmokeFree);
-      console.log('🔍 Frontend Component - daysSmokeFree type:', typeof progressData?.daysSmokeFree);
       
       setProgress(progressData);
-      console.log('🔍 Frontend Component - Progress state set with daysSmokeFree:', progressData?.daysSmokeFree);
     } catch (err: any) {
-      console.error('🔍 Frontend Component - Error fetching progress:', err);
       setError(err.message || 'Failed to fetch progress data');
     } finally {
-      console.log('🔍 Frontend Component - fetchProgress completed, setting loading to false');
       setIsLoading(false);
     }
   };
@@ -62,14 +54,6 @@ export function QuitTrackerCard() {
   useEffect(() => {
     fetchProgress();
   }, []);
-
-  // Debug logging when progress changes
-  useEffect(() => {
-    if (progress) {
-      console.log('🔍 Component - Progress state updated:', progress);
-      console.log('🔍 Component - Displaying daysSmokeFree:', progress.daysSmokeFree);
-    }
-  }, [progress]);
 
   // Handle questionnaire completion
   const handleQuestionnaireComplete = () => {

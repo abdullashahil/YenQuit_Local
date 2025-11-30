@@ -6,31 +6,56 @@ import { ProgressCalendar } from '../../src/components/features/dashboard/Progre
 import { AdaptiveAdviceModule } from '../../src/components/features/dashboard/AdaptiveAdviceModule'
 import { StatsSnapshot } from '../../src/components/features/dashboard/StatsSnapshot'
 import { MotivationalContent } from '../../src/components/features/dashboard/MotivationalContent'
+import userService from '../../src/services/userService'
 
 export default function Dashboard() {
   const router = useRouter()
   const [userName, setUserName] = useState<string>('User')
 
   useEffect(() => {
-    // Check if user is authenticated
-    if (typeof window !== 'undefined') {
-      const userType = sessionStorage.getItem('userType')
-      if (!userType) {
-        router.push('/login')
-        return
-      }
-
-      // Get user name from onboarding data
-      const onboardingData = sessionStorage.getItem('onboardingData')
-      if (onboardingData) {
-        try {
-          const data = JSON.parse(onboardingData)
-          setUserName(data.name || 'User')
-        } catch (e) {
-          console.error('Error parsing onboarding data:', e)
+    const loadUserProfile = async () => {
+      try {
+        // Check if user is authenticated
+        if (typeof window !== 'undefined') {
+          const userType = sessionStorage.getItem('userType')
+          if (!userType) {
+            router.push('/login')
+            return
+          }
         }
+
+        // Try to get user name from API first
+        try {
+          const response = await userService.getProfile()
+          
+          if (response.success && response.data) {
+            const name = response.data.full_name || 'User'
+            setUserName(name)
+            return
+          }
+        } catch (apiError) {
+          // API failed, continue to fallback
+        }
+
+        // Fallback to sessionStorage
+        const onboardingData = sessionStorage.getItem('onboardingData')
+        if (onboardingData) {
+          try {
+            const data = JSON.parse(onboardingData)
+            const fallbackName = data.name || 'User'
+            setUserName(fallbackName)
+          } catch (e) {
+            setUserName('User')
+          }
+        } else {
+          setUserName('User')
+        }
+      } catch (err) {
+        setUserName('User')
       }
     }
+
+    loadUserProfile()
   }, [router])
 
   return (
@@ -39,7 +64,7 @@ export default function Dashboard() {
         <div className="max-w-[1400px] mx-auto">
           <div className="mb-6 md:mb-8">
             <h1 className="text-2xl md:text-3xl font-semibold mb-1 md:mb-2 text-[#1C3B5E]">
-              Welcome back, {userName}
+              Welcome, {userName}
             </h1>
             <p className="text-gray-600">
               Here's your progress overview for today

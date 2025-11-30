@@ -1,145 +1,210 @@
-import { useState, useEffect, useRef } from 'react';
-import dynamic from 'next/dynamic';
+import { useState, useEffect } from 'react';
 import { Card } from "../../ui/card";
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
-// Remove the dynamic import of Calendar since we're using FullCalendar directly
+import quitTrackerService from "../../../services/quitTrackerService";
 
-type ValuePiece = Date | null;
-type Value = ValuePiece | [ValuePiece, ValuePiece];
-
-const generateTimeSlots = (startTime: string, endTime: string) => {
-  const timeSlots = [];
-  const start = new Date(`2024-01-01T${startTime}:00`);
-  const end = new Date(`2024-01-01T${endTime}:00`);
-
-  while (start <= end) {
-    timeSlots.push(start.toTimeString().slice(0, 5));
-    start.setMinutes(start.getMinutes() + 30);
-  }
-
-  return timeSlots;
-};
-
-const formatTo12Hour = (time: string) => {
-  const [hours, minutes] = time.split(':').map(Number);
-  const ampm = hours >= 12 ? 'PM' : 'AM';
-  const formattedHours = hours % 12 === 0 ? 12 : hours % 12;
-  return `${formattedHours}:${minutes < 10 ? '0' : ''}${minutes} ${ampm}`;
-};
+interface DailyLog {
+  id: string;
+  log_date: string;
+  smoked: boolean;
+  cigarettes_count?: number;
+  cravings_level?: number;
+  mood?: number;
+  notes?: string;
+}
 
 export function ProgressCalendar() {
-  const [isTimeVisible, setIsTimeVisible] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [selectedDay, setSelectedDay] = useState<string>('');
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('');
-  const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
-  const [appointmentsdateTimePairs, setAppointmentsdateTimePairs] = useState<string[]>([]);
-  const [is24Hour, setIs24Hour] = useState(false);
-  const timeSlotDivRef = useRef<HTMLDivElement>(null);
-  const [enabledDays, setEnabledDays] = useState<string[]>([]);
-  const [availability, setAvailability] = useState<Record<string, { start: string; end: string }>>({});
+  const [logs, setLogs] = useState<DailyLog[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const toggleTimeFormat = () => {
-    setIs24Hour(!is24Hour);
-  };
-
-  const handleClickOutside = (event: MouseEvent) => {
-    if (timeSlotDivRef.current && !timeSlotDivRef.current.contains(event.target as Node)) {
-      setIsTimeVisible(false);
-    }
-  };
-
+  // Fetch daily logs data
   useEffect(() => {
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+    const fetchLogs = async () => {
+      try {
+        const response = await quitTrackerService.getLogs();
+        setLogs(response.logs || []);
+      } catch (error) {
+        // Error fetching logs
+      } finally {
+        setIsLoading(false);
+      }
     };
+
+    fetchLogs();
   }, []);
 
-  const handleDateClick = (arg: any) => {
-    const date = arg.dateStr;
-    const day = new Date(date).toLocaleDateString('en-US', { weekday: 'long' });
-
-    setSelectedDate(date);
-    setSelectedDay(day);
-    setIsTimeVisible(true);
-
-    // Mock time slots for demonstration
-    const timeRange = { start: '09:00', end: '17:00' }; // Default time range
-    const slots = generateTimeSlots(timeRange.start, timeRange.end);
-    setAvailableTimeSlots(slots);
-    setAppointmentsdateTimePairs([]); // Clear any previous appointments
-  };
-
-  const handleTimeClick = (time: string) => {
-    setSelectedTimeSlot(time);
-    // Here you would typically handle the time slot selection
-    console.log(`Selected time: ${time} on ${selectedDate}`);
-    setIsTimeVisible(false);
-  };
-
-  // Mock data for marked dates
-  const markedDates = {
-    '2025-10-01': 'smoke-free',
-    '2025-10-02': 'smoke-free',
-    '2025-10-03': 'high',
-    '2025-10-04': 'smoke-free',
-    '2025-10-05': 'smoke-free',
-    '2025-10-06': 'smoke-free',
-    '2025-10-07': 'smoke-free',
-    '2025-10-08': 'smoke-free',
-    '2025-10-09': 'smoke-free',
-    '2025-10-10': 'smoke-free',
-    '2025-10-13': 'high',
-    '2025-10-14': 'smoke-free',
-    '2025-10-15': 'smoke-free',
-    '2025-10-16': 'smoke-free',
-  };
-
-  const eventContent = (arg: any) => {
-  // Check if arg.date exists and is a valid date
-  if (!arg.date) {
-    return null; // or return a default content
-  }
-  
-  try {
-    const dateStr = new Date(arg.date).toISOString().split('T')[0];
-    const status = markedDates[dateStr as keyof typeof markedDates];
-
-    if (status === 'smoke-free') {
-      return {
-        className: 'bg-[#20B2AA]',
-        // ... rest of your smoke-free styling
-      };
+  // Determine color based on log data
+  const getLogColor = (log: DailyLog) => {
+    if (log.smoked) {
+      return '#ff0800ff'; // Red for smoked days
+    } else {
+      // Non-smoke days - check cravings and mood
+      const cravings = log.cravings_level || 5; // Default to medium if not set
+      const mood = log.mood || 5; // Default to medium if not set
+      
+      // High cravings (7-10) OR bad mood (1-3) = teal color
+      if (cravings >= 7 || mood <= 3) {
+        return '#20B2AA'; // Teal for non-smoke days with high cravings/bad mood
+      } else {
+        return '#48ff00ff'; // Green for non-smoke days with low cravings/good mood
+      }
     }
-    // ... rest of your existing code
-  } catch (error) {
-    console.error('Error processing date:', error);
-    return null;
-  }
-};
+  };
+
+  // Create events for calendar based on logs
+  const calendarEvents = logs.map(log => {
+    const color = getLogColor(log);
+    return {
+      start: log.log_date,
+      allDay: true,
+      display: 'background',
+      backgroundColor: color,
+    };
+  });
+
+  // Remove date click handler to disable modal popup
+  // const handleDateClick = (arg: any) => {
+  //   // Removed to prevent modal popup
+  // };
 
   return (
-    <Card className="rounded-2xl shadow-sm border border-gray-100 w-full">
-      <div className="p-4 " >
-        <div className="flex justify-between items-center mb-3 ">
-          <h3 className="text-base font-bold text-gray-900">Progress Calendar</h3>
-          {/* <button
-            onClick={() => {
-              const calendarApi = document.querySelector('.fc') as any;
-              if (calendarApi) {
-                calendarApi.getApi().today();
-              }
-            }}
-            className="text-xs text-[#20B2AA] hover:text-[#1a9c94] font-medium"
-          >
-            Today
-          </button> */}
+    <Card className="rounded-2xl shadow-sm border border-gray-100 w-full bg-white">
+      <div className="p-4">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-base font-semibold text-gray-900">Progress Calendar</h3>
         </div>
 
-        <div className="relative">
+        <div className="relative bg-white rounded-lg border border-gray-200">
+          <style jsx>{`
+            .fc {
+              font-family: system-ui, -apple-system, sans-serif !important;
+              font-size: 0.875rem !important;
+            }
+            .fc-theme-standard .fc-scrollgrid {
+              border: 1px solid #e5e7eb !important;
+              border-radius: 6px !important;
+              overflow: hidden !important;
+            }
+            .fc-theme-standard td, .fc-theme-standard th {
+              border: 1px solid #f3f4f6 !important;
+              padding: 0 !important;
+            }
+            .fc-theme-standard .fc-scrollgrid td:last-child,
+            .fc-theme-standard .fc-scrollgrid th:last-child {
+              border-right: 1px solid #e5e7eb !important;
+            }
+            .fc-theme-standard .fc-scrollgrid tr:last-child td {
+              border-bottom: 1px solid #e5e7eb !important;
+            }
+            .fc-col-header {
+              background: #fafbfc !important;
+            }
+            .fc-col-header-cell {
+              padding: 6px 2px !important;
+              font-weight: 600 !important;
+              font-size: 0.7rem !important;
+              color: #6b7280 !important;
+              text-transform: uppercase !important;
+              letter-spacing: 0.05em !important;
+              text-align: center !important;
+            }
+            .fc-daygrid-day-number {
+              color: #374151 !important;
+              font-weight: 500 !important;
+              font-size: 0.8rem !important;
+              padding: 4px 2px !important;
+              text-align: center !important;
+              width: 100% !important;
+              line-height: 1.2 !important;
+            }
+            .fc-daygrid-day {
+              background: white !important;
+              min-height: 32px !important;
+              position: relative !important;
+              padding: 0 !important;
+            }
+            .fc-daygrid-day:hover {
+              background: #f8fafc !important;
+            }
+            .fc-day-today {
+              background: #fef3c7 !important;
+            }
+            .fc-day-today .fc-daygrid-day-number {
+              font-weight: 600 !important;
+              color: #d97706 !important;
+            }
+            .fc-daygrid-day-bg {
+              opacity: 0.9 !important;
+            }
+            .fc-event-bg {
+              opacity: 0.9 !important;
+            }
+            .fc-daygrid-day .fc-bg-event {
+              opacity: 0.9 !important;
+              border: none !important;
+              border-radius: 0 !important;
+              position: absolute !important;
+              top: 0 !important;
+              left: 0 !important;
+              right: 0 !important;
+              bottom: 0 !important;
+            }
+            .fc-toolbar {
+              margin-bottom: 0 !important;
+              padding: 8px !important;
+            }
+            .fc-toolbar-title {
+              font-size: 0.95rem !important;
+              font-weight: 600 !important;
+              color: #111827 !important;
+              margin: 0 8px !important;
+            }
+            .fc-toolbar-chunk {
+              display: flex !important;
+              align-items: center !important;
+            }
+            .fc-button-primary {
+              background: white !important;
+              border: 1px solid #d1d5db !important;
+              color: #6b7280 !important;
+              font-weight: 500 !important;
+              padding: 4px 6px !important;
+              border-radius: 4px !important;
+              min-width: 24px !important;
+              height: 24px !important;
+              box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+            }
+            .fc-button-primary:hover {
+              background: #f9fafb !important;
+              border-color: #9ca3af !important;
+              color: #374151 !important;
+            }
+            .fc-button-primary:disabled {
+              opacity: 0.5 !important;
+              cursor: not-allowed !important;
+            }
+            .fc-button-primary .fc-icon {
+              font-size: 12px !important;
+              margin: 0 !important;
+            }
+            .fc-daygrid-event {
+              margin: 0 !important;
+              padding: 0 !important;
+            }
+            .fc-daygrid-block-event {
+              border: none !important;
+              padding: 0 !important;
+            }
+            .fc-daygrid-day-frame {
+              min-height: 32px !important;
+              padding: 0 !important;
+            }
+            .fc-scrollgrid {
+              font-size: 0.875rem !important;
+            }
+          `}</style>
           <FullCalendar
             plugins={[dayGridPlugin, interactionPlugin]}
             initialView="dayGridMonth"
@@ -149,65 +214,24 @@ export function ProgressCalendar() {
               end: 'prev,next'
             }}
             dayHeaderFormat={{ weekday: 'short' }}
-            dayHeaderContent={(arg) => ({
-              html: `<div class="bg-[#e3f4ffd7] text-black p-2">${arg.text}</div>`
-            })}
-            dayCellContent={(arg) => ({
-              html: `<div class="hover:bg-[#5fb6afd7] cursor-pointer h-full w-full">${arg.dayNumberText}</div>`
-            })}
             height="auto"
-            dateClick={handleDateClick}
-            eventContent={eventContent}
-            events={Object.entries(markedDates).map(([date, status]) => ({
-              start: date,
-              display: 'background',
-              className: status === 'smoke-free' ? 'bg-[#20B2AA]' : 'bg-[#E57373]'
-            }))}
+            aspectRatio={1.5}
+            events={calendarEvents}
           />
+        </div>
 
-          {isTimeVisible && selectedDate && (
-            <div
-              ref={timeSlotDivRef}
-              className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[15vw] max-h-[50vh] px-6 py-8 border text-center rounded-lg shadow-lg bg-white z-10 overflow-y-auto`}
-            >
-              <div className='flex justify-between items-center'>
-                <h1 className='mt-5 text-lg font-semibold mb-4'>
-                  On <span className='text-green-700'>{selectedDate}</span> @
-                </h1>
-                <button
-                  className='mb-6 px-2 py-1 border rounded-lg stroke-blue-500 text-gray-600 hover:bg-gray-200 transition duration-200 text-sm'
-                  onClick={toggleTimeFormat}
-                >
-                  {is24Hour ? '24HR' : '12HR'}
-                </button>
-              </div>
-
-              {availableTimeSlots.map((slot) => (
-                <div
-                  key={slot}
-                  className={`border border-gray-300 p-2 rounded-lg mb-4 transition-colors duration-200 
-                    ${appointmentsdateTimePairs.includes(slot)
-                      ? 'bg-gray-200 opacity-50 cursor-not-allowed'
-                      : 'bg-gray-100 hover:bg-gray-300 cursor-pointer'}`}
-                  onClick={() => !appointmentsdateTimePairs.includes(slot) && handleTimeClick(slot)}
-                >
-                  <span className="text-sm font-small">
-                    {is24Hour ? slot : formatTo12Hour(slot)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="flex justify-center gap-4 mt-3 text-xs">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-[#20B2AA]"></div>
-              <span className="text-gray-600">Smoke-free</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-[#E57373]"></div>
-              <span className="text-gray-600">High-risk</span>
-            </div>
+        <div className="flex justify-center gap-6 mt-4">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full border border-white shadow-sm" style={{ backgroundColor: '#8BC34A' }}></div>
+            <span className="text-xs text-gray-600">Good Progress</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full border border-white shadow-sm" style={{ backgroundColor: '#20B2AA' }}></div>
+            <span className="text-xs text-gray-600">High Cravings</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full border border-white shadow-sm" style={{ backgroundColor: '#D9534F' }}></div>
+            <span className="text-xs text-gray-600">Smoked</span>
           </div>
         </div>
       </div>

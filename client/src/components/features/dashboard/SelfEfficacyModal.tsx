@@ -128,7 +128,7 @@ export function SelfEfficacyModal({ open, onOpenChange, onComplete, isPostSelfEf
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <Card className="w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-3xl shadow-2xl">
+      <Card className="w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-3xl shadow-2xl !bg-white">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-2xl font-bold" style={{ color: "#1C3B5E" }}>

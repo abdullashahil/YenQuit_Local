@@ -102,6 +102,23 @@ export async function getUserAnswers(userId, step) {
   return res.rows;
 }
 
+export async function getAllUserAnswersForUser(userId) {
+  // Ensure userId is a valid UUID string
+  if (!userId || typeof userId !== 'string') {
+    throw new Error('Invalid userId: must be a UUID string');
+  }
+  
+  const res = await query(
+    `SELECT a.id, a.question_id, a.answer_text, a.created_at, a.updated_at, q.step, q.question_text
+       FROM fivea_user_answers a
+       JOIN fivea_questions q ON a.question_id = q.id
+       WHERE a.user_id = $1::uuid
+       ORDER BY q.step, q.id ASC`,
+    [userId]
+  );
+  return res.rows;
+}
+
 export async function getAllUserAnswers() {
   const res = await query(
     `SELECT a.id, a.user_id, a.question_id, a.answer_text, a.created_at, a.updated_at, q.step, q.question_text

@@ -5,6 +5,7 @@ import { ProgressCalendar } from "./ProgressCalendar";
 import { AdaptiveAdviceModule } from "./AdaptiveAdviceModule";
 import { StatsSnapshot } from "./StatsSnapshot";
 import { MotivationalContent } from "./MotivationalContent";
+import userService from "../../../services/userService";
 
 interface DashboardPageProps {
   activeTab: string;
@@ -17,33 +18,27 @@ export function DashboardPage({ activeTab, setActiveTab, onLogout, onboardingNam
   const [displayName, setDisplayName] = useState<string>("");
 
   useEffect(() => {
-    const run = async () => {
+    const loadUserProfile = async () => {
       try {
-        if (typeof window === 'undefined') return;
-        const token = localStorage.getItem('accessToken');
-        if (!token) {
-          setDisplayName(onboardingName || "");
-          return;
+        console.log('👤 Dashboard - Loading user profile...');
+        const response = await userService.getProfile();
+        console.log('👤 Dashboard - Profile response:', response);
+        
+        if (response.success && response.data) {
+          const name = response.data.full_name || onboardingName || "User";
+          console.log('👤 Dashboard - Setting display name:', name);
+          setDisplayName(name);
+        } else {
+          console.log('👤 Dashboard - No profile data, using fallback');
+          setDisplayName(onboardingName || "User");
         }
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-        const res = await fetch(`${API_URL}/api/users/me`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        if (!res.ok) {
-          setDisplayName(onboardingName || "");
-          return;
-        }
-        const data = await res.json();
-        const name = data?.profile?.full_name || data?.user?.full_name || data?.user?.name || onboardingName || "";
-        setDisplayName(name);
-      } catch {
-        setDisplayName(onboardingName || "");
+      } catch (err) {
+        console.error('👤 Dashboard - Failed to load user profile:', err);
+        setDisplayName(onboardingName || "User");
       }
     };
-    run();
+
+    loadUserProfile();
   }, [onboardingName]);
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#FFFFFF" }}>
@@ -52,35 +47,34 @@ export function DashboardPage({ activeTab, setActiveTab, onLogout, onboardingNam
         <div className="max-w-[1400px] mx-auto">
           <div className="mb-6 md:mb-8">
             <h1 className="text-2xl md:text-3xl mb-2" style={{ color: "#1C3B5E" }}>
-              Welcome back, {displayName || onboardingName || "Sarah"}
+              Welcome, {displayName || "User"}
             </h1>
             <p className="text-sm md:text-base" style={{ color: "#333333" }}>
               Here's your progress overview for today
             </p>
           </div>
 
-          // In DashboardPage.tsx
-<div className="space-y-6">
-  {/* Two Column Layout */}
-  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-    {/* Left Column */}
-    <div className="lg:col-span-8 space-y-6">
-      <QuitTrackerCard />
-      <StatsSnapshot />
-      <MotivationalContent />
-    </div>
-    
-    {/* Right Column */}
-    <div className="lg:col-span-4">
-      <AdaptiveAdviceModule />
-    </div>
-  </div>
-  
-  {/* Calendar - Full Width */}
-  <div className="w-full">
-    <ProgressCalendar />
-  </div>
-</div>
+          <div className="space-y-6">
+            {/* Two Column Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Left Column */}
+              <div className="lg:col-span-8 space-y-6">
+                <QuitTrackerCard />
+                <StatsSnapshot />
+                <MotivationalContent />
+              </div>
+              
+              {/* Right Column */}
+              <div className="lg:col-span-4">
+                <AdaptiveAdviceModule />
+              </div>
+            </div>
+            
+            {/* Calendar - Full Width */}
+            <div className="w-full">
+              <ProgressCalendar />
+            </div>
+          </div>
         </div>
       </div>
     </div>

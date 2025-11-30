@@ -4,6 +4,7 @@ import { Input } from "../../ui/input";
 import { Label } from "../../ui/label";
 import { Textarea } from "../../ui/textarea";
 import { CravingSlider } from "./CravingSlider";
+import { MoodSlider } from "./MoodSlider";
 import { X, Calendar, Shield, AlertTriangle, CheckCircle2, Sparkles, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import quitTrackerService from "../../../services/quitTrackerService";
@@ -159,19 +160,20 @@ export function DailyLogModal({ open, onOpenChange, onLogChange, quitDate }: Dai
     return "#D9534F";
   };
 
-  // Calculate mood color
+  // Calculate mood color - 1/10 scale (1=bad, 10=good)
   const getMoodColor = (value: number) => {
-    if (value <= 3) return "#D9534F";
-    if (value <= 5) return "#FFA726";
-    if (value <= 7) return "#20B2AA";
-    return "#8BC34A";
+    if (value <= 2) return "#D9534F";    // 1-2: Bad (Red)
+    if (value <= 4) return "#FFA726";    // 3-4: Low (Orange)  
+    if (value <= 6) return "#FFC107";    // 5-6: Neutral (Yellow)
+    if (value <= 8) return "#20B2AA";    // 7-8: Good (Teal)
+    return "#8BC34A";                    // 9-10: Great (Green)
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl p-0 rounded-3xl border-0 overflow-hidden shadow-2xl bg-white">
         {/* Header */}
-        <div className="p-8 pb-6 border-b border-gray-100">
+        <div className="p-6 pb-4 border-b border-gray-100">
           <div className="flex items-start justify-between">
             <div>
               <h2 className="text-2xl mb-2" style={{ color: "#1C3B5E" }}>
@@ -186,7 +188,7 @@ export function DailyLogModal({ open, onOpenChange, onLogChange, quitDate }: Dai
         </div>
 
         {/* Content */}
-        <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
+        <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
           {/* Error Message */}
           {error && (
             <div className="p-4 rounded-xl flex items-center gap-2" style={{ backgroundColor: "#D9534F20" }}>
@@ -265,27 +267,6 @@ export function DailyLogModal({ open, onOpenChange, onLogChange, quitDate }: Dai
                 cigarettes today
               </span>
             </div>
-            <p className="text-xs" style={{ color: "#333333", opacity: 0.6 }}>
-              Enter the total number of cigarettes (or equivalent) consumed today
-            </p>
-          </div>
-
-          {/* Required Field 2: Craving Level */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm" style={{ color: "#1C3B5E" }}>
-                Overall Craving Level <span style={{ color: "#D9534F" }}>*</span>
-              </Label>
-              <div
-                className="px-4 py-2 rounded-xl text-lg"
-                style={{
-                  backgroundColor: `${getSliderColor(cravingLevel)}20`,
-                  color: getSliderColor(cravingLevel),
-                }}
-              >
-                {cravingLevel}/10
-              </div>
-            </div>
 
             <div className="px-2">
               <CravingSlider
@@ -306,7 +287,7 @@ export function DailyLogModal({ open, onOpenChange, onLogChange, quitDate }: Dai
           </div>
 
           {/* Optional: Mood Level */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Label className="text-sm" style={{ color: "#1C3B5E" }}>
                 Today's Mood
@@ -323,7 +304,7 @@ export function DailyLogModal({ open, onOpenChange, onLogChange, quitDate }: Dai
             </div>
 
             <div className="px-2">
-              <CravingSlider
+              <MoodSlider
                 value={mood}
                 onChange={setMood}
                 min={1}
@@ -338,50 +319,6 @@ export function DailyLogModal({ open, onOpenChange, onLogChange, quitDate }: Dai
             <p className="text-xs" style={{ color: "#333333", opacity: 0.6 }}>
               How was your overall mood today?
             </p>
-          </div>
-
-          {/* Required Field 3: Quit Date */}
-          <div className="space-y-3">
-            <Label className="text-sm" style={{ color: "#1C3B5E" }}>
-              Official Quit Date
-              {quitDate && <span className="ml-2 text-xs" style={{ color: "#666666" }}>(Already set)</span>}
-            </Label>
-            <div className="flex items-center gap-3">
-              <div className="relative flex-1">
-                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: "#20B2AA" }} />
-                <Input
-                  type="date"
-                  value={selectedQuitDate}
-                  onChange={(e) => setSelectedQuitDate(e.target.value)}
-                  disabled={!!quitDate}
-                  className={`rounded-2xl border-gray-200 h-14 pl-12 ${
-                    quitDate ? 'bg-gray-100 cursor-not-allowed' : ''
-                  }`}
-                />
-              </div>
-            </div>
-            {selectedQuitDate && (
-              <div className="p-3 rounded-xl" style={{ backgroundColor: "#20B2AA10" }}>
-                <p className="text-xs" style={{ color: "#20B2AA" }}>
-                  ✓ Quit date set: {new Date(selectedQuitDate).toLocaleDateString("en-US", {
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </p>
-              </div>
-            )}
-            {quitDate && !selectedQuitDate && (
-              <div className="p-3 rounded-xl" style={{ backgroundColor: "#F0F0F0" }}>
-                <p className="text-xs" style={{ color: "#666666" }}>
-                  Your quit date is already set: {new Date(quitDate).toLocaleDateString("en-US", {
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </p>
-              </div>
-            )}
           </div>
 
           {/* Optional: Notes */}
@@ -402,7 +339,7 @@ export function DailyLogModal({ open, onOpenChange, onLogChange, quitDate }: Dai
         </div>
 
         {/* Footer Actions */}
-        <div className="p-8 pt-6 border-t border-gray-100 flex items-center justify-between gap-4">
+        <div className="p-6 pt-4 border-t border-gray-100 flex items-center justify-between gap-4">
           <button
             onClick={() => onOpenChange(false)}
             className="px-6 py-3 rounded-2xl text-sm transition-all hover:bg-gray-100"

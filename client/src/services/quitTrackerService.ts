@@ -78,8 +78,6 @@ const quitTrackerService = {
   // Get user's quit tracker progress
   async getProgress(options: ProgressOptions = {}): Promise<ProgressResponse> {
     try {
-      console.log('🔍 Service - getProgress called with options:', options);
-      
       const params = new URLSearchParams();
       
       if (options.startDate) params.append('startDate', options.startDate);
@@ -87,22 +85,16 @@ const quitTrackerService = {
       if (options.goalDays) params.append('goalDays', options.goalDays.toString());
       
       const url = `${API_BASE_URL}/quit-tracker/progress${params.toString() ? '?' + params.toString() : ''}`;
-      console.log('🔍 Service - Making request to:', url);
       
       const response = await axios.get(
         url,
         { headers: getAuthHeaders() }
       );
       
-      console.log('🔍 Service - Raw response:', response);
-      console.log('🔍 Service - Response data:', response.data);
-      
       const progressData = response.data.data;
-      console.log('🔍 Service - Progress data extracted:', progressData);
       
       return progressData;
     } catch (error) {
-      console.error('🔍 Service - Error in getProgress:', error);
       handleApiError(error, 'Failed to fetch progress data');
     }
   },
