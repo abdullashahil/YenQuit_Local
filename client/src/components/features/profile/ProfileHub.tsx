@@ -1,7 +1,6 @@
 import { UserProfileCard } from "./UserProfileCard";
 import { ProgressSummaryPanel } from "../dashboard/ProgressSummaryPanel";
 import { ActionBlock } from "../../admin/ActionBlock";
-import { LearningActivityLog } from "../dashboard/LearningActivityLog";
 import { SupportHistory } from "./SupportHistory";
 // import { PsychologicalProfileStatus } from "./PsychologicalProfileStatus";
 
@@ -42,9 +41,6 @@ export function ProfileHub({ activeTab, setActiveTab, onLogout }: ProfileHubProp
 
             {/* Right Column: Activity & Data */}
             <div className="lg:col-span-7 space-y-4 md:space-y-6">
-              {/* Learning Hub Activity Log */}
-              <LearningActivityLog />
-
               {/* Support Interaction History */}
               <SupportHistory />
 
