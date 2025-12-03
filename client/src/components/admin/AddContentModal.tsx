@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { X, Upload, Image, Video, FileText, Calendar, Tag } from "lucide-react";
+import { X, Upload, Image, Video, FileText, Calendar, Tag, Quote } from "lucide-react";
 import { useState, useEffect } from "react";
 import axios from "axios";
 
@@ -36,22 +36,53 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [step, setStep] = useState<'category' | 'details'>('category');
+
+  // Reset step when modal opens/closes
+  useEffect(() => {
+    if (open) {
+      if (editContent?.category) {
+        setCategory(editContent.category);
+        setStep('details');
+      } else {
+        setStep('category');
+      }
+    }
+  }, [open, editContent]);
 
   const handleSave = async () => {
     setError(null);
     
-    // Validation
-    if (!title.trim()) {
-      setError('Title is required');
-      return;
-    }
+    // Validation based on category
     if (!category) {
       setError('Category is required');
       return;
     }
-    if (!content.trim()) {
-      setError('Content is required');
-      return;
+    
+    // Category-specific validation
+    if (category === 'Video' || category === 'Podcast') {
+      if (!title.trim()) {
+        setError('Title is required for video/podcast content');
+        return;
+      }
+      if (!mediaUrl.trim()) {
+        setError('Video URL is required for video/podcast content');
+        return;
+      }
+    } else if (category === 'Image') {
+      if (!mediaUrl.trim()) {
+        setError('Image URL is required for image-based learning');
+        return;
+      }
+    } else if (category === 'Blog' || category === 'Quote') {
+      if (!title.trim()) {
+        setError('Title is required for blog/quote content');
+        return;
+      }
+      if (!content.trim()) {
+        setError('Content is required for blog/quote content');
+        return;
+      }
     }
 
     try {
@@ -89,7 +120,7 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
       });
 
       if (response.data.success) {
-        // Reset form
+        // Reset form and step
         if (!editContent) {
           setTitle("");
           setCategory("");
@@ -101,6 +132,7 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
           setMediaUrl("");
           setTags("");
           setSelectedFile(null);
+          setStep('category');
         }
         
         // Call success callback if provided
@@ -119,6 +151,23 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleCategorySelect = (selectedCategory: string) => {
+    setCategory(selectedCategory);
+    setStep('details');
+    setError(null);
+  };
+
+  const handleBackToCategory = () => {
+    setStep('category');
+    // Reset form fields
+    setTitle("");
+    setDescription("");
+    setContent("");
+    setMediaUrl("");
+    setTags("");
+    setSelectedFile(null);
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -163,12 +212,6 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
                 </p>
               </div>
             </div>
-            <button
-              onClick={() => onOpenChange(false)}
-              className="p-3 rounded-2xl hover:bg-gray-100 transition-all duration-200"
-            >
-              <X className="w-5 h-5 text-gray-600" />
-            </button>
           </div>
         </div>
 
@@ -180,224 +223,296 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
               <p className="text-red-600 text-sm">{error}</p>
             </div>
           )}
-          {/* Basic Information Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Left Column */}
+          
+          {step === 'category' ? (
+            /* Category Selection Step */
             <div className="space-y-6">
-              {/* Title */}
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold text-[#1C3B5E] flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  Content Title <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Enter a compelling title for your content..."
-                  className="rounded-2xl border-gray-200 h-12 focus:border-[#20B2AA] focus:ring-[#20B2AA]/20"
-                />
+              <div className="text-center space-y-4">
+                <h3 className="text-xl font-semibold text-[#1C3B5E]">Choose Content Type</h3>
+                <p className="text-gray-600">Select the type of content you want to create</p>
               </div>
-
-              {/* Category and Status */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <Label className="text-sm font-semibold text-[#1C3B5E] flex items-center gap-2">
-                    <Tag className="w-4 h-4" />
-                    Category <span className="text-red-500">*</span>
-                  </Label>
-                  <Select value={category} onValueChange={setCategory}>
-                    <SelectTrigger className="h-12 rounded-2xl border-gray-200 focus:border-[#20B2AA] focus:ring-[#20B2AA]/20">
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Blog" className="flex items-center gap-2">
-                        <FileText className="w-4 h-4" /> Blog Article
-                      </SelectItem>
-                      <SelectItem value="Quote" className="flex items-center gap-2">
-                        <FileText className="w-4 h-4" /> Motivational Quote
-                      </SelectItem>
-                      <SelectItem value="Campaign" className="flex items-center gap-2">
-                        <FileText className="w-4 h-4" /> Campaign
-                      </SelectItem>
-                      <SelectItem value="Video" className="flex items-center gap-2">
-                        <Video className="w-4 h-4" /> Video Content
-                      </SelectItem>
-                      <SelectItem value="Podcast" className="flex items-center gap-2">
-                        <FileText className="w-4 h-4" /> Podcast
-                      </SelectItem>
-                      <SelectItem value="Image" className="flex items-center gap-2">
-                        <Image className="w-4 h-4" /> Image-Based Learning
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-sm font-semibold text-[#1C3B5E]">Status</Label>
-                  <Select value={status} onValueChange={setStatus}>
-                    <SelectTrigger className="h-12 rounded-2xl border-gray-200">
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Draft" className="text-orange-600">Draft</SelectItem>
-                      <SelectItem value="Pending" className="text-blue-600">Pending Review</SelectItem>
-                      <SelectItem value="Live" className="text-green-600">Live</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Media Upload */}
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold text-[#1C3B5E] flex items-center gap-2">
-                  <Upload className="w-4 h-4" />
-                  Media Upload
-                </Label>
-                <div className="border-2 border-dashed border-gray-300 rounded-2xl p-6 text-center hover:border-[#20B2AA] transition-colors">
-                  <Input
-                    type="file"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    id="file-upload"
-                    accept=".png,.jpg,.jpeg,.mp4,.pdf"
-                  />
-                  <label htmlFor="file-upload" className="cursor-pointer">
-                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600">
-                      {selectedFile ? selectedFile.name : 'Click to upload or drag and drop'}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      PNG, JPG, MP4, PDF up to 10MB
-                    </p>
-                  </label>
-                </div>
-              </div>
-
-              {/* Media URL */}
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold text-[#1C3B5E]">Media URL (Optional)</Label>
-                <Input
-                  value={mediaUrl}
-                  onChange={(e) => setMediaUrl(e.target.value)}
-                  placeholder="https://example.com/image.jpg or YouTube URL"
-                  className="rounded-2xl border-gray-200 h-12"
-                />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <button
+                  onClick={() => handleCategorySelect('Video')}
+                  className="p-6 rounded-2xl border-2 border-gray-200 hover:border-red-500 hover:bg-red-50 transition-all duration-200 text-left group"
+                >
+                  <Video className="w-8 h-8 text-red-500 mb-3" />
+                  <h4 className="font-semibold text-[#1C3B5E] mb-2">Video Content</h4>
+                </button>
+                
+                <button
+                  onClick={() => handleCategorySelect('Podcast')}
+                  className="p-6 rounded-2xl border-2 border-gray-200 hover:border-purple-500 hover:bg-purple-50 transition-all duration-200 text-left group"
+                >
+                  <FileText className="w-8 h-8 text-purple-500 mb-3" />
+                  <h4 className="font-semibold text-[#1C3B5E] mb-2">Podcast</h4>
+                </button>
+                
+                <button
+                  onClick={() => handleCategorySelect('Image')}
+                  className="p-6 rounded-2xl border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all duration-200 text-left group"
+                >
+                  <Image className="w-8 h-8 text-green-500 mb-3" />
+                  <h4 className="font-semibold text-[#1C3B5E] mb-2">Image-Based Learning</h4>
+                </button>
+                
+                <button
+                  onClick={() => handleCategorySelect('Blog')}
+                  className="p-6 rounded-2xl border-2 border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 text-left group"
+                >
+                  <FileText className="w-8 h-8 text-blue-500 mb-3" />
+                  <h4 className="font-semibold text-[#1C3B5E] mb-2">Blog Article</h4>
+                </button>
+                
+                {/* <button
+                  onClick={() => handleCategorySelect('Quote')}
+                  className="p-6 rounded-2xl border-2 border-gray-200 hover:border-orange-500 hover:bg-orange-50 transition-all duration-200 text-left group"
+                >
+                  <Quote className="w-8 h-8 text-yellow-500 mb-3" />
+                  <h4 className="font-semibold text-[#1C3B5E] mb-2">Motivational Quote</h4>
+                </button> */}
               </div>
             </div>
-
-            {/* Right Column */}
+          ) : (
+            /* Category-specific form fields */
             <div className="space-y-6">
-              {/* Description */}
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold text-[#1C3B5E]">Short Description</Label>
-                <Textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Brief description or summary that will appear in content listings..."
-                  className="rounded-2xl border-gray-200 min-h-24 resize-none focus:border-[#20B2AA] focus:ring-[#20B2AA]/20"
-                />
-              </div>
-
-              {/* Dates */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <Label className="text-sm font-semibold text-[#1C3B5E] flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    Publish Date
-                  </Label>
-                  <Input
-                    type="date"
-                    value={publishDate}
-                    onChange={(e) => setPublishDate(e.target.value)}
-                    className="rounded-2xl border-gray-200 h-12"
-                  />
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-sm font-semibold text-[#1C3B5E]">End Date (Campaigns)</Label>
-                  <Input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="rounded-2xl border-gray-200 h-12"
-                  />
+              {/* Back button and category display */}
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={handleBackToCategory}
+                  className="px-4 py-2 rounded-2xl border border-gray-200 hover:bg-gray-50 transition-all duration-200 text-sm"
+                >
+                  ← Back to Categories
+                </button>
+                <div className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-sm font-medium">
+                  {category}
                 </div>
               </div>
-
-              {/* Tags */}
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold text-[#1C3B5E] flex items-center gap-2">
-                  <Tag className="w-4 h-4" />
-                  Tags
-                </Label>
-                <Input
-                  value={tags}
-                  onChange={(e) => setTags(e.target.value)}
-                  placeholder="Enter tags separated by commas..."
-                  className="rounded-2xl border-gray-200 h-12"
-                />
-              </div>
-
-              {/* Preview Card */}
-              <div className="p-4 rounded-2xl border border-gray-200 bg-gray-50">
-                <h4 className="text-sm font-semibold text-[#1C3B5E] mb-2">Preview</h4>
-                <div className="text-xs text-gray-600 space-y-1">
-                  <p>Title: {title || "No title set"}</p>
-                  <p>Category: {category || "No category selected"}</p>
-                  <p>Status: <span className={`px-2 py-1 rounded-full text-xs ${
-                    status === 'Live' ? 'bg-green-100 text-green-800' :
-                    status === 'Pending' ? 'bg-blue-100 text-blue-800' :
-                    'bg-orange-100 text-orange-800'
-                  }`}>{status || 'Draft'}</span></p>
+              
+              {/* Video/Podcast Fields */}
+              {(category === 'Video' || category === 'Podcast') && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <div className="space-y-6">
+                    <div className="space-y-3">
+                      <Label className="text-sm font-semibold text-[#1C3B5E] flex items-center gap-2">
+                        <FileText className="w-4 h-4" />
+                        Title <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="Enter a compelling title..."
+                        className="rounded-2xl border-gray-200 h-12 focus:border-[#20B2AA] focus:ring-[#20B2AA]/20"
+                      />
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <Label className="text-sm font-semibold text-[#1C3B5E] flex items-center gap-2">
+                        <Video className="w-4 h-4" />
+                        YouTube URL <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        value={mediaUrl}
+                        onChange={(e) => setMediaUrl(e.target.value)}
+                        placeholder="https://youtube.com/watch?v=..."
+                        className="rounded-2xl border-gray-200 h-12 focus:border-[#20B2AA] focus:ring-[#20B2AA]/20"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-6">
+                    <div className="space-y-3">
+                      <Label className="text-sm font-semibold text-[#1C3B5E]">Short Description</Label>
+                      <Textarea
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Brief description for content listings..."
+                        className="rounded-2xl border-gray-200 min-h-24 resize-none focus:border-[#20B2AA] focus:ring-[#20B2AA]/20"
+                      />
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <Label className="text-sm font-semibold text-[#1C3B5E]">Status</Label>
+                      <Select value={status} onValueChange={setStatus}>
+                        <SelectTrigger className="h-12 rounded-2xl border-gray-200">
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Draft" className="text-orange-600">Draft</SelectItem>
+                          <SelectItem value="Pending" className="text-blue-600">Pending Review</SelectItem>
+                          <SelectItem value="Live" className="text-green-600">Live</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
+              
+              {/* Image-Based Learning Fields */}
+              {category === 'Image' && (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div className="space-y-6">
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold text-[#1C3B5E] flex items-center gap-2">
+                          <FileText className="w-4 h-4" />
+                          Title
+                        </Label>
+                        <Input
+                          value={title}
+                          onChange={(e) => setTitle(e.target.value)}
+                          placeholder="Enter a title for the image (optional)..."
+                          className="rounded-2xl border-gray-200 h-12 focus:border-[#20B2AA] focus:ring-[#20B2AA]/20"
+                        />
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold text-[#1C3B5E] flex items-center gap-2">
+                          <Image className="w-4 h-4" />
+                          Image URL <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          value={mediaUrl}
+                          onChange={(e) => setMediaUrl(e.target.value)}
+                          placeholder="https://example.com/image.jpg"
+                          className="rounded-2xl border-gray-200 h-12 focus:border-[#20B2AA] focus:ring-[#20B2AA]/20"
+                        />
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold text-[#1C3B5E]">Status</Label>
+                        <Select value={status} onValueChange={setStatus}>
+                          <SelectTrigger className="h-12 rounded-2xl border-gray-200">
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Draft" className="text-orange-600">Draft</SelectItem>
+                            <SelectItem value="Pending" className="text-blue-600">Pending Review</SelectItem>
+                            <SelectItem value="Live" className="text-green-600">Live</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-6">
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold text-[#1C3B5E] flex items-center gap-2">
+                          <Tag className="w-4 h-4" />
+                          Tags
+                        </Label>
+                        <Input
+                          value={tags}
+                          onChange={(e) => setTags(e.target.value)}
+                          placeholder="Enter tags separated by commas..."
+                          className="rounded-2xl border-gray-200 h-12"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Blog/Quote Fields */}
+              {(category === 'Blog' || category === 'Quote') && (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div className="space-y-6">
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold text-[#1C3B5E] flex items-center gap-2">
+                          <FileText className="w-4 h-4" />
+                          Title <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          value={title}
+                          onChange={(e) => setTitle(e.target.value)}
+                          placeholder="Enter a compelling title..."
+                          className="rounded-2xl border-gray-200 h-12 focus:border-[#20B2AA] focus:ring-[#20B2AA]/20"
+                        />
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold text-[#1C3B5E]">Status</Label>
+                        <Select value={status} onValueChange={setStatus}>
+                          <SelectTrigger className="h-12 rounded-2xl border-gray-200">
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Draft" className="text-orange-600">Draft</SelectItem>
+                            <SelectItem value="Pending" className="text-blue-600">Pending Review</SelectItem>
+                            <SelectItem value="Live" className="text-green-600">Live</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-6">
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold text-[#1C3B5E] flex items-center gap-2">
+                          <Tag className="w-4 h-4" />
+                          Tags
+                        </Label>
+                        <Input
+                          value={tags}
+                          onChange={(e) => setTags(e.target.value)}
+                          placeholder="Enter tags separated by commas..."
+                          className="rounded-2xl border-gray-200 h-12"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold text-[#1C3B5E]">
+                      {category === 'Blog' ? 'Content' : 'Quote Text'} <span className="text-red-500">*</span>
+                    </Label>
+                    <Textarea
+                      value={content}
+                      onChange={(e) => setContent(e.target.value)}
+                      placeholder={category === 'Blog' ? "Write your full blog post here..." : "Enter the motivational quote..."}
+                      className="rounded-2xl border-gray-200 min-h-48 resize-none focus:border-[#20B2AA] focus:ring-[#20B2AA]/20"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-
-          {/* Full Content */}
-          <div className="space-y-3">
-            <Label className="text-sm font-semibold text-[#1C3B5E]">Full Content</Label>
-            <Textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Write your full content here... You can use markdown formatting for better presentation."
-              className="rounded-2xl border-gray-200 min-h-48 resize-none focus:border-[#20B2AA] focus:ring-[#20B2AA]/20"
-            />
-          </div>
+          )}
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-gray-100 bg-white flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <div className="w-2 h-2 rounded-full bg-green-500"></div>
-            Auto-save enabled
+        {step === 'details' && (
+          <div className="p-6 border-t border-gray-100 bg-white flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <div className="w-2 h-2 rounded-full bg-green-500"></div>
+              Auto-save enabled
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={() => onOpenChange(false)}
+                className="px-8 py-3 rounded-2xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-all duration-200"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSave}
+                disabled={isLoading}
+                className="px-8 py-3 rounded-2xl text-white transition-all duration-200 hover:shadow-lg shadow-md disabled:opacity-50"
+                style={{ 
+                  background: "linear-gradient(135deg, #20B2AA 0%, #1C9B94 100%)"
+                }}
+              >
+                {isLoading ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    {editContent ? "Updating..." : "Publishing..."}
+                  </span>
+                ) : (
+                  editContent ? "Update Content" : "Publish Content"
+                )}
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Button
-              onClick={() => onOpenChange(false)}
-              className="px-8 py-3 rounded-2xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-all duration-200"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={isLoading}
-              className="px-8 py-3 rounded-2xl text-white transition-all duration-200 hover:shadow-lg shadow-md disabled:opacity-50"
-              style={{ 
-                background: "linear-gradient(135deg, #20B2AA 0%, #1C9B94 100%)"
-              }}
-            >
-              {isLoading ? (
-                <span className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  {editContent ? "Updating..." : "Publishing..."}
-                </span>
-              ) : (
-                editContent ? "Update Content" : "Publish Content"
-              )}
-            </Button>
-          </div>
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );

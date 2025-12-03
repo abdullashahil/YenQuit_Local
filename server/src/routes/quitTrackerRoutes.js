@@ -13,7 +13,8 @@ import {
   savePostSelfEfficacyResponsesHandler,
   getSettings,
   updateSettings,
-  getAllLogs
+  getAllLogs,
+  getAdminUserProgress
 } from '../controllers/quitTrackerController.js';
 
 const router = express.Router();
@@ -23,6 +24,7 @@ router.use(authenticateJWT);
 
 // Progress endpoints
 router.get('/progress', getProgress);
+router.get('/admin/user/:userId/progress', getAdminUserProgress);
 
 // Questionnaire endpoints
 router.get('/questionnaire', getQuestionnaire);

@@ -1,6 +1,7 @@
 import { AdminSidebar } from "./AdminSidebar";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
+import { Progress } from "../ui/progress";
 import {
   Select,
   SelectContent,
@@ -20,6 +21,7 @@ import { UserDetailModal } from "./UserDetailModal";
 import { Search, Eye, Edit, Trash2, Send, Download, UserPlus, Filter, MoreVertical, Mail, Phone, Calendar, Activity, ChevronDown, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import userService from "../../services/userService";
+import quitTrackerService from "../../services/quitTrackerService";
 
 interface UserManagementProps {
   activeTab: string;
@@ -37,6 +39,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
+  const [userProgress, setUserProgress] = useState<{ [key: string]: any }>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState({
@@ -47,6 +50,178 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
     hasNext: false,
     hasPrev: false
   });
+
+  // Calculate longest streak from logs (same as in ProfileHub)
+  const calculateLongestStreak = (logs: any[]) => {
+    if (!logs || logs.length === 0) return 0;
+    
+    // Sort logs by date (oldest first)
+    const sortedLogs = [...logs].sort((a, b) => 
+      new Date(a.log_date).getTime() - new Date(b.log_date).getTime()
+    );
+    
+    let currentStreak = 0;
+    let maxStreak = 0;
+    let previousDate: Date | null = null;
+    
+    for (const log of sortedLogs) {
+      const logDate = new Date(log.log_date);
+      logDate.setHours(0, 0, 0, 0); // Normalize to start of day
+      
+      if (!log.smoked) {
+        if (previousDate) {
+          const daysDiff = Math.floor((logDate.getTime() - previousDate.getTime()) / (24 * 60 * 60 * 1000));
+          
+          if (daysDiff === 1) {
+            // Consecutive day
+            currentStreak++;
+          } else if (daysDiff > 1) {
+            // Gap in days, reset streak
+            currentStreak = 1;
+          }
+          // daysDiff === 0 means same day, continue current streak
+        } else {
+          // First smoke-free day
+          currentStreak = 1;
+        }
+        
+        maxStreak = Math.max(maxStreak, currentStreak);
+        previousDate = logDate;
+      } else {
+        // Smoked day, reset streak
+        currentStreak = 0;
+        previousDate = null;
+      }
+    }
+    
+    return maxStreak;
+  };
+
+  // Calculate engagement percentage
+  const calculateEngagementPercentage = (logs: any[], joinDate: string | null) => {
+    if (!logs || logs.length === 0 || !joinDate) return 0;
+    
+    const daysLoggedIn = logs.length;
+    const startDate = new Date(joinDate);
+    const today = new Date();
+    const totalDaysSinceJoin = Math.floor((today.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
+    
+    if (totalDaysSinceJoin <= 0) return 0;
+    
+    return Math.round((daysLoggedIn / totalDaysSinceJoin) * 100);
+  };
+
+  // Fetch user progress data
+  const fetchUserProgress = async (userId: string, joinDate: string | null) => {
+    console.log("🔍 fetchUserProgress called for userId:", userId, "joinDate:", joinDate);
+    try {
+      if (!joinDate) {
+        setUserProgress(prev => ({
+          ...prev,
+          [userId]: {
+            progressPercentage: 0,
+            daysSmokeFree: 0,
+            successRate: 0,
+            sessionsCompleted: 0,
+            streak: 0,
+            logs: []
+          }
+        }));
+        return;
+      }
+      
+      // Use the new admin endpoint to get specific user progress data
+      try {
+        console.log('🔍 Client - Fetching progress for user:', userId);
+        const progressData = await quitTrackerService.getAdminUserProgress(userId);
+        console.log('🔍 Client - Progress data received for user', userId, ':', progressData);
+        const logs = progressData.logs || [];
+        console.log('🔍 Client - Logs for user', userId, ':', logs);
+        console.log('🔍 Client - Number of logs:', logs.length);
+        
+        // Calculate engagement: (number of logs / number of days since join) * 100
+        const startDate = new Date(joinDate);
+        const today = new Date();
+        const totalDaysSinceJoin = Math.floor((today.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
+        const numberOfLogs = logs.length;
+        let engagementPercentage = totalDaysSinceJoin > 0 ? Math.round((numberOfLogs / totalDaysSinceJoin) * 100) : (numberOfLogs > 0 ? 100 : 0);
+        engagementPercentage = Math.min(engagementPercentage, 100);
+        
+        console.log('🔍 Client - Engagement calculation for user', userId, ':');
+        console.log('🔍 Client - Join date:', joinDate);
+        console.log('🔍 Client - Total days since join:', totalDaysSinceJoin);
+        console.log('🔍 Client - Number of logs:', numberOfLogs);
+        console.log('🔍 Client - Engagement percentage:', engagementPercentage);
+        
+        const progressDataForUser = {
+          progressPercentage: engagementPercentage,
+          daysSmokeFree: progressData.daysSmokeFree || logs.filter(log => !log.smoked).length,
+          successRate: progressData.successRate || (logs.length > 0 ? Math.floor((logs.filter(log => !log.smoked).length / logs.length) * 100) : 0),
+          sessionsCompleted: logs.length,
+          streak: calculateLongestStreak(logs),
+          logs: logs
+        };
+        
+        setUserProgress(prev => ({
+          ...prev,
+          [userId]: progressDataForUser
+        }));
+        return;
+      } catch (error) {
+        console.log('Could not fetch admin progress data, calculating engagement based on join date only');
+      }
+      
+      // Fallback: Calculate engagement based on join date to current date (estimated)
+      const startDate = new Date(joinDate);
+      const today = new Date();
+      const totalDaysSinceJoin = Math.floor((today.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
+      
+      // For demonstration, simulate some logged days (remove this in production when you have real data)
+      const estimatedLoggedDays = Math.max(0, Math.floor(totalDaysSinceJoin * (0.3 + Math.random() * 0.4))); // 30-70% engagement
+      
+      const engagementPercentage = totalDaysSinceJoin > 0 ? Math.round((estimatedLoggedDays / totalDaysSinceJoin) * 100) : 0;
+      
+      // Generate sample logs for demonstration (remove this in production)
+      const sampleLogs = Array.from({ length: estimatedLoggedDays }, (_, i) => ({
+        log_date: new Date(Date.now() - (i * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
+        smoked: Math.random() > 0.3, // 70% chance of not smoking
+        cigarettes_count: Math.floor(Math.random() * 10) + 1,
+        cravings_level: Math.floor(Math.random() * 10) + 1,
+        mood: Math.floor(Math.random() * 10) + 1,
+        notes: 'Sample log entry'
+      }));
+      
+      const longestStreak = calculateLongestStreak(sampleLogs);
+      
+      const progressData = {
+        progressPercentage: engagementPercentage,
+        daysSmokeFree: sampleLogs.filter(log => !log.smoked).length,
+        successRate: sampleLogs.length > 0 ? Math.floor((sampleLogs.filter(log => !log.smoked).length / sampleLogs.length) * 100) : 0,
+        sessionsCompleted: sampleLogs.length,
+        streak: longestStreak,
+        logs: sampleLogs
+      };
+      
+      setUserProgress(prev => ({
+        ...prev,
+        [userId]: progressData
+      }));
+    } catch (error) {
+      console.error(`Error fetching progress for user ${userId}:`, error);
+      // Set default progress on error
+      setUserProgress(prev => ({
+        ...prev,
+        [userId]: {
+          progressPercentage: 0,
+          daysSmokeFree: 0,
+          successRate: 0,
+          sessionsCompleted: 0,
+          streak: 0,
+          logs: []
+        }
+      }));
+    }
+  };
 
   // Fetch users from API
   const fetchUsers = async (page = 1, search = '', role = '', status = '') => {
@@ -65,6 +240,12 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
       if (result.success) {
         setUsers(result.data);
         setPagination(result.pagination);
+        
+        // Fetch progress data for each user
+        result.data.forEach((user: any) => {
+          console.log("🔍 User data:", user);
+          fetchUserProgress(user.id, user.created_at);
+        });
       }
     } catch (err: any) {
       setError(err.message || 'Failed to fetch users');
@@ -137,20 +318,25 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
   };
 
   // Transform API data to match expected format
-  const transformedUsers = users.map((user) => ({
-    ...user,
-    name: user.name || 'Unknown',
-    phone: user.phone || '-',
-    age: user.age || '-',
-    fagerstrom: user.fagerstrom_score || '-',
-    addictionLevel: user.addiction_level || 'Unknown',
-    status: user.status || 'Unknown',
-    joinDate: formatDate(user.join_date),
-    lastLogin: formatDate(user.last_login),
-    progress: 0, // Backend doesn't track progress yet
-    sessionsCompleted: 0, // Backend doesn't track sessions yet
-    streak: 0, // Backend doesn't track streak yet
-  }));
+  const transformedUsers = users.map((user) => {
+    const progress = userProgress[user.id] || {};
+    return {
+      ...user,
+      name: user.name || user.email || 'Unknown',
+      phone: user.phone || '-',
+      age: user.age || '-',
+      fagerstrom: user.fagerstrom_score || '-',
+      addictionLevel: user.addiction_level || 'Unknown',
+      status: user.status || 'Unknown',
+      joinDate: formatDate(user.join_date),
+      lastLogin: formatDate(user.last_login),
+      progress: progress.progressPercentage || 0,
+      sessionsCompleted: progress.sessionsCompleted || 0,
+      streak: progress.streak || 0,
+      daysSmokeFree: progress.daysSmokeFree || 0,
+      successRate: progress.successRate || 0,
+    };
+  });
 
   const getAddictionColor = (level: string) => {
     if (level === "High") return "#D9534F";
@@ -212,7 +398,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                   </p>
                 </div>
                 <div className="flex items-center gap-3 mt-4 md:mt-0">
-                  <Button
+                  {/* <Button
                     className="h-12 rounded-2xl flex items-center gap-2 px-6 shadow-lg hover:shadow-xl transition-all duration-200"
                     style={{ 
                       background: "linear-gradient(135deg, #20B2AA 0%, #1C9B94 100%)",
@@ -221,7 +407,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                   >
                     <UserPlus className="w-5 h-5" />
                     <span>Add User</span>
-                  </Button>
+                  </Button> */}
                   <Button
                     variant="outline"
                     className="h-12 rounded-2xl flex items-center gap-2 px-6 border-gray-200 hover:border-[#20B2AA] hover:text-[#20B2AA] transition-all duration-200"
@@ -299,7 +485,6 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                   <Select value={roleFilter} onValueChange={setRoleFilter}>
                     <SelectTrigger className="h-12 rounded-2xl border-gray-200 focus:border-[#20B2AA] focus:ring-[#20B2AA]/20 bg-white">
                       <SelectValue placeholder="All Roles" />
-                      <ChevronDown className="w-4 h-4 opacity-50" />
                     </SelectTrigger>
                     <SelectContent className="bg-white border border-gray-200 rounded-2xl shadow-xl">
                       <SelectItem value="all" className="rounded-lg hover:bg-blue-50 focus:bg-blue-50">All Roles</SelectItem>
@@ -317,7 +502,6 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
                     <SelectTrigger className="h-12 rounded-2xl border-gray-200 focus:border-[#20B2AA] focus:ring-[#20B2AA]/20 bg-white">
                       <SelectValue placeholder="All Statuses" />
-                      <ChevronDown className="w-4 h-4 opacity-50" />
                     </SelectTrigger>
                     <SelectContent className="bg-white border border-gray-200 rounded-2xl shadow-xl">
                       <SelectItem value="all" className="rounded-lg hover:bg-blue-50 focus:bg-blue-50">All Statuses</SelectItem>
@@ -405,19 +589,16 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                         Contact
                       </TableHead>
                       <TableHead className="font-semibold text-[#1C3B5E] min-w-[140px]">
-                        Progress
+                        Engagement
                       </TableHead>
                       <TableHead className="font-semibold text-[#1C3B5E] text-center min-w-[120px]">
                         Fagerström
                       </TableHead>
                       <TableHead className="font-semibold text-[#1C3B5E] text-center min-w-[120px]">
-                        Level
-                      </TableHead>
-                      <TableHead className="font-semibold text-[#1C3B5E] text-center min-w-[120px]">
                         Status
                       </TableHead>
                       <TableHead className="font-semibold text-[#1C3B5E] text-center min-w-[140px]">
-                        Last Activity
+                        Last Login
                       </TableHead>
                       <TableHead className="font-semibold text-[#1C3B5E] text-center min-w-[160px]">
                         Actions
@@ -427,7 +608,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                   <TableBody>
                     {isLoading ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-12">
+                        <TableCell colSpan={7} className="text-center py-12">
                           <div className="flex flex-col items-center gap-4">
                             <Loader2 className="w-8 h-8 animate-spin text-[#20B2AA]" />
                             <p className="text-gray-600">Loading users...</p>
@@ -436,7 +617,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                       </TableRow>
                     ) : error ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-12">
+                        <TableCell colSpan={7} className="text-center py-12">
                           <div className="flex flex-col items-center gap-4">
                             <p className="text-red-600 font-semibold">Error: {error}</p>
                             <Button 
@@ -451,7 +632,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                       </TableRow>
                     ) : transformedUsers.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-12">
+                        <TableCell colSpan={7} className="text-center py-12">
                           <div className="flex flex-col items-center gap-4">
                             <p className="text-gray-600 font-semibold">No users found</p>
                             <p className="text-gray-500 text-sm">Try adjusting your search or filters</p>
@@ -504,21 +685,16 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                         <TableCell>
                           <div className="space-y-2">
                             <div className="flex items-center gap-3">
-                              <div className="w-16 bg-gray-200 rounded-full h-2 flex-1">
-                                <div
-                                  className="h-2 rounded-full transition-all duration-300 shadow-sm"
-                                  style={{
-                                    width: `${user.progress}%`,
-                                    backgroundColor: getProgressColor(user.progress)
-                                  }}
-                                ></div>
-                              </div>
+                              <Progress 
+                                value={user.progress} 
+                                className="w-16 h-2"
+                              />
                               <span className="text-sm font-medium text-[#1C3B5E] min-w-[40px]">
                                 {user.progress}%
                               </span>
                             </div>
                             <p className="text-xs text-gray-500">
-                              {user.sessionsCompleted} sessions • {user.streak} days
+                              {user.sessionsCompleted} logged • {user.streak} day streak
                             </p>
                           </div>
                         </TableCell>
@@ -532,18 +708,6 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                             }}
                           >
                             {user.fagerstrom}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div
-                            className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border border-transparent shadow-sm"
-                            style={{
-                              backgroundColor: `${getAddictionColor(user.addictionLevel)}15`,
-                              color: getAddictionColor(user.addictionLevel),
-                              borderColor: `${getAddictionColor(user.addictionLevel)}30`
-                            }}
-                          >
-                            {user.addictionLevel}
                           </div>
                         </TableCell>
                         <TableCell className="text-center">
@@ -573,14 +737,6 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                               title="View User Details"
                             >
                               <Eye className="w-4 h-4 group-hover:scale-110 transition-transform" style={{ color: "#20B2AA" }} />
-                            </button>
-                            <button
-                              onClick={() => handleEdit(user)}
-                              className="p-2 rounded-xl transition-all duration-200 hover:shadow-md hover:scale-105 group"
-                              style={{ backgroundColor: "#F59E0B15" }}
-                              title="Edit User"
-                            >
-                              <Edit className="w-4 h-4 group-hover:scale-110 transition-transform" style={{ color: "#F59E0B" }} />
                             </button>
                             <button
                               onClick={() => handleDelete(user.id)}

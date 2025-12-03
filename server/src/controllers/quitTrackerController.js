@@ -508,6 +508,49 @@ const getAllLogs = async (req, res, next) => {
   }
 };
 
+// Admin endpoint to get specific user's progress
+const getAdminUserProgress = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const { startDate, endDate, goalDays } = req.query;
+    
+    console.log('🔍 Admin Controller - getAdminUserProgress called for userId:', userId);
+    
+    // Check if user has completed pre and post self-efficacy questionnaires
+    const hasCompletedPre = await hasUserCompletedPreSelfEfficacy(userId);
+    const hasCompletedPost = await hasUserCompletedPostSelfEfficacy(userId);
+    
+    // Always calculate progress, but include questionnaire status
+    const options = { startDate, endDate, goalDays: goalDays ? parseInt(goalDays) : 30 };
+    const progressData = await QuitTrackerService.getProgress(userId, options);
+    console.log('🔍 Admin Controller - Progress Data from Service for user', userId, ':', progressData);
+    console.log('🔍 Admin Controller - Logs in Progress Data:', progressData.logs);
+    console.log('🔍 Admin Controller - Number of logs:', progressData.logs?.length || 0);
+    
+    // Check if quit date has passed
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const quitDate = progressData.quitDate ? new Date(progressData.quitDate) : null;
+    const isQuitDatePassed = quitDate && quitDate <= today;
+    
+    // Add status information to the response
+    progressData.needsQuestionnaire = !hasCompletedPre;
+    progressData.hasCompletedPreSelfEfficacy = hasCompletedPre;
+    progressData.hasCompletedPostSelfEfficacy = hasCompletedPost;
+    progressData.isQuitDatePassed = isQuitDatePassed;
+    
+    console.log('📊 Admin Controller - Final progress data for user', userId, ':', progressData);
+    
+    res.json({
+      success: true,
+      data: progressData
+    });
+  } catch (error) {
+    console.error('🔍 Admin Controller - Error in getAdminUserProgress:', error);
+    next(error);
+  }
+};
+
 export {
   getProgress,
   createOrUpdateLog,
@@ -521,5 +564,6 @@ export {
   savePostSelfEfficacyResponsesHandler,
   getSettings,
   updateSettings,
-  getAllLogs
+  getAllLogs,
+  getAdminUserProgress
 };

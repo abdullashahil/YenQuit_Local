@@ -29,7 +29,7 @@ export function AdminSidebar({ activeTab, setActiveTab, onExitAdmin, onLogout }:
 
   const navItems = [
     { id: "admin-dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/admin", badge: null },
-    { id: "user-management", label: "User Management", icon: Users, href: "/admin/users", badge: null },
+    // { id: "  user-management", label: "User Management", icon: Users, href: "/admin/users", badge: null },
     { id: "coping-strategies", label: "Coping Strategies", icon: Heart, href: "/admin/coping-strategies", badge: null },
     { id: "notification-templates", label: "Notification Templates", icon: Clock, href: "/admin/notification-templates", badge: null },
     { id: "assist-history", label: "Assist History", icon: History, href: "/admin/assist-history", badge: null },
