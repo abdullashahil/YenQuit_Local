@@ -273,6 +273,7 @@ export const userService = {
     }
   },
 
+  // Get user answers
   getUserAnswers: async () => {
     try {
       const headers = getAuthHeaders();
@@ -283,6 +284,25 @@ export const userService = {
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to fetch user answers');
+    }
+  },
+
+  // Get user progress data for admin
+  getUserProgress: async (userId: string) => {
+    try {
+      const headers = getAuthHeaders();
+      const response = await axios.get(
+        `${API_BASE_URL}/quit-tracker/admin/user/${userId}/progress`,
+        { headers }
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error('Error fetching user progress:', error);
+      // Return null if endpoint doesn't exist yet, allowing fallback to calculated engagement
+      if (error.response?.status === 404) {
+        return null;
+      }
+      throw new Error(error.response?.data?.message || 'Failed to fetch user progress');
     }
   }
 };

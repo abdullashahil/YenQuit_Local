@@ -17,12 +17,48 @@ class ContentController {
         tags
       } = req.body;
 
-      // Validation
-      if (!title || !category || !content) {
+      // Category-specific validation
+      if (!category) {
         return res.status(400).json({
           success: false,
-          message: 'Title, category, and content are required fields'
+          message: 'Category is required'
         });
+      }
+
+      // Content-specific validation based on category
+      if (category === 'Video' || category === 'Podcast') {
+        if (!title) {
+          return res.status(400).json({
+            success: false,
+            message: 'Title is required for video/podcast content'
+          });
+        }
+        if (!media_url) {
+          return res.status(400).json({
+            success: false,
+            message: 'Media URL is required for video/podcast content'
+          });
+        }
+      } else if (category === 'Image') {
+        if (!media_url) {
+          return res.status(400).json({
+            success: false,
+            message: 'Image URL is required for image-based learning'
+          });
+        }
+      } else if (category === 'Blog' || category === 'Quote') {
+        if (!title) {
+          return res.status(400).json({
+            success: false,
+            message: 'Title is required for blog/quote content'
+          });
+        }
+        if (!content) {
+          return res.status(400).json({
+            success: false,
+            message: 'Content is required for blog/quote content'
+          });
+        }
       }
 
       // Parse tags if it's a string
@@ -42,10 +78,10 @@ class ContentController {
       }
 
       const contentData = {
-        title: title.trim(),
+        title: title?.trim() || (category === 'Image' ? 'Untitled Image' : null),
         category,
         description: description?.trim() || null,
-        content: content.trim(),
+        content: content?.trim() || '',
         status,
         publish_date: publish_date || null,
         end_date: end_date || null,
@@ -174,6 +210,44 @@ class ContentController {
         });
       }
 
+      // Category-specific validation for updates
+      if (category !== undefined) {
+        if (category === 'Video' || category === 'Podcast') {
+          if (title !== undefined && !title.trim()) {
+            return res.status(400).json({
+              success: false,
+              message: 'Title is required for video/podcast content'
+            });
+          }
+          if (media_url !== undefined && !media_url.trim()) {
+            return res.status(400).json({
+              success: false,
+              message: 'Media URL is required for video/podcast content'
+            });
+          }
+        } else if (category === 'Image') {
+          if (media_url !== undefined && !media_url.trim()) {
+            return res.status(400).json({
+              success: false,
+              message: 'Image URL is required for image-based learning'
+            });
+          }
+        } else if (category === 'Blog' || category === 'Quote') {
+          if (title !== undefined && !title.trim()) {
+            return res.status(400).json({
+              success: false,
+              message: 'Title is required for blog/quote content'
+            });
+          }
+          if (content !== undefined && !content.trim()) {
+            return res.status(400).json({
+              success: false,
+              message: 'Content is required for blog/quote content'
+            });
+          }
+        }
+      }
+
       // Parse tags if it's a string
       let parsedTags = tags;
       if (typeof tags === 'string') {
@@ -196,10 +270,10 @@ class ContentController {
       }
 
       const updateData = {};
-      if (title !== undefined) updateData.title = title.trim();
+      if (title !== undefined) updateData.title = title?.trim() || null;
       if (category !== undefined) updateData.category = category;
       if (description !== undefined) updateData.description = description?.trim() || null;
-      if (content !== undefined) updateData.content = content.trim();
+      if (content !== undefined) updateData.content = content?.trim() || '';
       if (status !== undefined) updateData.status = status;
       if (publish_date !== undefined) updateData.publish_date = publish_date || null;
       if (end_date !== undefined) updateData.end_date = end_date || null;

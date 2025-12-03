@@ -280,6 +280,19 @@ const quitTrackerService = {
     }
   },
 
+  // Get specific user's quit tracker progress for admin
+  async getAdminUserProgress(userId: string): Promise<ProgressResponse> {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/quit-tracker/admin/user/${userId}/progress`,
+        { headers: getAuthHeaders() }
+      );
+      return response.data.data;
+    } catch (error) {
+      handleApiError(error, `Failed to fetch progress data for user ${userId}`);
+    }
+  },
+
   // Get all logs for modal view
   async getAllLogs(options: { page?: number; limit?: number } = {}): Promise<LogsResponse> {
     try {

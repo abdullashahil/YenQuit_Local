@@ -21,7 +21,7 @@ import { PreviewContentModal } from "./PreviewContentModal";
 import { CampaignScheduler } from "./CampaignScheduler";
 import { InsightsNotifications } from "../features/community/InsightsNotifications";
 import { SystemConfiguration } from "./SystemConfiguration";
-import { Search, Plus, Edit, Trash2, Eye, Filter, ChevronDown, BarChart3, Users, Calendar, FileText, MessageSquare, Bell, Loader2, Settings } from "lucide-react";
+import { Search, Plus, Edit, Trash2, Eye, Filter, BarChart3, Users, Calendar, FileText, MessageSquare, Bell, Loader2, Settings } from "lucide-react";
 import { useState, useEffect } from "react";
 import axios from "axios";
 
@@ -338,13 +338,12 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
                   <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                     <SelectTrigger className="h-12 rounded-2xl border-gray-200 focus:border-[#20B2AA] focus:ring-[#20B2AA]/20 bg-white">
                       <SelectValue placeholder="All Categories" />
-                      <ChevronDown className="w-4 h-4 opacity-50" />
                     </SelectTrigger>
                     <SelectContent className="bg-white border border-gray-200 rounded-2xl shadow-xl">
                       <SelectItem value="all" className="rounded-lg hover:bg-blue-50 focus:bg-blue-50">All Categories</SelectItem>
                       <SelectItem value="Blog" className="rounded-lg hover:bg-cyan-50 focus:bg-cyan-50">Blog</SelectItem>
                       <SelectItem value="Quote" className="rounded-lg hover:bg-orange-50 focus:bg-orange-50">Quote</SelectItem>
-                      <SelectItem value="Campaign" className="rounded-lg hover:bg-purple-50 focus:bg-purple-50">Campaign</SelectItem>
+                      {/* <SelectItem value="Campaign" className="rounded-lg hover:bg-purple-50 focus:bg-purple-50">Campaign</SelectItem> */}
                       <SelectItem value="Video" className="rounded-lg hover:bg-red-50 focus:bg-red-50">Video</SelectItem>
                       <SelectItem value="Podcast" className="rounded-lg hover:bg-green-50 focus:bg-green-50">Podcast</SelectItem>
                       <SelectItem value="Image" className="rounded-lg hover:bg-blue-50 focus:bg-blue-50">Image</SelectItem>
@@ -360,7 +359,6 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
                     <SelectTrigger className="h-12 rounded-2xl border-gray-200 focus:border-[#20B2AA] focus:ring-[#20B2AA]/20 bg-white">
                       <SelectValue placeholder="All Statuses" />
-                      <ChevronDown className="w-4 h-4 opacity-50" />
                     </SelectTrigger>
                     <SelectContent className="bg-white border border-gray-200 rounded-2xl shadow-xl">
                       <SelectItem value="all" className="rounded-lg hover:bg-blue-50 focus:bg-blue-50">All Statuses</SelectItem>
@@ -419,12 +417,6 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
                       <TableHead className="font-semibold text-[#1C3B5E] text-center min-w-[100px]">
                         Status
                       </TableHead>
-                      <TableHead className="font-semibold text-[#1C3B5E] text-center min-w-[100px]">
-                        Views
-                      </TableHead>
-                      <TableHead className="font-semibold text-[#1C3B5E] text-center min-w-[120px]">
-                        Engagement
-                      </TableHead>
                       <TableHead className="font-semibold text-[#1C3B5E] text-center min-w-[140px]">
                         Actions
                       </TableHead>
@@ -433,7 +425,7 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
                   <TableBody>
                     {isLoading ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="py-16 text-center">
+                        <TableCell colSpan={5} className="py-16 text-center">
                           <div className="flex flex-col items-center justify-center">
                             <Loader2 className="w-8 h-8 animate-spin mb-4" style={{ color: "#20B2AA" }} />
                             <p className="text-lg font-semibold text-gray-600 mb-2">Loading content...</p>
@@ -443,7 +435,7 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
                       </TableRow>
                     ) : error ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="py-16 text-center">
+                        <TableCell colSpan={5} className="py-16 text-center">
                           <div className="flex flex-col items-center justify-center">
                             <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
                               <Trash2 className="w-8 h-8 text-red-500" />
@@ -461,7 +453,7 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
                       </TableRow>
                     ) : transformedContent.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="py-16 text-center">
+                        <TableCell colSpan={5} className="py-16 text-center">
                           <div className="flex flex-col items-center justify-center">
                             <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
                               <Search className="w-8 h-8 text-gray-400" />
@@ -535,34 +527,6 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
                             }}
                           >
                             {content.status}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex flex-col items-center">
-                            <p className="text-sm font-medium text-[#1C3B5E]">{content.views}</p>
-                            {content.views > 0 && (
-                              <p className="text-xs text-gray-500">views</p>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex flex-col items-center">
-                            {content.engagement > 0 ? (
-                              <>
-                                <p className="text-sm font-medium text-[#1C3B5E]">{content.engagement}%</p>
-                                <div className="w-16 bg-gray-200 rounded-full h-1.5 mt-1">
-                                  <div
-                                    className="h-1.5 rounded-full transition-all duration-300"
-                                    style={{
-                                      width: `${content.engagement}%`,
-                                      backgroundColor: getStatusColor(content.status)
-                                    }}
-                                  ></div>
-                                </div>
-                              </>
-                            ) : (
-                              <p className="text-sm text-gray-400">-</p>
-                            )}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -664,129 +628,23 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
               )}
             </div>
 
-            {/* Campaign Scheduler & Insights Sharing - Horizontal Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-6">
-              {/* Campaign Scheduler */}
-              <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg border-0 overflow-hidden">
-                <div className="p-6 border-b border-gray-100">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 rounded-xl bg-[#20B2AA20]">
-                      <Calendar className="w-5 h-5 text-[#20B2AA]" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-[#1C3B5E]">Campaign Scheduler</h3>
-                  </div>
-                  <p className="text-sm text-gray-600">Plan and schedule content campaigns</p>
-                </div>
-                <div className="p-6">
-                  <CampaignScheduler />
-                </div>
-              </div>
-
-              {/* Insights Sharing */}
-              <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg border-0 overflow-hidden">
-                <div className="p-6 border-b border-gray-100">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 rounded-xl bg-[#FFA72620]">
-                      <MessageSquare className="w-5 h-5 text-[#FFA726]" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-[#1C3B5E]">Insights Sharing</h3>
-                  </div>
-                  <p className="text-sm text-gray-600">Share performance insights with team</p>
-                </div>
-                <div className="p-6 space-y-4">
-                  <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-100">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-[#1C3B5E]">Weekly Report</span>
-                      <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">Ready</span>
-                    </div>
-                    <p className="text-xs text-gray-600 mb-3">Content performance overview</p>
-                    <Button size="sm" className="w-full rounded-xl bg-[#20B2AA] hover:bg-[#1C9B94] text-white">
-                      Share with Team
-                    </Button>
-                  </div>
-                  <div className="p-4 rounded-2xl bg-green-50/50 border border-green-100">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-[#1C3B5E]">Top Performers</span>
-                      <span className="text-xs text-green-600">+24%</span>
-                    </div>
-                    <p className="text-xs text-gray-600">3 content pieces trending</p>
-                  </div>
-                  <div className="p-4 rounded-2xl bg-purple-50/50 border border-purple-100">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-[#1C3B5E]">Engagement Analytics</span>
-                      <span className="text-xs text-purple-600">72% avg</span>
-                    </div>
-                    <p className="text-xs text-gray-600">Across all live content</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Notification Center - Full Width */}
-            <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg border-0 overflow-hidden">
+            {/* Campaign Scheduler */}
+            <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg border-0 overflow-hidden mb-6">
               <div className="p-6 border-b border-gray-100">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 rounded-xl bg-[#8B5CF620]">
-                    <Bell className="w-5 h-5 text-[#8B5CF6]" />
+                  <div className="p-2 rounded-xl bg-[#20B2AA20]">
+                    <Calendar className="w-5 h-5 text-[#20B2AA]" />
                   </div>
-                  <h3 className="text-lg font-semibold text-[#1C3B5E]">Notification Center</h3>
+                  <h3 className="text-lg font-semibold text-[#1C3B5E]">Campaign Scheduler</h3>
                 </div>
-                <p className="text-sm text-gray-600">System alerts and updates</p>
+                <p className="text-sm text-gray-600">Plan and schedule content campaigns</p>
               </div>
               <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div className="flex items-start gap-3 p-4 rounded-2xl bg-red-50/50 border border-red-100">
-                    <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-[#1C3B5E]">System Maintenance</p>
-                      <p className="text-xs text-gray-600">Scheduled for Oct 20, 2:00 AM</p>
-                      <p className="text-xs text-gray-500 mt-1">2 hours ago</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3 p-4 rounded-2xl bg-blue-50/50 border border-blue-100">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-[#1C3B5E]">New User Registration</p>
-                      <p className="text-xs text-gray-600">5 new users joined today</p>
-                      <p className="text-xs text-gray-500 mt-1">5 hours ago</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3 p-4 rounded-2xl bg-green-50/50 border border-green-100">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-[#1C3B5E]">Content Published</p>
-                      <p className="text-xs text-gray-600">"Stress Management" is now live</p>
-                      <p className="text-xs text-gray-500 mt-1">1 day ago</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3 p-4 rounded-2xl bg-orange-50/50 border border-orange-100">
-                    <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-[#1C3B5E]">Content Approval</p>
-                      <p className="text-xs text-gray-600">3 items pending review</p>
-                      <p className="text-xs text-gray-500 mt-1">2 days ago</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3 p-4 rounded-2xl bg-purple-50/50 border border-purple-100">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-[#1C3B5E]">Performance Alert</p>
-                      <p className="text-xs text-gray-600">High engagement on blog posts</p>
-                      <p className="text-xs text-gray-500 mt-1">3 days ago</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3 p-4 rounded-2xl bg-cyan-50/50 border border-cyan-100">
-                    <div className="w-2 h-2 bg-cyan-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-[#1C3B5E]">Update Available</p>
-                      <p className="text-xs text-gray-600">New features in content manager</p>
-                      <p className="text-xs text-gray-500 mt-1">1 week ago</p>
-                    </div>
-                  </div>
-                </div>
+                <CampaignScheduler />
               </div>
             </div>
-              </>
+
+            </>
             ) : (
               <SystemConfiguration />
             )}

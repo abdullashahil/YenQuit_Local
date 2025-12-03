@@ -15,6 +15,11 @@ class ContentModel {
       tags
     } = contentData;
 
+    // Ensure we never attempt to insert a NULL title into the database.
+    // If no title is provided, fall back to a generic one so the NOT NULL
+    // constraint on the "title" column is always satisfied.
+    const safeTitle = title || 'Untitled Content';
+
     const query = `
       INSERT INTO contents (title, category, description, content, status, publish_date, end_date, media_url, tags)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -22,7 +27,7 @@ class ContentModel {
     `;
     
     const values = [
-      title,
+      safeTitle,
       category,
       description || null,
       content,
@@ -45,13 +50,15 @@ class ContentModel {
     const {
       page = 1,
       limit = 10,
-      type // expected values: 'video' | 'podcast' | 'image'
+      type // expected values: 'video' | 'podcast' | 'image' | 'blog' | 'quote'
     } = options;
 
     const categoryMap = {
       video: 'Video',
       podcast: 'Podcast',
-      image: 'Image'
+      image: 'Image',
+      blog: 'Blog',
+      quote: 'Quote'
     };
 
     const offset = (page - 1) * limit;
@@ -106,24 +113,30 @@ class ContentModel {
     }
   }
 
-  // Group public content by type (videos, podcasts, images)
+  // Group public content by type (videos, podcasts, images, blogs, quotes)
   static async findPublicGrouped(options = {}) {
     const { page = 1, limit = 10 } = options;
     // Fetch each type in parallel with its own pagination
-    const [videos, podcasts, images] = await Promise.all([
+    const [videos, podcasts, images, blogs, quotes] = await Promise.all([
       this.findPublic({ page, limit, type: 'video' }),
       this.findPublic({ page, limit, type: 'podcast' }),
-      this.findPublic({ page, limit, type: 'image' })
+      this.findPublic({ page, limit, type: 'image' }),
+      this.findPublic({ page, limit, type: 'blog' }),
+      this.findPublic({ page, limit, type: 'quote' })
     ]);
 
     return {
       videos: videos.data,
       podcasts: podcasts.data,
       images: images.data,
+      blogs: blogs.data,
+      quotes: quotes.data,
       pagination: {
         videos: videos.pagination,
         podcasts: podcasts.pagination,
-        images: images.pagination
+        images: images.pagination,
+        blogs: blogs.pagination,
+        quotes: quotes.pagination
       }
     };
   }
