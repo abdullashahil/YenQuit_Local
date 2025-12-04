@@ -6,8 +6,22 @@ export async function getQuestionsByStep(req, res, next) {
   try {
     const { step } = req.params;
     if (!step) return res.status(400).json({ error: 'step is required' });
-    const questions = await fiveaService.getQuestionsByStep(step);
-    res.json({ questions });
+
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const profile = await UserModel.getProfileByUserId(userId);
+    const tobaccoType = profile?.tobacco_type || 'smoked';
+
+    let tobaccoCategory;
+    if (tobaccoType === 'smokeless') {
+      tobaccoCategory = 'smokeless';
+    } else {
+      tobaccoCategory = 'smoked';
+    }
+
+    const questions = await fiveaService.getQuestionsByStep(step, tobaccoCategory);
+    res.json({ questions, tobacco_type: tobaccoType });
   } catch (err) {
     next(err);
   }
@@ -133,10 +147,10 @@ export async function getAdvise(req, res, next) {
     if (!severity) return res.status(404).json({ error: 'Severity assessment not found. Please complete ASK step first.' });
     const content = await fiveaService.getAdviseContent(severity.severity_level);
     if (!content) return res.status(404).json({ error: 'Advise content not found for this severity level.' });
-    
+
     // Fetch user profile to get actual age
     const profile = await UserModel.getProfileByUserId(userId);
-    const userAge = profile?.age || '20'; 
+    const userAge = profile?.age || '20';
     // Template interpolation for ai_message with actual user age
     const aiMessage = content.ai_message_template.replace('{{age}}', userAge.toString());
     res.json({
@@ -187,14 +201,23 @@ export async function getQuestionById(req, res, next) {
 
 export async function createAdminQuestion(req, res, next) {
   try {
-    const { step, question_text, options } = req.body;
+    const { step, question_text, options, tobacco_category } = req.body;
     if (!step || !question_text) {
       return res.status(400).json({ error: 'step and question_text are required' });
     }
     if (options !== undefined && !Array.isArray(options)) {
       return res.status(400).json({ error: 'options must be an array' });
     }
-    const created = await fiveaService.createAdminQuestion({ step, question_text, options });
+
+    const category = tobacco_category || 'smoked';
+
+    const created = await fiveaService.createAdminQuestion({
+      step,
+      question_text,
+      options,
+      tobacco_category: category
+    });
+
     res.status(201).json({ question: created });
   } catch (err) {
     next(err);
@@ -208,6 +231,7 @@ export async function updateAdminQuestion(req, res, next) {
     if (payload.options !== undefined && !Array.isArray(payload.options)) {
       return res.status(400).json({ error: 'options must be an array' });
     }
+
     const updated = await fiveaService.updateAdminQuestion(id, payload);
     if (!updated) return res.status(404).json({ error: 'Question not found' });
     res.json({ question: updated });

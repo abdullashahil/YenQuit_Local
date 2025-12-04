@@ -1,12 +1,20 @@
 import { query, getClient } from '../db/index.js';
 
-export async function getQuestionsByStep(step) {
-  const res = await query(
-    'SELECT id, step, question_text, options, is_active, created_at, updated_at FROM fivea_questions WHERE step = $1 AND is_active = TRUE ORDER BY id ASC',
-    [step]
+export async function getQuestionsByStep(step, tobaccoCategory) { 
+  const category = tobaccoCategory || 'smoked';
+
+  const result = await query(
+    `SELECT id, step, question_text, options
+     FROM fivea_questions
+     WHERE step = $1
+       AND is_active = TRUE
+       AND tobacco_category = $2
+     ORDER BY id`,
+    [step, category]
   );
-  return res.rows;
-}
+
+  return result.rows;
+} 
 
 export async function getAllQuestions() {
   const res = await query(
@@ -64,7 +72,7 @@ export async function saveUserAnswers(userId, answers) {
   if (!userId || typeof userId !== 'string') {
     throw new Error('Invalid userId: must be a UUID string');
   }
-  
+
   const client = await getClient();
   try {
     await client.query('BEGIN');
@@ -90,7 +98,7 @@ export async function getUserAnswers(userId, step) {
   if (!userId || typeof userId !== 'string') {
     throw new Error('Invalid userId: must be a UUID string');
   }
-  
+
   const res = await query(
     `SELECT a.id, a.question_id, a.answer_text, a.created_at, a.updated_at, q.step, q.question_text
        FROM fivea_user_answers a
@@ -107,7 +115,7 @@ export async function getAllUserAnswersForUser(userId) {
   if (!userId || typeof userId !== 'string') {
     throw new Error('Invalid userId: must be a UUID string');
   }
-  
+
   const res = await query(
     `SELECT a.id, a.question_id, a.answer_text, a.created_at, a.updated_at, q.step, q.question_text
        FROM fivea_user_answers a
@@ -179,7 +187,7 @@ export async function getSeverityForUser(userId) {
   if (!userId || typeof userId !== 'string') {
     throw new Error('Invalid userId: must be a UUID string');
   }
-  
+
   const res = await query('SELECT severity_level, score, created_at FROM fivea_severity_assessment WHERE user_id = $1::uuid', [userId]);
   return res.rows[0];
 }
@@ -192,14 +200,14 @@ export async function getAdviseContent(severityLevel) {
   return res.rows[0];
 }
 
-export async function createAdminQuestion({ step, question_text, options }) {
-  if (!step || !question_text) throw new Error('step and question_text are required');
-  if (options !== undefined && !Array.isArray(options)) throw new Error('options must be an array');
-  const res = await query(
-    'INSERT INTO fivea_questions (step, question_text, options) VALUES ($1, $2, $3) RETURNING id, step, question_text, options, is_active, created_at, updated_at',
-    [step, question_text, options]
+export async function createAdminQuestion({ step, question_text, options, tobacco_category }) {
+  const result = await db.query(
+    `INSERT INTO fivea_questions (step, question_text, options, tobacco_category)
+     VALUES ($1, $2, $3, $4)
+     RETURNING *`,
+    [step, question_text, options || [], tobacco_category || 'smoked']
   );
-  return res.rows[0];
+  return result.rows[0];
 }
 
 export async function updateAdminQuestion(id, payload) {
