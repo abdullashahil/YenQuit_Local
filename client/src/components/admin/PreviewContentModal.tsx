@@ -13,25 +13,8 @@ export function PreviewContentModal({ open, onOpenChange, content }: PreviewCont
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl h-[85vh] p-0 rounded-3xl border-0 overflow-hidden shadow-2xl">
-        {/* Header */}
-        <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl mb-1" style={{ color: "#1C3B5E" }}>
-              Content Preview
-            </h2>
-            <p className="text-sm" style={{ color: "#333333", opacity: 0.6 }}>
-              How this content appears to users
-            </p>
-          </div>
-          <button
-            onClick={() => onOpenChange(false)}
-            className="p-2 rounded-xl hover:bg-gray-100 transition-all"
-          >
-            <X className="w-5 h-5" style={{ color: "#333333" }} />
-          </button>
-        </div>
-
+      <DialogContent className=" p-0 rounded-3xl border-0 overflow-hidden shadow-2xl">
+        
         {/* Preview Content */}
         <div className="p-8 overflow-y-auto flex-1" style={{ backgroundColor: "#f8f8f8" }}>
           <Card className="rounded-3xl border-0 shadow-lg overflow-hidden">
@@ -73,11 +56,40 @@ export function PreviewContentModal({ open, onOpenChange, content }: PreviewCont
             </div>
 
             {/* Media */}
-            {content.mediaUrl && (
-              <div className="w-full aspect-video bg-gray-200 flex items-center justify-center">
-                <p className="text-sm" style={{ color: "#333333", opacity: 0.5 }}>
-                  Media Preview: {content.mediaUrl}
-                </p>
+            {content.media_url && (
+              <div className="w-full">
+                {content.category === 'Image' ? (
+                  <img 
+                    src={content.media_url} 
+                    alt={content.title || "Content image"}
+                    className="w-full h-auto max-h-96 object-cover"
+                  />
+                ) : content.category === 'Video' || content.category === 'Podcast' ? (
+                  <div className="w-full p-8 bg-gray-50">
+                    <div className="text-center space-y-4">
+                      <p className="text-sm text-gray-600 mb-2">
+                        {content.category === 'Video' ? 'Video URL:' : 'Podcast URL:'}
+                      </p>
+                      <a 
+                        href={content.media_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 underline break-all text-lg"
+                      >
+                        {content.media_url}
+                      </a>
+                      <p className="text-xs text-gray-500">
+                        Click to open in YouTube
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full aspect-video bg-gray-200 flex items-center justify-center">
+                    <p className="text-sm" style={{ color: "#333333", opacity: 0.5 }}>
+                      Media Preview: {content.media_url}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 

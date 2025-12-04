@@ -55,8 +55,8 @@ export function ContentViewPage({ contentType, items, onBack }: ContentViewPageP
   return (
     <div className="min-h-screen bg-white">
       {/* Main Content Area */}
-      <div className="p-4 md:p-6 lg:p-8">
-        <div className="max-w-7xl mx-auto">
+      <div className="p-2 md:p-4 lg:p-6">
+        <div className="w-full">
           {/* Back Button */}
           <button
             onClick={onBack}

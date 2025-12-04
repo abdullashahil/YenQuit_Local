@@ -166,7 +166,7 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
   // Transform API data to match expected format
   const transformedContent = contentList.map((content) => ({
     ...content,
-    publishDate: formatDate(content.publish_date),
+    publishDate: formatDate(content.created_at),
     endDate: formatDate(content.end_date),
     views: 0, // Backend doesn't track views yet
     engagement: 0 // Backend doesn't track engagement yet
@@ -256,53 +256,16 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
                       <Plus className="w-5 h-5" />
                       <span>Create Content</span>
                     </Button>
-                    <Button
+                    {/* <Button
                       variant="outline"
                       className="h-12 rounded-2xl flex items-center gap-2 px-6 border-gray-200 hover:border-[#20B2AA] hover:text-[#20B2AA] transition-all duration-200"
                     >
                       <FileText className="w-5 h-5" />
                       <span className="hidden sm:inline">Export</span>
-                    </Button>
+                    </Button> */}
                   </div>
                 )}
               </div>
-
-              {/* Stats Cards - Only show for content tab */}
-              {activeContentTab === "content" && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                {
-                  (stats ? [
-                    { label: "Total Content", value: stats.total.toString(), change: "+12%", icon: FileText, color: "#20B2AA" },
-                    { label: "Live Content", value: stats.byStatus?.find((s: any) => s.status === 'Live')?.count.toString() || "0", change: "+8%", icon: BarChart3, color: "#10B981" },
-                    { label: "Avg. Engagement", value: "72%", change: "+5%", icon: Users, color: "#F59E0B" },
-                    { label: "Draft", value: stats.byStatus?.find((s: any) => s.status === 'Draft')?.count.toString() || "0", change: "+3%", icon: Calendar, color: "#8B5CF6" }
-                  ] : [
-                    { label: "Total Content", value: "-", change: "-", icon: FileText, color: "#20B2AA" },
-                    { label: "Live Content", value: "-", change: "-", icon: BarChart3, color: "#10B981" },
-                    { label: "Avg. Engagement", value: "-", change: "-", icon: Users, color: "#F59E0B" },
-                    { label: "Draft", value: "-", change: "-", icon: Calendar, color: "#8B5CF6" }
-                  ]).map((stat, index) => {
-                  const Icon = stat.icon;
-                  return (
-                    <div key={index} className="bg-white rounded-2xl p-4 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-gray-600">{stat.label}</p>
-                          <p className="text-2xl font-bold text-[#1C3B5E]">{stat.value}</p>
-                        </div>
-                        <div 
-                          className="w-12 h-12 rounded-full flex items-center justify-center"
-                          style={{ backgroundColor: `${stat.color}20` }}
-                        >
-                          <Icon className="w-6 h-6" style={{ color: stat.color }} />
-                        </div>
-                      </div>
-                      <p className="text-xs text-green-600 mt-2 font-medium">{stat.change} from last month</p>
-                    </div>
-                  );
-                })}
-              </div>
-              )}
             </div>
 
             {/* Conditional Content Rendering */}
@@ -352,7 +315,7 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
                 </div>
 
                 {/* Status Filter */}
-                <div className="lg:col-span-3">
+                {/* <div className="lg:col-span-3">
                   <label className="block text-sm font-semibold text-[#1C3B5E] mb-2">
                     Status
                   </label>
@@ -367,7 +330,7 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
                       <SelectItem value="Pending" className="rounded-lg hover:bg-cyan-50 focus:bg-cyan-50">Pending</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+                </div> */}
 
                 {/* Actions */}
                 <div className="lg:col-span-2 flex gap-2">
@@ -412,10 +375,7 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
                         Category
                       </TableHead>
                       <TableHead className="font-semibold text-[#1C3B5E] text-center min-w-[120px]">
-                        Published
-                      </TableHead>
-                      <TableHead className="font-semibold text-[#1C3B5E] text-center min-w-[100px]">
-                        Status
+                        Created
                       </TableHead>
                       <TableHead className="font-semibold text-[#1C3B5E] text-center min-w-[140px]">
                         Actions
@@ -425,7 +385,7 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
                   <TableBody>
                     {isLoading ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="py-16 text-center">
+                        <TableCell colSpan={4} className="py-16 text-center">
                           <div className="flex flex-col items-center justify-center">
                             <Loader2 className="w-8 h-8 animate-spin mb-4" style={{ color: "#20B2AA" }} />
                             <p className="text-lg font-semibold text-gray-600 mb-2">Loading content...</p>
@@ -435,7 +395,7 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
                       </TableRow>
                     ) : error ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="py-16 text-center">
+                        <TableCell colSpan={4} className="py-16 text-center">
                           <div className="flex flex-col items-center justify-center">
                             <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
                               <Trash2 className="w-8 h-8 text-red-500" />
@@ -453,7 +413,7 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
                       </TableRow>
                     ) : transformedContent.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="py-16 text-center">
+                        <TableCell colSpan={4} className="py-16 text-center">
                           <div className="flex flex-col items-center justify-center">
                             <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
                               <Search className="w-8 h-8 text-gray-400" />
@@ -517,18 +477,6 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
                             <p className="text-sm font-medium text-[#1C3B5E]">{content.publishDate}</p>
                           </div>
                         </TableCell>
-                        <TableCell className="text-center">
-                          <div
-                            className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border border-transparent shadow-sm mx-auto"
-                            style={{
-                              backgroundColor: `${getStatusColor(content.status)}15`,
-                              color: getStatusColor(content.status),
-                              borderColor: `${getStatusColor(content.status)}30`
-                            }}
-                          >
-                            {content.status}
-                          </div>
-                        </TableCell>
                         <TableCell>
                           <div className="flex items-center justify-center gap-1">
                             <button
@@ -538,14 +486,6 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
                               title="Preview Content"
                             >
                               <Eye className="w-4 h-4 group-hover:scale-110 transition-transform" style={{ color: "#20B2AA" }} />
-                            </button>
-
-                            <button
-                              onClick={() => handleEdit(content)}
-                              className="p-2 rounded-xl transition-all duration-200 hover:shadow-md hover:scale-105 hover:bg-gray-100 group"
-                              title="Edit Content"
-                            >
-                              <Edit className="w-4 h-4 group-hover:scale-110 transition-transform text-gray-600" />
                             </button>
 
                             <button

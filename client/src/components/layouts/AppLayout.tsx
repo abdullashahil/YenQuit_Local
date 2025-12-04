@@ -57,7 +57,7 @@ export function AppLayout({ children, activeTab }: AppLayoutProps) {
         onLogout={handleLogout} 
       />
       {/* Responsive margin: no margin on mobile, ml-64 on desktop */}
-      <div className="md:ml-64 pt-16 md:pt-0 px-4 md:px-8">
+      <div className="md:ml-64 pt-16 md:pt-0 px-2 md:px-4">
         {children}
       </div>
     </div>
