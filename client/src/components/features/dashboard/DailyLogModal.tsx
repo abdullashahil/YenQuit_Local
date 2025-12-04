@@ -127,6 +127,9 @@ export function DailyLogModal({ open, onOpenChange, onLogChange, quitDate }: Dai
       if (onLogChange) {
         onLogChange();
       }
+      
+      // Refresh the page to show updated data in all components
+      window.location.reload();
 
     } catch (err: any) {
       setError(err.message || 'Failed to save log');

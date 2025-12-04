@@ -17,22 +17,33 @@ interface DailyLog {
 
 export function ProgressCalendar() {
   const [logs, setLogs] = useState<DailyLog[]>([]);
+  const [quitDate, setQuitDate] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch daily logs data
+  // Fetch daily logs data and quit date
   useEffect(() => {
-    const fetchLogs = async () => {
+    const fetchData = async () => {
       try {
-        const response = await quitTrackerService.getLogs();
-        setLogs(response.logs || []);
+        // Fetch logs
+        const logsResponse = await quitTrackerService.getLogs();
+        setLogs(logsResponse.logs || []);
+        
+        // Fetch progress data to get quit date
+        const progressResponse = await quitTrackerService.getProgress();
+        console.log('Progress response:', progressResponse);
+        // Extract just the date part from the ISO string
+        const fullQuitDate = progressResponse.quitDate;
+        const quitDateOnly = fullQuitDate ? fullQuitDate.split('T')[0] : null;
+        console.log('Quit date only:', quitDateOnly);
+        setQuitDate(quitDateOnly);
       } catch (error) {
-        // Error fetching logs
+        // Error fetching data
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchLogs();
+    fetchData();
   }, []);
 
   // Determine color based on log data
@@ -64,10 +75,46 @@ export function ProgressCalendar() {
     };
   });
 
+  // Add quit date event if it exists
+  if (quitDate) {
+    calendarEvents.push({
+      start: quitDate,
+      allDay: true,
+      display: 'background',
+      backgroundColor: 'transparent',
+    });
+  }
+
   // Remove date click handler to disable modal popup
   // const handleDateClick = (arg: any) => {
   //   // Removed to prevent modal popup
   // };
+
+  // Handle day cell rendering to highlight quit date with border
+  const handleDayCellDidMount = (info: any) => {
+    console.log('Day cell mounted - date:', info.date, 'dateStr:', info.dateStr, 'Quit date:', quitDate);
+    // Try different properties to get the date
+    const cellDate = info.dateStr || (info.date && info.date.toISOString().split('T')[0]);
+    console.log('Cell date to check:', cellDate);
+    if (quitDate && cellDate === quitDate) {
+      console.log('Applying border and background to quit date:', cellDate);
+      // info.el.style.border = '3px solid #FF6B35';
+      // info.el.style.backgroundColor = '#81ca64ff';
+      info.el.style.boxSizing = 'border-box';
+      info.el.style.zIndex = '10';
+      info.el.style.position = 'relative';
+      info.el.style.color = '#ff0000ff';
+      info.el.style.fontWeight = 'bold';
+      info.el.style.fontSize = '160%';
+    }
+  };
+
+  // Force re-render when quit date changes
+  useEffect(() => {
+    if (quitDate) {
+      console.log('Quit date updated, calendar should re-render');
+    }
+  }, [quitDate]);
 
   return (
     <Card className="rounded-2xl shadow-sm border border-gray-100 w-full bg-white">
@@ -77,135 +124,8 @@ export function ProgressCalendar() {
         </div>
 
         <div className="relative bg-white rounded-lg border border-gray-200">
-          <style jsx>{`
-            .fc {
-              font-family: system-ui, -apple-system, sans-serif !important;
-              font-size: 0.875rem !important;
-            }
-            .fc-theme-standard .fc-scrollgrid {
-              border: 1px solid #e5e7eb !important;
-              border-radius: 6px !important;
-              overflow: hidden !important;
-            }
-            .fc-theme-standard td, .fc-theme-standard th {
-              border: 1px solid #f3f4f6 !important;
-              padding: 0 !important;
-            }
-            .fc-theme-standard .fc-scrollgrid td:last-child,
-            .fc-theme-standard .fc-scrollgrid th:last-child {
-              border-right: 1px solid #e5e7eb !important;
-            }
-            .fc-theme-standard .fc-scrollgrid tr:last-child td {
-              border-bottom: 1px solid #e5e7eb !important;
-            }
-            .fc-col-header {
-              background: #fafbfc !important;
-            }
-            .fc-col-header-cell {
-              padding: 6px 2px !important;
-              font-weight: 600 !important;
-              font-size: 0.7rem !important;
-              color: #6b7280 !important;
-              text-transform: uppercase !important;
-              letter-spacing: 0.05em !important;
-              text-align: center !important;
-            }
-            .fc-daygrid-day-number {
-              color: #374151 !important;
-              font-weight: 500 !important;
-              font-size: 0.8rem !important;
-              padding: 4px 2px !important;
-              text-align: center !important;
-              width: 100% !important;
-              line-height: 1.2 !important;
-            }
-            .fc-daygrid-day {
-              background: white !important;
-              min-height: 32px !important;
-              position: relative !important;
-              padding: 0 !important;
-            }
-            .fc-daygrid-day:hover {
-              background: #f8fafc !important;
-            }
-            .fc-day-today {
-              background: #fef3c7 !important;
-            }
-            .fc-day-today .fc-daygrid-day-number {
-              font-weight: 600 !important;
-              color: #d97706 !important;
-            }
-            .fc-daygrid-day-bg {
-              opacity: 0.9 !important;
-            }
-            .fc-event-bg {
-              opacity: 0.9 !important;
-            }
-            .fc-daygrid-day .fc-bg-event {
-              opacity: 0.9 !important;
-              border: none !important;
-              border-radius: 0 !important;
-              position: absolute !important;
-              top: 0 !important;
-              left: 0 !important;
-              right: 0 !important;
-              bottom: 0 !important;
-            }
-            .fc-toolbar {
-              margin-bottom: 0 !important;
-              padding: 8px !important;
-            }
-            .fc-toolbar-title {
-              font-size: 0.95rem !important;
-              font-weight: 600 !important;
-              color: #111827 !important;
-              margin: 0 8px !important;
-            }
-            .fc-toolbar-chunk {
-              display: flex !important;
-              align-items: center !important;
-            }
-            .fc-button-primary {
-              background: white !important;
-              border: 1px solid #d1d5db !important;
-              color: #6b7280 !important;
-              font-weight: 500 !important;
-              padding: 4px 6px !important;
-              border-radius: 4px !important;
-              min-width: 24px !important;
-              height: 24px !important;
-              box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
-            }
-            .fc-button-primary:hover {
-              background: #f9fafb !important;
-              border-color: #9ca3af !important;
-              color: #374151 !important;
-            }
-            .fc-button-primary:disabled {
-              opacity: 0.5 !important;
-              cursor: not-allowed !important;
-            }
-            .fc-button-primary .fc-icon {
-              font-size: 12px !important;
-              margin: 0 !important;
-            }
-            .fc-daygrid-event {
-              margin: 0 !important;
-              padding: 0 !important;
-            }
-            .fc-daygrid-block-event {
-              border: none !important;
-              padding: 0 !important;
-            }
-            .fc-daygrid-day-frame {
-              min-height: 32px !important;
-              padding: 0 !important;
-            }
-            .fc-scrollgrid {
-              font-size: 0.875rem !important;
-            }
-          `}</style>
           <FullCalendar
+            key={quitDate || 'no-quit-date'}
             plugins={[dayGridPlugin, interactionPlugin]}
             initialView="dayGridMonth"
             headerToolbar={{
@@ -217,6 +137,7 @@ export function ProgressCalendar() {
             height="auto"
             aspectRatio={1.5}
             events={calendarEvents}
+            dayCellDidMount={handleDayCellDidMount}
           />
         </div>
 
@@ -230,9 +151,15 @@ export function ProgressCalendar() {
             <span className="text-xs text-gray-600">High Cravings</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full border border-white shadow-sm" style={{ backgroundColor: '#D9534F' }}></div>
+            <div className="w-2.5 h-2.5 rounded-full border border-white shadow-sm" style={{ backgroundColor: '#f78c89ff' }}></div>
             <span className="text-xs text-gray-600">Smoked</span>
           </div>
+          {/* {quitDate && (
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full border-2 border-orange-500 shadow-sm bg-white"></div>
+              <span className="text-xs text-gray-600">Quit Date</span>
+            </div>
+          )} */}
         </div>
       </div>
     </Card>
