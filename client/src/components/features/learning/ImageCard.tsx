@@ -12,11 +12,11 @@ export function ImageCard({ image, caption, category }: ImageCardProps) {
   return (
     <Card className="w-80 flex-shrink-0 rounded-3xl shadow-lg border-0 overflow-hidden hover:shadow-xl transition-all cursor-pointer group">
       {/* Image */}
-      <div className="relative h-72 overflow-hidden">
+      <div className="relative aspect-square overflow-hidden">
         <ImageWithFallback
           src={image}
           alt={caption}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
         />
         
         {/* Gradient Overlay */}

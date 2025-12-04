@@ -26,9 +26,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/a
 export function AddContentModal({ open, onOpenChange, editContent, onContentSaved }: AddContentModalProps) {
   const [title, setTitle] = useState(editContent?.title || "");
   const [category, setCategory] = useState(editContent?.category || "");
-  const [description, setDescription] = useState(editContent?.description || "");
   const [content, setContent] = useState(editContent?.content || "");
-  const [status, setStatus] = useState(editContent?.status || "Draft");
   const [publishDate, setPublishDate] = useState(editContent?.publish_date || "");
   const [endDate, setEndDate] = useState(editContent?.end_date || "");
   const [mediaUrl, setMediaUrl] = useState(editContent?.media_url || "");
@@ -91,9 +89,9 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
       const formData = new FormData();
       formData.append('title', title.trim());
       formData.append('category', category);
-      formData.append('description', description.trim());
+      formData.append('description', '');
       formData.append('content', content.trim());
-      formData.append('status', status);
+      formData.append('status', 'Live');
       formData.append('publish_date', publishDate);
       formData.append('end_date', endDate);
       formData.append('media_url', mediaUrl);
@@ -124,9 +122,7 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
         if (!editContent) {
           setTitle("");
           setCategory("");
-          setDescription("");
           setContent("");
-          setStatus("Draft");
           setPublishDate("");
           setEndDate("");
           setMediaUrl("");
@@ -162,8 +158,6 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
   const handleBackToCategory = () => {
     setStep('category');
     // Reset form fields
-    setTitle("");
-    setDescription("");
     setContent("");
     setMediaUrl("");
     setTags("");
@@ -322,29 +316,7 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
                   </div>
                   
                   <div className="space-y-6">
-                    <div className="space-y-3">
-                      <Label className="text-sm font-semibold text-[#1C3B5E]">Short Description</Label>
-                      <Textarea
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        placeholder="Brief description for content listings..."
-                        className="rounded-2xl border-gray-200 min-h-24 resize-none focus:border-[#20B2AA] focus:ring-[#20B2AA]/20"
-                      />
-                    </div>
                     
-                    <div className="space-y-3">
-                      <Label className="text-sm font-semibold text-[#1C3B5E]">Status</Label>
-                      <Select value={status} onValueChange={setStatus}>
-                        <SelectTrigger className="h-12 rounded-2xl border-gray-200">
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Draft" className="text-orange-600">Draft</SelectItem>
-                          <SelectItem value="Pending" className="text-blue-600">Pending Review</SelectItem>
-                          <SelectItem value="Live" className="text-green-600">Live</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
                   </div>
                 </div>
               )}
@@ -379,35 +351,6 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
                           className="rounded-2xl border-gray-200 h-12 focus:border-[#20B2AA] focus:ring-[#20B2AA]/20"
                         />
                       </div>
-                      
-                      <div className="space-y-3">
-                        <Label className="text-sm font-semibold text-[#1C3B5E]">Status</Label>
-                        <Select value={status} onValueChange={setStatus}>
-                          <SelectTrigger className="h-12 rounded-2xl border-gray-200">
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Draft" className="text-orange-600">Draft</SelectItem>
-                            <SelectItem value="Pending" className="text-blue-600">Pending Review</SelectItem>
-                            <SelectItem value="Live" className="text-green-600">Live</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-6">
-                      <div className="space-y-3">
-                        <Label className="text-sm font-semibold text-[#1C3B5E] flex items-center gap-2">
-                          <Tag className="w-4 h-4" />
-                          Tags
-                        </Label>
-                        <Input
-                          value={tags}
-                          onChange={(e) => setTags(e.target.value)}
-                          placeholder="Enter tags separated by commas..."
-                          className="rounded-2xl border-gray-200 h-12"
-                        />
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -429,20 +372,6 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
                           placeholder="Enter a compelling title..."
                           className="rounded-2xl border-gray-200 h-12 focus:border-[#20B2AA] focus:ring-[#20B2AA]/20"
                         />
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <Label className="text-sm font-semibold text-[#1C3B5E]">Status</Label>
-                        <Select value={status} onValueChange={setStatus}>
-                          <SelectTrigger className="h-12 rounded-2xl border-gray-200">
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Draft" className="text-orange-600">Draft</SelectItem>
-                            <SelectItem value="Pending" className="text-blue-600">Pending Review</SelectItem>
-                            <SelectItem value="Live" className="text-green-600">Live</SelectItem>
-                          </SelectContent>
-                        </Select>
                       </div>
                     </div>
                     

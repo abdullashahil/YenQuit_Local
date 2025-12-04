@@ -56,7 +56,7 @@ const BlogCard = ({ item, onItemClick }: { item: ContentItem; onItemClick?: (ite
 
   return (
     <Card 
-      className="w-64 flex-shrink-0 overflow-hidden hover:shadow-md transition-shadow cursor-pointer bg-white border border-gray-200"
+      className="w-full overflow-hidden hover:shadow-md transition-shadow cursor-pointer bg-white border border-gray-200"
       onClick={handleCardClick}
     >
       <div className="relative">
@@ -98,7 +98,10 @@ export function LearningSection({
   const renderContent = () => {
     if (children) return children;
 
-    return items.slice(0, 4).map((item) => {
+    // Show all items if this is a "View All" page (no onViewMore), otherwise limit to 6
+    const itemsToShow = onViewMore ? items.slice(0, 6) : items;
+
+    return itemsToShow.map((item) => {
       if (type === 'blog') {
         return <BlogCard key={item.id} item={item} onItemClick={handleBlogClick} />;
       }
@@ -106,12 +109,12 @@ export function LearningSection({
       return (
         <Card 
           key={item.id} 
-          className="w-64 flex-shrink-0 overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+          className="w-full overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
           onClick={() => type === 'image' ? handleImageClick(item) : onItemClick?.(item)}
         >
           <div className="relative">
             {item.media_url && type !== 'quote' && (
-              <div className="aspect-video bg-gray-100 flex items-center justify-center">
+              <div className="aspect-square bg-gray-100 flex items-center justify-center">
                 {type === 'video' || type === 'podcast' ? (
                   <div className="relative w-full h-full">
                     <img
@@ -129,7 +132,7 @@ export function LearningSection({
                   <img
                     src={item.media_url}
                     alt={item.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                   />
                 )}
               </div>
@@ -187,12 +190,8 @@ export function LearningSection({
       </div>
 
       {/* Content */}
-      <div className="relative">
-        <div className="overflow-x-auto pb-4 -mx-4 px-4 scroll-smooth [scrollbar-width:thin] [scrollbar-color:rgba(0,0,0,0.1)_transparent] hover:[scrollbar-color:rgba(0,0,0,0.15)_transparent] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-black/10 hover:[&::-webkit-scrollbar-thumb]:bg-black/15 [&::-webkit-scrollbar-button]:hidden">
-          <div className="flex gap-4 pb-2">
-            {renderContent()}
-          </div>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+        {renderContent()}
       </div>
 
       {/* Blog Modal */}
@@ -213,11 +212,11 @@ export function LearningSection({
                 </div>
 
                 {selectedBlog.media_url && (
-                  <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                  <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden max-h-96">
                     <img
                       src={selectedBlog.media_url}
                       alt={selectedBlog.title}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                     />
                   </div>
                 )}
