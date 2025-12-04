@@ -26,24 +26,76 @@ interface ExtendedFiveAAskProps extends FiveA_AskProps {
 
 export function FiveA_Ask({ onNext, questions = [], savedAnswers = [], submitted = false }: ExtendedFiveAAskProps) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
+  const [otherTexts, setOtherTexts] = useState<Record<string, string>>({});
 
   // Pre-fill answers from savedAnswers on mount
   useEffect(() => {
     if (savedAnswers.length > 0) {
       const prefilled: Record<string, string> = {};
+      const prefilledSelected: Record<string, string> = {};
+      const prefilledOtherTexts: Record<string, string> = {};
+      
       savedAnswers.forEach(sa => {
-        prefilled[`q${sa.question_id}`] = sa.answer_text;
+        const key = `q${sa.question_id}`;
+        prefilled[key] = sa.answer_text;
+        
+        // Check if the answer corresponds to an "Others" option
+        const question = questions.find(q => q.id === sa.question_id);
+        if (question && question.options.includes("Others")) {
+          // If the answer text doesn't match any option exactly, it must be from "Others"
+          const isOtherAnswer = !question.options.includes(sa.answer_text);
+          if (isOtherAnswer) {
+            prefilledSelected[key] = "Others";
+            prefilledOtherTexts[key] = sa.answer_text;
+          } else {
+            prefilledSelected[key] = sa.answer_text;
+          }
+        } else {
+          prefilledSelected[key] = sa.answer_text;
+        }
       });
+      
       setAnswers(prefilled);
+      setSelectedOptions(prefilledSelected);
+      setOtherTexts(prefilledOtherTexts);
     }
-  }, [savedAnswers]);
+  }, [savedAnswers, questions]);
 
   const handleAnswer = (questionId: string, value: string) => {
     if (submitted) return; // read-only if already submitted
     setAnswers(prev => ({ ...prev, [questionId]: value }));
   };
 
-  const isComplete = questions.length > 0 && questions.every(q => answers[`q${q.id}`]);
+  const handleOptionChange = (questionId: string, option: string) => {
+    if (submitted) return;
+    
+    setSelectedOptions(prev => ({ ...prev, [questionId]: option }));
+    
+    if (option === "Others") {
+      // When "Others" is selected, set answer to current other text or empty string
+      setAnswers(prev => ({ ...prev, [questionId]: otherTexts[questionId] || "" }));
+    } else {
+      // For non-"Others" options, set answer directly to the option
+      setAnswers(prev => ({ ...prev, [questionId]: option }));
+    }
+  };
+
+  const handleOtherTextChange = (questionId: string, value: string) => {
+    if (submitted) return;
+    
+    setOtherTexts(prev => ({ ...prev, [questionId]: value }));
+    
+    // If "Others" is currently selected, update the answer with the new text
+    if (selectedOptions[questionId] === "Others") {
+      setAnswers(prev => ({ ...prev, [questionId]: value }));
+    }
+  };
+
+  const isComplete = questions.length > 0 && questions.every(q => {
+    const key = `q${q.id}`;
+    return answers[key]?.trim() !== "";
+  });
 
   return (
     <div className="min-h-screen p-4 md:p-6 lg:p-8" style={{ backgroundColor: '#FFFFFF' }}>
@@ -97,39 +149,53 @@ export function FiveA_Ask({ onNext, questions = [], savedAnswers = [], submitted
                   {index + 1}. {q.question_text}
                 </Label>
                 <RadioGroup
-                  value={answers[`q${q.id}`] || ''}
-                  onValueChange={(value) => handleAnswer(`q${q.id}`, value)}
+                  value={selectedOptions[`q${q.id}`] || ''}
+                  onValueChange={(value) => handleOptionChange(`q${q.id}`, value)}
                   className="space-y-3"
                   disabled={submitted}
                 >
                   {q.options.map((option) => (
-                    <div
-                      key={option}
-                      className="flex items-center p-4 rounded-xl transition-all duration-200"
-                      style={{
-                        backgroundColor: answers[`q${q.id}`] === option ? 'rgba(32, 178, 170, 0.08)' : 'transparent',
-                        border: `2px solid ${answers[`q${q.id}`] === option ? '#20B2AA' : 'transparent'}`,
-                        cursor: submitted ? 'not-allowed' : 'pointer'
-                      }}
-                      onClick={() => !submitted && handleAnswer(`q${q.id}`, option)}
-                    >
-                      <RadioGroupItem
-                        value={option}
-                        id={`${q.id}-${option}`}
-                        className="w-5 h-5"
+                    <div key={option}>
+                      <div
+                        className="flex items-center p-4 rounded-xl transition-all duration-200"
                         style={{
-                          borderColor: '#20B2AA',
-                          color: '#20B2AA'
+                          backgroundColor: selectedOptions[`q${q.id}`] === option ? 'rgba(32, 178, 170, 0.08)' : 'transparent',
+                          border: `2px solid ${selectedOptions[`q${q.id}`] === option ? '#20B2AA' : 'transparent'}`,
+                          cursor: submitted ? 'not-allowed' : 'pointer'
                         }}
-                        disabled={submitted}
-                      />
-                      <Label
-                        htmlFor={`${q.id}-${option}`}
-                        className="ml-4 cursor-pointer flex-1"
-                        style={{ color: '#333333', cursor: submitted ? 'not-allowed' : 'pointer' }}
+                        onClick={() => !submitted && handleOptionChange(`q${q.id}`, option)}
                       >
-                        {option}
-                      </Label>
+                        <RadioGroupItem
+                          value={option}
+                          id={`${q.id}-${option}`}
+                          className="w-5 h-5"
+                          style={{
+                            borderColor: '#20B2AA',
+                            color: '#20B2AA'
+                          }}
+                          disabled={submitted}
+                        />
+                        <Label
+                          htmlFor={`${q.id}-${option}`}
+                          className="ml-4 cursor-pointer flex-1"
+                          style={{ color: '#333333', cursor: submitted ? 'not-allowed' : 'pointer' }}
+                        >
+                          {option}
+                        </Label>
+                      </div>
+                      
+                      {option === "Others" && selectedOptions[`q${q.id}`] === "Others" && (
+                        <div className="mt-3 ml-4">
+                          <input
+                            type="text"
+                            value={otherTexts[`q${q.id}`] || ''}
+                            onChange={(e) => handleOtherTextChange(`q${q.id}`, e.target.value)}
+                            placeholder="Please specify..."
+                            className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#20B2AA] focus:border-transparent"
+                            disabled={submitted}
+                          />
+                        </div>
+                      )}
                     </div>
                   ))}
                 </RadioGroup>
