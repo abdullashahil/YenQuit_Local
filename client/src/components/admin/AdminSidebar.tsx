@@ -9,13 +9,12 @@ import {
   LogOut,
   Menu,
   Shield,
-  Users,
-  Heart,
-  Clock,
-  History
+  Users
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
 import { useState } from "react";
+import userService from "../../services/userService";
+import { useRouter } from "next/navigation";
 
 interface AdminSidebarProps {
   activeTab: string;
@@ -26,13 +25,36 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ activeTab, setActiveTab, onExitAdmin, onLogout }: AdminSidebarProps) {
   const [open, setOpen] = useState(false);
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    // Show confirmation dialog
+    const confirmed = window.confirm(
+      "Are you sure you want to log out? You will need to sign in again to access your account."
+    );
+    
+    if (!confirmed) return;
+
+    try {
+      // Call backend logout endpoint
+      await userService.logout();
+    } catch (error) {
+      // Continue with logout even if backend call fails
+      console.error("Logout API call failed:", error);
+    } finally {
+      // Clear all storage regardless of API call success
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('user');
+      sessionStorage.clear();
+      
+      // Redirect to login page
+      router.push('/login');
+    }
+  };
 
   const navItems = [
     { id: "admin-dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/admin", badge: null },
     // { id: "  user-management", label: "User Management", icon: Users, href: "/admin/users", badge: null },
-    { id: "coping-strategies", label: "Coping Strategies", icon: Heart, href: "/admin/coping-strategies", badge: null },
-    { id: "notification-templates", label: "Notification Templates", icon: Clock, href: "/admin/notification-templates", badge: null },
-    { id: "assist-history", label: "Assist History", icon: History, href: "/admin/assist-history", badge: null },
     { id: "content-management", label: "Content Management", icon: FileText, href: "/admin/content", badge: null },
     { id: "system-settings", label: "System Settings", icon: Settings, href: "/admin/settings", badge: null },
   ];
@@ -52,7 +74,7 @@ export function AdminSidebar({ activeTab, setActiveTab, onExitAdmin, onLogout }:
         </div>
         <div className="mt-4 p-3 rounded-2xl bg-white/5 backdrop-blur-sm">
           <p className="text-xs text-white/80">Welcome back,</p>
-          <p className="text-sm font-semibold text-white">Admin User</p>
+          <p className="text-sm font-semibold text-white">Admin</p>
         </div>
       </div>
 
@@ -107,27 +129,10 @@ export function AdminSidebar({ activeTab, setActiveTab, onExitAdmin, onLogout }:
 
       {/* Footer Actions */}
       <div className="p-4 border-t border-white/10 space-y-2">
-        <button
-          onClick={() => {
-            onExitAdmin();
-            setOpen(false);
-          }}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 hover:bg-white/10 group"
-        >
-          <div className="p-2 rounded-xl bg-white/10 group-hover:bg-white/20 transition-colors">
-            <ArrowLeft className="w-4 h-4 text-white/80 group-hover:text-white" />
-          </div>
-          <span className="text-sm text-white/80 group-hover:text-white transition-colors">
-            Exit Admin Panel
-          </span>
-        </button>
-
+        
         {onLogout && (
           <button
-            onClick={() => {
-              onLogout();
-              setOpen(false);
-            }}
+            onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 hover:bg-red-500/20 group"
           >
             <div className="p-2 rounded-xl bg-red-500/10 group-hover:bg-red-500/20 transition-colors">

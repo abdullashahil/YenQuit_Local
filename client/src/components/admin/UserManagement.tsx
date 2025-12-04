@@ -18,7 +18,7 @@ import {
   TableRow,
 } from "../ui/table";
 import { UserDetailModal } from "./UserDetailModal";
-import { Search, Eye, Edit, Trash2, Send, Download, UserPlus, Filter, MoreVertical, Mail, Phone, Calendar, Activity, ChevronDown, Loader2 } from "lucide-react";
+import { Search, Eye, Edit, Trash2, Send, Download, UserPlus, Filter, MoreVertical, Mail, Phone, Calendar, Activity, ChevronDown, Loader2, Shield } from "lucide-react";
 import { useState, useEffect } from "react";
 import userService from "../../services/userService";
 import quitTrackerService from "../../services/quitTrackerService";
@@ -408,13 +408,13 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                     <UserPlus className="w-5 h-5" />
                     <span>Add User</span>
                   </Button> */}
-                  <Button
+                  {/* <Button
                     variant="outline"
                     className="h-12 rounded-2xl flex items-center gap-2 px-6 border-gray-200 hover:border-[#20B2AA] hover:text-[#20B2AA] transition-all duration-200"
                   >
                     <Download className="w-5 h-5" />
                     <span className="hidden sm:inline">Export</span>
-                  </Button>
+                  </Button> */}
                 </div>
               </div>
 
@@ -422,15 +422,15 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 {[
                   ...(stats ? [
-                    { label: "Total Users", value: stats.total.toString(), change: "+12%", icon: Activity, color: "#20B2AA" },
-                    { label: "Active Users", value: stats.byStatus?.find((s: any) => s.status === 'active')?.count.toString() || "0", change: "+8%", icon: Eye, color: "#10B981" },
-                    { label: "Admin Users", value: stats.byRole?.find((r: any) => r.role === 'admin')?.count.toString() || "0", change: "+5%", icon: Calendar, color: "#F59E0B" },
-                    { label: "Recent Join", value: stats.recentRegistrations.toString(), change: "+3%", icon: Mail, color: "#8B5CF6" }
+                    { label: "Total Users", value: stats.total.toString(), icon: Activity, color: "#20B2AA" },
+                    // { label: "Active Users", value: stats.byStatus?.find((s: any) => s.status === 'active')?.count.toString() || "0", icon: Eye, color: "#10B981" },
+                    { label: "Admin Users", value: stats.byRole?.find((r: any) => r.role === 'admin')?.count.toString() || "0", icon: Shield, color: "#F59E0B" },
+                    // { label: "Recent Join", value: stats.recentRegistrations.toString(), icon: Mail, color: "#8B5CF6" }
                   ] : [
-                    { label: "Total Users", value: "-", change: "-", icon: Activity, color: "#20B2AA" },
-                    { label: "Active Users", value: "-", change: "-", icon: Eye, color: "#10B981" },
-                    { label: "Admin Users", value: "-", change: "-", icon: Calendar, color: "#F59E0B" },
-                    { label: "Recent Join", value: "-", change: "-", icon: Mail, color: "#8B5CF6" }
+                    { label: "Total Users", value: "-", icon: Activity, color: "#20B2AA" },
+                    // { label: "Active Users", value: "-", icon: Eye, color: "#10B981" },
+                    { label: "Admin Users", value: "-", icon: Shield, color: "#F59E0B" },
+                    // { label: "Recent Join", value: "-", icon: Mail, color: "#8B5CF6" }
                   ])
                 ].map((stat, index) => {
                   const Icon = stat.icon;
@@ -445,10 +445,9 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                           className="w-12 h-12 rounded-full flex items-center justify-center"
                           style={{ backgroundColor: `${stat.color}20` }}
                         >
-                          {typeof Icon === 'function' ? <Icon className="w-6 h-6" style={{ color: stat.color }} /> : <div className="w-6 h-6" style={{ color: stat.color }} />}
+                          <Icon className="w-6 h-6" style={{ color: stat.color }} />
                         </div>
                       </div>
-                      <p className="text-xs text-green-600 mt-2 font-medium">{stat.change} from last month</p>
                     </div>
                   );
                 })}
@@ -547,14 +546,14 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                     <span className="text-sm text-gray-600">
                       {selectedRows.length} selected
                     </span>
-                    <Button
+                    {/* <Button
                       variant="outline"
                       size="sm"
                       className="rounded-xl border-gray-200 hover:border-[#20B2AA] hover:text-[#20B2AA] transition-all duration-200"
                     >
                       <Send className="w-4 h-4 mr-2" />
                       Send Message
-                    </Button>
+                    </Button> */}
                     <Button
                       variant="outline"
                       size="sm"
@@ -672,11 +671,11 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1">
-                            <p className="text-sm text-gray-600 flex items-center gap-2">
+                            {/* <p className="text-sm text-gray-600 flex items-center gap-2">
                               <Mail className="w-3 h-3" />
                               {user.email}
-                            </p>
-                            <p className="text-xs text-gray-500 flex items-center gap-2">
+                            </p> */}
+                            <p className=" text-black flex items-center gap-2">
                               <Phone className="w-3 h-3" />
                               {user.phone}
                             </p>
@@ -725,7 +724,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                         <TableCell className="text-center">
                           <div className="space-y-1">
                             <p className="text-sm font-medium text-[#1C3B5E]">{user.lastLogin}</p>
-                            <p className="text-xs text-gray-500">Joined {user.joinDate}</p>
+                            {/* <p className="text-xs text-gray-500">Joined {user.joinDate}</p> */}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -820,6 +819,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                 open={isDetailModalOpen}
                 onOpenChange={setIsDetailModalOpen}
                 user={selectedUser}
+                userProgress={selectedUser ? userProgress[selectedUser.id] : undefined}
               />
             </div>
           </div>

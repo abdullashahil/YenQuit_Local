@@ -2,9 +2,10 @@ import { VideoCard } from "./VideoCard";
 import { PodcastCard } from "./PodcastCard";
 import { ImageCard } from "./ImageCard";
 import { LearningSection } from "./LearningSection";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 import { RecommendedSidebar } from "./RecommendedSidebar";
 import { PublicContentItem } from "../../../services/contentService";
+import { useCallback, useEffect, useState } from "react";
 
 interface ContentViewPageProps {
   contentType: "video" | "podcast" | "image" | "blog" | "quote";
@@ -13,6 +14,48 @@ interface ContentViewPageProps {
 }
 
 export function ContentViewPage({ contentType, items, onBack }: ContentViewPageProps) {
+  const [fullscreenVideo, setFullscreenVideo] = useState<{url: string, title: string, id: string | null, key?: number} | null>(null);
+
+  const closeFullscreenVideo = useCallback(() => {
+    setFullscreenVideo(null);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && fullscreenVideo) {
+        closeFullscreenVideo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [fullscreenVideo, closeFullscreenVideo]);
+
+  const getYoutubeId = (url: string): string | null => {
+    try {
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+      const match = url.match(regExp);
+      return (match && match[2].length === 11) ? match[2] : null;
+    } catch (e) {
+      console.error('Error parsing YouTube URL:', e);
+      return null;
+    }
+  };
+
+  const handleVideoClick = (content: PublicContentItem) => {
+    if (content.media_url) {
+      const videoId = getYoutubeId(content.media_url);
+      if (videoId) {
+        // Add a timestamp to force iframe remount
+        setFullscreenVideo({
+          url: content.media_url,
+          title: content.title,
+          id: videoId,
+          key: Date.now() // This will force a remount of the iframe
+        });
+      }
+    }
+  };
   const getTitle = () => {
     switch (contentType) {
       case "video":
@@ -48,8 +91,13 @@ export function ContentViewPage({ contentType, items, onBack }: ContentViewPageP
   };
 
   const handleContentSelect = (content: PublicContentItem) => {
-    // Handle content selection - can be expanded based on requirements
-    console.log('Selected content:', content);
+    // Handle video/podcast playback using local video modal
+    if ((contentType === "video" || contentType === "podcast")) {
+      handleVideoClick(content);
+    } else {
+      // Handle other content types (can be expanded based on requirements)
+      console.log('Selected content:', content);
+    }
   };
 
   return (
@@ -112,6 +160,59 @@ export function ContentViewPage({ contentType, items, onBack }: ContentViewPageP
 
       {/* Floating Recommended Sidebar */}
       <RecommendedSidebar />
+      
+      {/* Fullscreen Video Modal */}
+      {fullscreenVideo && fullscreenVideo.id && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4"
+          onClick={closeFullscreenVideo}
+        >
+          <div 
+            className="relative w-full max-w-4xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              onClick={closeFullscreenVideo}
+              className="absolute -top-12 right-0 text-white hover:text-gray-300 p-2 z-10"
+              aria-label="Close video"
+            >
+              <X className="w-8 h-8" />
+            </button>
+            
+            <div className="relative" style={{ paddingBottom: '56.25%', backgroundColor: '#000' }}>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-full h-full" key={fullscreenVideo.key}>
+                  <iframe
+                    className="w-full h-full rounded-lg"
+                    src={`https://www.youtube-nocookie.com/embed/${fullscreenVideo.id}?autoplay=1&mute=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`}
+                    title={fullscreenVideo.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    frameBorder="0"
+                    loading="eager"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                  />
+                  <div className="text-center mt-2 text-gray-400 text-sm">
+                    If the video doesn't load, try <a 
+                      href={`https://www.youtube.com/watch?v=${fullscreenVideo.id}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-400 hover:underline"
+                      onClick={e => e.stopPropagation()}
+                    >
+                      watching on YouTube
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-4 px-2">
+              <h2 className="text-xl font-semibold text-white">{fullscreenVideo.title}</h2>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

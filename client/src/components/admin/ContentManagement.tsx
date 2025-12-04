@@ -21,7 +21,10 @@ import { PreviewContentModal } from "./PreviewContentModal";
 import { CampaignScheduler } from "./CampaignScheduler";
 import { InsightsNotifications } from "../features/community/InsightsNotifications";
 import { SystemConfiguration } from "./SystemConfiguration";
-import { Search, Plus, Edit, Trash2, Eye, Filter, BarChart3, Users, Calendar, FileText, MessageSquare, Bell, Loader2, Settings } from "lucide-react";
+import { CopingStrategies } from "./CopingStrategies";
+import { NotificationTemplates } from "./NotificationTemplates";
+import { AssistHistory } from "./AssistHistory";
+import { Search, Plus, Edit, Trash2, Eye, Filter, BarChart3, Users, Calendar, FileText, MessageSquare, Bell, Loader2, Settings, Heart, Clock, History } from "lucide-react";
 import { useState, useEffect } from "react";
 import axios from "axios";
 
@@ -58,6 +61,9 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
 
   const contentTabs = [
     { id: "content", label: "Content", icon: FileText },
+    { id: "coping-strategies", label: "Coping Strategies", icon: Heart },
+    { id: "notification-templates", label: "Notification Templates", icon: Bell },
+    { id: "assist-history", label: "Assist History", icon: History },
     { id: "configuration", label: "System Configuration", icon: Settings },
   ];
 
@@ -234,13 +240,18 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
               <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
                 <div>
                   <h1 className="text-2xl md:text-3xl font-bold mb-2 text-[#1C3B5E]">
-                    {activeContentTab === "content" ? "Content Management" : "System Configuration"}
+                    {activeContentTab === "content" && "Content Management"}
+                    {activeContentTab === "coping-strategies" && "Coping Strategies Management"}
+                    {activeContentTab === "notification-templates" && "Notification Templates Management"}
+                    {activeContentTab === "assist-history" && "Assist Plan History"}
+                    {activeContentTab === "configuration" && "System Configuration"}
                   </h1>
                   <p className="text-sm md:text-base text-gray-600">
-                    {activeContentTab === "content" 
-                      ? "Manage all public-facing content, campaigns, and user communications"
-                      : "Configure system settings, API keys, and global preferences"
-                    }
+                    {activeContentTab === "content" && "Manage all public-facing content, campaigns, and user communications"}
+                    {activeContentTab === "coping-strategies" && "Manage coping strategies available to users in the ASSIST step"}
+                    {activeContentTab === "notification-templates" && "Manage notification templates available to users in the ASSIST step"}
+                    {activeContentTab === "assist-history" && "View completed assist plans and user progress"}
+                    {activeContentTab === "configuration" && "Configure system settings, API keys, and global preferences"}
                   </p>
                 </div>
                 {activeContentTab === "content" && (
@@ -569,7 +580,7 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
             </div>
 
             {/* Campaign Scheduler */}
-            <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg border-0 overflow-hidden mb-6">
+            {/* <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg border-0 overflow-hidden mb-6">
               <div className="p-6 border-b border-gray-100">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="p-2 rounded-xl bg-[#20B2AA20]">
@@ -582,9 +593,15 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
               <div className="p-6">
                 <CampaignScheduler />
               </div>
-            </div>
+            </div> */}
 
             </>
+            ) : activeContentTab === "coping-strategies" ? (
+              <CopingStrategies activeTab={activeContentTab} setActiveTab={setActiveContentTab} />
+            ) : activeContentTab === "notification-templates" ? (
+              <NotificationTemplates activeTab={activeContentTab} setActiveTab={setActiveContentTab} />
+            ) : activeContentTab === "assist-history" ? (
+              <AssistHistory activeTab={activeContentTab} setActiveTab={setActiveContentTab} />
             ) : (
               <SystemConfiguration />
             )}

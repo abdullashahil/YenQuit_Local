@@ -1,6 +1,5 @@
 import { Dialog, DialogContent } from "../ui/dialog";
 import { 
-  X, 
   User, 
   Mail, 
   Phone, 
@@ -15,38 +14,63 @@ interface UserDetailModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   user: any;
+  userProgress?: any;
 }
 
-export function UserDetailModal({ open, onOpenChange, user }: UserDetailModalProps) {
+export function UserDetailModal({ open, onOpenChange, user, userProgress }: UserDetailModalProps) {
   if (!user) return null;
+
+  // Format date helper
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "-";
+    return new Date(dateString).toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
+
+  // Calculate engagement percentage
+  const calculateEngagementPercentage = (logs: any[], joinDate: string | null) => {
+    if (!logs || logs.length === 0 || !joinDate) return 0;
+    
+    const daysLoggedIn = logs.length;
+    const startDate = new Date(joinDate);
+    const today = new Date();
+    const totalDaysSinceJoin = Math.floor((today.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
+    
+    if (totalDaysSinceJoin <= 0) return 0;
+    
+    return Math.round((daysLoggedIn / totalDaysSinceJoin) * 100);
+  };
+
+  // Get engagement from userProgress or calculate it
+  const engagement = userProgress?.progressPercentage || 
+    (userProgress?.logs ? calculateEngagementPercentage(userProgress.logs, user.created_at) : 0);
+
+  // Get member since from created_at
+  const memberSince = formatDate(user.created_at);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl p-0 rounded-3xl border-0 overflow-hidden shadow-2xl bg-white">
         {/* Header */}
         <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-white to-blue-50/30">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-r from-[#20B2AA] to-[#1C9B94] flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                  {user.name?.split(' ').map(n => n[0]).join('') || user.email?.charAt(0)?.toUpperCase() || 'U'}
-                </div>
-                <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
-                  user.status === 'Active' ? 'bg-green-500' : 
-                  user.status === 'Quit' ? 'bg-blue-500' : 'bg-red-500'
-                }`} />
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-r from-[#20B2AA] to-[#1C9B94] flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                {user.name?.split(' ').map(n => n[0]).join('') || user.email?.charAt(0)?.toUpperCase() || 'U'}
               </div>
-              <div>
-                <h2 className="text-xl font-bold text-[#1C3B5E]">{user.name || 'User Details'}</h2>
-                <p className="text-sm text-gray-600 mt-1">User information</p>
-              </div>
+              <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
+                user.status === 'Active' ? 'bg-green-500' : 
+                user.status === 'Quit' ? 'bg-blue-500' : 'bg-red-500'
+              }`} />
             </div>
-            <button 
-              onClick={() => onOpenChange(false)}
-              className="p-2 rounded-2xl hover:bg-gray-100 transition-all duration-200"
-            >
-              <X className="w-5 h-5 text-gray-600" />
-            </button>
+            <div>
+              <h2 className="text-xl font-bold text-[#1C3B5E]">{user.name || 'User Details'}</h2>
+              <p className="text-sm text-gray-600 mt-1">User information</p>
+              
+            </div>
           </div>
         </div>
 
@@ -96,7 +120,7 @@ export function UserDetailModal({ open, onOpenChange, user }: UserDetailModalPro
                 </div>
                 <div>
                   <p className="text-xs font-medium text-gray-600">Member Since</p>
-                  <p className="text-sm text-[#1C3B5E]">{user.joinDate || '-'}</p>
+                  <p className="text-sm text-[#1C3B5E]">{memberSince}</p>
                 </div>
               </div>
             </Card>
@@ -134,7 +158,7 @@ export function UserDetailModal({ open, onOpenChange, user }: UserDetailModalPro
                 </div>
                 <div>
                   <p className="text-xs font-medium text-gray-600">Engagement</p>
-                  <p className="text-lg font-bold text-[#1C3B5E]">{user.engagement || '-'}</p>
+                  <p className="text-lg font-bold text-[#1C3B5E]">{engagement > 0 ? `${engagement}%` : '-'}</p>
                 </div>
               </div>
             </Card>
