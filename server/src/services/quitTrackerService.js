@@ -1,6 +1,72 @@
 import { query, getClient } from '../db/index.js';
 
 class QuitTrackerService {
+  // Get user's progress data
+  static async getProgress(userId, options = {}) {
+    const { startDate, endDate, goalDays = 30 } = options;
+    
+    try {
+      // 1. Get user's quit date
+      const quitDate = await this.getUserQuitDate(userId);
+      
+      // 2. Calculate days smoke-free
+      let daysSmokeFree = 0;
+      if (quitDate) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const quitDateObj = new Date(quitDate);
+        quitDateObj.setHours(0, 0, 0, 0);
+        
+        // Calculate days since quit date
+        const diffTime = Math.max(0, today - quitDateObj);
+        daysSmokeFree = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      }
+      
+      // 3. Get logs for the period
+      let logsSql = `
+        SELECT * FROM daily_logs 
+        WHERE user_id = $1 
+        ${startDate ? 'AND log_date >= $2' : ''}
+        ${endDate ? `AND log_date <= $${startDate ? '3' : '2'}` : ''}
+        ORDER BY log_date DESC
+      `;
+      
+      const logParams = [userId];
+      if (startDate) logParams.push(startDate);
+      if (endDate) logParams.push(endDate);
+      
+      const logsResult = await query(logsSql, logParams);
+      
+      // 4. Calculate success rate
+      const totalDays = logsResult.rows.length;
+      const smokeFreeDays = logsResult.rows.filter(log => !log.smoked).length;
+      const successRate = totalDays > 0 ? Math.round((smokeFreeDays / totalDays) * 100) : 0;
+      
+      // 5. Get the last entry date
+      const lastEntry = logsResult.rows[0]?.log_date || null;
+      
+      // 6. Calculate progress percentage based on goal days
+      const progressPercentage = Math.min(
+        Math.round((daysSmokeFree / goalDays) * 100),
+        100
+      );
+      
+      return {
+        quitDate,
+        daysSmokeFree,
+        totalGoal: goalDays,
+        progressPercentage,
+        lastEntry,
+        successRate,
+        logs: logsResult.rows
+      };
+      
+    } catch (error) {
+      console.error('Error in QuitTrackerService.getProgress:', error);
+      throw error;
+    }
+  }
+
   // Get user's quit date from profile
   static async getUserQuitDate(userId) {
     const sql = 'SELECT quit_date FROM profiles WHERE user_id = $1';
@@ -177,25 +243,30 @@ class QuitTrackerService {
     // Get assist plan data for start date and quit date
     let assistPlanData = null;
     
-    // First try to get assist plan data by user_id (most recent)
-    const assistPlanRes = await query(`
-      SELECT quit_date, updated_at, created_at
-      FROM fivea_assist_plans 
-      WHERE user_id = $1
-      ORDER BY updated_at DESC
-      LIMIT 1
-    `, [userId]);
-    
-    assistPlanData = assistPlanRes.rows[0];
-    console.log('🎯 Assist plan data found:', assistPlanData);
-    
-    // If assist plan exists, use its quit_date for consistency
-    if (assistPlanData && assistPlanData.quit_date) {
-      console.log('🔄 Using assist plan quit_date instead of profile quit_date');
-      console.log('📅 Profile quit_date was:', quitDate);
-      console.log('📅 Assist plan quit_date is:', assistPlanData.quit_date);
-      // Override the quitDate with the one from assist plan for consistency
-      quitDate = assistPlanData.quit_date;
+    try {
+      // First try to get assist plan data by user_id (most recent)
+      const assistPlanRes = await query(`
+        SELECT quit_date, updated_at, created_at
+        FROM fivea_assist_plans 
+        WHERE user_id = $1
+        ORDER BY updated_at DESC
+        LIMIT 1
+      `, [userId]);
+      
+      assistPlanData = assistPlanRes.rows[0];
+      console.log('🎯 Assist plan data found:', assistPlanData);
+      
+      // If assist plan exists, use its quit_date for consistency
+      if (assistPlanData && assistPlanData.quit_date) {
+        console.log('🔄 Using assist plan quit_date instead of profile quit_date');
+        console.log('📅 Profile quit_date was:', quitDate);
+        console.log('📅 Assist plan quit_date is:', assistPlanData.quit_date);
+        // Override the quitDate with the one from assist plan for consistency
+        quitDate = assistPlanData.quit_date;
+      }
+    } catch (error) {
+      // If the table doesn't exist or there's an error, just log it and continue
+      console.log('ℹ️ fivea_assist_plans table not found or error accessing it, using profile quit date');
     }
     
     // Default date range: last 90 days or since assist plan start date

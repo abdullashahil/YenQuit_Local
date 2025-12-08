@@ -63,7 +63,7 @@ export function RecommendedSidebar() {
         ) : (
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5" style={{ color: "white" }}/>
-            <span className="text-sm font-medium text-white">Recommended for You</span>
+            {/* <span className="text-sm font-medium text-white">Recommended for You</span> */}
           </div>
         )}
       </button>
