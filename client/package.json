@@ -50,6 +50,7 @@
             "react-day-picker": "^9.0.0-alpha.5",
             "react-dom": "^19.2.0",
             "react-hook-form": "^7.55.0",
+            "react-markdown": "^10.1.0",
             "react-resizable-panels": "^2.1.7",
             "react-router-dom": "^7.9.5",
             "react-slick": "^0.31.0",
