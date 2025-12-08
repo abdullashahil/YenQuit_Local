@@ -253,21 +253,73 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className={`w-full justify-start text-left rounded-xl h-12 border brand-border ${isCompleted ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  className={`w-full justify-start text-left rounded-xl h-14 border brand-border ${isCompleted ? 'opacity-60 cursor-not-allowed' : ''}`}
                   disabled={isCompleted}
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {quitDate ? format(quitDate, 'PPP') : <span>Pick a date</span>}
+                  <CalendarIcon className="mr-3 h-5 w-5" />
+                  {quitDate ? format(quitDate, 'PPP') : <span className="text-gray-500">Select a date (minimum 30 days from today)</span>}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-white" align="start">
+              <PopoverContent className="w-auto p-4 bg-white shadow-xl border border-gray-200" align="start">
                 <Calendar
                   mode="single"
                   selected={quitDate}
                   onSelect={setQuitDate}
                   disabled={isCompleted}
-                  className="rounded-lg border-0 shadow-lg"
+                  className="rounded-lg border-0"
+                  style={{
+                    width: '280px'
+                  }}
                   initialFocus
+                  defaultMonth={new Date(new Date().setDate(new Date().getDate() + 30))}
+                  fromDate={new Date(new Date().setDate(new Date().getDate() + 30))}
+                  toDate={new Date(new Date().setFullYear(new Date().getFullYear() + 2))}
+                  modifiers={{
+                    disabled: [
+                      { before: new Date(new Date().setDate(new Date().getDate() + 30)) },
+                      { after: new Date(new Date().setFullYear(new Date().getFullYear() + 2)) }
+                    ]
+                  }}
+                  modifiersStyles={{
+                    disabled: {
+                      color: '#d1d5db',
+                      backgroundColor: '#f9fafb',
+                      cursor: 'not-allowed',
+                      opacity: 0.5
+                    },
+                    selected: {
+                      backgroundColor: '#20B2AA',
+                      color: 'white',
+                      fontWeight: 'bold'
+                    },
+                    today: {
+                      backgroundColor: '#f0fdf4',
+                      border: '2px solid #20B2AA'
+                    }
+                  }}
+                  classNames={{
+                    months: 'flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0',
+                    month: 'space-y-4',
+                    caption: 'flex justify-between items-center pt-1 relative',
+                    caption_label: 'text-sm font-medium text-gray-900',
+                    nav: 'space-x-1 flex items-center',
+                    nav_button: 'h-7 w-7 bg-transparent hover:bg-gray-100 rounded-md flex items-center justify-center',
+                    nav_button_previous: '',
+                    nav_button_next: '',
+                    table: 'w-full border-collapse space-y-1',
+                    head_row: 'flex',
+                    head_cell: 'text-gray-500 rounded-md w-9 font-normal text-[0.8rem]',
+                    row: 'flex w-full mt-2',
+                    cell: 'h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20',
+                    day: 'h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground rounded-md transition-colors',
+                    day_range_end: 'day-range-end',
+                    day_selected: 'bg-[#20B2AA] text-white hover:bg-[#20B2AA] hover:text-white focus:bg-[#20B2AA] focus:text-white',
+                    day_today: 'bg-[#f0fdf4] text-[#20B2AA] font-bold border-2 border-[#20B2AA]',
+                    day_outside: 'day-outside text-gray-400 opacity-50 aria-selected:bg-accent/50 aria-selected:text-gray-400 aria-selected:opacity-30',
+                    day_disabled: 'text-gray-400 opacity-50',
+                    day_range_middle: 'aria-selected:bg-accent aria-selected:text-accent-foreground',
+                    day_hidden: 'invisible'
+                  }}
                 />
               </PopoverContent>
             </Popover>

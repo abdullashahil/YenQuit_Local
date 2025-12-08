@@ -3,14 +3,19 @@ import { query, getClient } from '../db/index.js';
 export async function getQuestionsByStep(step, tobaccoCategory) { 
   const category = tobaccoCategory || 'smoked';
 
+  // For 'assess' step, show questions to all users regardless of tobacco category
+  const whereClause = step === 'assess' 
+    ? `WHERE step = $1 AND is_active = TRUE`
+    : `WHERE step = $1 AND is_active = TRUE AND tobacco_category = $2`;
+
+  const params = step === 'assess' ? [step] : [step, category];
+
   const result = await query(
     `SELECT id, step, question_text, options
      FROM fivea_questions
-     WHERE step = $1
-       AND is_active = TRUE
-       AND tobacco_category = $2
+     ${whereClause}
      ORDER BY id`,
-    [step, category]
+    params
   );
 
   return result.rows;
