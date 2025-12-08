@@ -6,6 +6,12 @@ const router = express.Router();
 
 // Public or user routes (require auth)
 router.get('/', authenticateJWT, fagerstromController.getFagerstromQuestions);
+
+// Answer routes (must come before /:id)
+router.get('/answers', authenticateJWT, fagerstromController.getFagerstromUserAnswers);
+router.post('/answers', authenticateJWT, fagerstromController.saveFagerstromAnswers);
+
+// Question by ID (must come after /answers)
 router.get('/:id', authenticateJWT, fagerstromController.getFagerstromQuestionById);
 
 // Admin CRUD
