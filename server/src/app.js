@@ -16,6 +16,9 @@ import risksRoutes from './routes/risks.js';
 import rewardsRoutes from './routes/rewards.js';
 import roadblocksRoutes from './routes/roadblocks.js';
 import personalRoadblocksRoutes from './routes/personalRoadblocks.js';
+import yenquitChatRoutes from './routes/yenquitChat.js';
+import { startChatCleanupJob } from './jobs/chatCleanupJob.js';
+
 
 dotenv.config();
 
@@ -48,6 +51,10 @@ app.use('/api/personal-roadblocks', personalRoadblocksRoutes);
 app.use('/api/content', publicContentRoutes);
 app.use('/api/content', contentRoutes);
 app.use('/api/assist', assistRoutes);
+app.use('/api/yenquit-chat', yenquitChatRoutes);
+
+// Start chat cleanup job
+startChatCleanupJob();
 
 app.get('/', (req, res) => {
   res.json({ status: 'API running' });
