@@ -15,13 +15,15 @@ export default function Dashboard() {
   useEffect(() => {
     const loadUserProfile = async () => {
       try {
-        // Check if user is authenticated
+        // Check if user is authenticated - look for accessToken in localStorage
         if (typeof window !== 'undefined') {
-          const userType = sessionStorage.getItem('userType')
-          if (!userType) {
+          const accessToken = localStorage.getItem('accessToken')
+          if (!accessToken) {
+            console.log('No access token found, redirecting to login')
             router.push('/login')
             return
           }
+          console.log('Access token found, user is authenticated')
         }
 
         // Try to get user name from API first
@@ -34,6 +36,7 @@ export default function Dashboard() {
             return
           }
         } catch (apiError) {
+          console.log('API call failed, using fallback:', apiError)
           // API failed, continue to fallback
         }
 
@@ -51,6 +54,7 @@ export default function Dashboard() {
           setUserName('User')
         }
       } catch (err) {
+        console.error('Error in loadUserProfile:', err)
         setUserName('User')
       }
     }

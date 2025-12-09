@@ -24,7 +24,7 @@ export async function getPersonalRoadblockQuestionsContent(req, res, next) {
 // Get user's personal roadblock responses
 export async function getUserPersonalRoadblocksContent(req, res, next) {
   try {
-    const userId = req.user?.id;
+    const userId = req.user?.userId;
     if (!userId) return res.status(401).json({ error: 'User not authenticated' });
     
     const responses = await getUserPersonalRoadblocks(userId);
@@ -40,7 +40,7 @@ export async function getUserPersonalRoadblocksContent(req, res, next) {
 // Save user's personal roadblock response
 export async function saveUserPersonalRoadblockResponse(req, res, next) {
   try {
-    const userId = req.user?.id;
+    const userId = req.user?.userId;
     if (!userId) return res.status(401).json({ error: 'User not authenticated' });
     
     const { questionId, response } = req.body;
@@ -60,7 +60,7 @@ export async function saveUserPersonalRoadblockResponse(req, res, next) {
 // Delete user's personal roadblock response
 export async function deleteUserPersonalRoadblockResponse(req, res, next) {
   try {
-    const userId = req.user?.id;
+    const userId = req.user?.userId;
     if (!userId) return res.status(401).json({ error: 'User not authenticated' });
     
     const { questionId } = req.params;

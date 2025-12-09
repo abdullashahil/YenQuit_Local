@@ -6,18 +6,31 @@ export async function getFagerstromQuestions(req, res, next) {
     const page = Math.max(parseInt(req.query.page) || 1, 1);
     const limit = Math.min(Math.max(parseInt(req.query.limit) || 50, 1), 200);
     const isActiveOnly = req.query.active !== 'false';
+    const getAll = req.query.getAll === 'true';
     
-    // Get user's tobacco type for filtering
+    // Get user's tobacco type for filtering (only if not explicitly provided and not getAll)
     const userId = req.user?.userId;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
     
-    const profile = await UserModel.getProfileByUserId(userId);
-    const tobaccoType = profile?.tobacco_type || 'smoked'; // Default to 'smoked' if no profile
+    let tobaccoCategory;
     
-    // Map tobacco_type to tobacco_category
-    // - smokeless -> smokeless
-    // - smoked, both, null, anything else -> smoked
-    const tobaccoCategory = tobaccoType === 'smokeless' ? 'smokeless' : 'smoked';
+    if (getAll) {
+      // When getAll is true, don't filter by tobacco category
+      tobaccoCategory = null;
+    } else {
+      tobaccoCategory = req.query.tobaccoCategory; // Allow explicit override for admin
+      
+      // If no explicit category provided, use user's profile
+      if (!tobaccoCategory) {
+        const profile = await UserModel.getProfileByUserId(userId);
+        const tobaccoType = profile?.tobacco_type || 'smoked'; // Default to 'smoked' if no profile
+        
+        // Map tobacco_type to tobacco_category
+        // - smokeless -> smokeless
+        // - smoked, both, null, anything else -> smoked
+        tobaccoCategory = tobaccoType === 'smokeless' ? 'smokeless' : 'smoked';
+      }
+    }
     
     const questions = await fagerstromService.getFagerstromQuestions(page, limit, isActiveOnly, tobaccoCategory);
     const total = await fagerstromService.getFagerstromQuestionCount(isActiveOnly, tobaccoCategory);

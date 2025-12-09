@@ -8,6 +8,7 @@ export function authenticateJWT(req, res, next) {
   if (!token) {
     return res.status(401).json({ error: 'Access token required' });
   }
+  
   try {
     const payload = verifyAccessToken(token);
     console.log('Auth middleware - Token payload:', payload);

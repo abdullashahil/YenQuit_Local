@@ -157,7 +157,7 @@ export function FiveA_Ask({ onNext, questions = [], savedAnswers = [], submitted
                   {q.options.map((option) => (
                     <div key={option}>
                       <div
-                        className="flex items-center p-4 rounded-xl transition-all duration-200"
+                        className="flex items-center p-2 rounded-xl transition-all duration-200"
                         style={{
                           backgroundColor: selectedOptions[`q${q.id}`] === option ? 'rgba(32, 178, 170, 0.08)' : 'transparent',
                           border: `2px solid ${selectedOptions[`q${q.id}`] === option ? '#20B2AA' : 'transparent'}`,
@@ -206,17 +206,30 @@ export function FiveA_Ask({ onNext, questions = [], savedAnswers = [], submitted
           <HesitationLink />
 
           <div className="mt-4 flex justify-end">
-            <Button
-              onClick={() => onNext(answers)}
-              disabled={!isComplete || submitted}
-              className="px-8 py-6 rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{
-                backgroundColor: isComplete && !submitted ? '#20B2AA' : '#cccccc',
-                color: '#FFFFFF'
-              }}
-            >
-              {submitted ? 'Already Submitted' : 'Next: Get Your Personalized Advice'}
-            </Button>
+            {submitted ? (
+              <Button
+                onClick={() => window.location.href = '/5a/advise'}
+                className="px-8 py-6 rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl"
+                style={{
+                  backgroundColor: '#20B2AA',
+                  color: '#FFFFFF'
+                }}
+              >
+                Continue to Next Step
+              </Button>
+            ) : (
+              <Button
+                onClick={() => onNext(answers)}
+                disabled={!isComplete || submitted}
+                className="px-8 py-6 rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: isComplete && !submitted ? '#20B2AA' : '#cccccc',
+                  color: '#FFFFFF'
+                }}
+              >
+                {submitted ? 'Already Submitted' : 'Next: Get Your Personalized Advice'}
+              </Button>
+            )}
           </div>
         </div>
       </div>

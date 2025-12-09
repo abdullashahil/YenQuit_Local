@@ -16,6 +16,7 @@ import risksRoutes from './routes/risks.js';
 import rewardsRoutes from './routes/rewards.js';
 import roadblocksRoutes from './routes/roadblocks.js';
 import personalRoadblocksRoutes from './routes/personalRoadblocks.js';
+import fiveAAdminRoutes from './routes/fiveAAdmin.js';
 import yenquitChatRoutes from './routes/yenquitChat.js';
 import learningProgressRoutes from './routes/learningProgress.js';
 import { startChatCleanupJob } from './jobs/chatCleanupJob.js';
@@ -48,6 +49,7 @@ app.use('/api/risks', risksRoutes);
 app.use('/api/rewards', rewardsRoutes);
 app.use('/api/roadblocks', roadblocksRoutes);
 app.use('/api/personal-roadblocks', personalRoadblocksRoutes);
+app.use('/api/admin/5a', fiveAAdminRoutes);
 // Register public content routes BEFORE admin content routes so /public doesn't hit the generic /:id handler
 app.use('/api/content', publicContentRoutes);
 app.use('/api/content', contentRoutes);

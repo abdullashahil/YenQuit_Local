@@ -11,7 +11,9 @@ export async function findUserById(id) {
 }
 
 export async function updateOnboardingStep(userId, step) {
-  const completed = step >= 5;
+  // Update: Only 4 steps are mandatory (ASK, ADVISE, ASSESS, ASSIST)
+  // ARRANGE is optional, so onboarding is completed after step 4 (ASSIST)
+  const completed = step >= 4;
   const res = await query(
     'UPDATE users SET onboarding_step = $2, onboarding_completed = $3, updated_at = NOW() WHERE id = $1 RETURNING id, email, role, onboarding_step, onboarding_completed',
     [userId, step, completed]

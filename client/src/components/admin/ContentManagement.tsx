@@ -21,10 +21,9 @@ import { PreviewContentModal } from "./PreviewContentModal";
 import { CampaignScheduler } from "./CampaignScheduler";
 import { InsightsNotifications } from "../features/community/InsightsNotifications";
 import { SystemConfiguration } from "./SystemConfiguration";
-import { CopingStrategies } from "./CopingStrategies";
-import { NotificationTemplates } from "./NotificationTemplates";
+import { FiveAManagement } from "./FiveAManagement";
 import { AssistHistory } from "./AssistHistory";
-import { Search, Plus, Edit, Trash2, Eye, Filter, BarChart3, Users, Calendar, FileText, MessageSquare, Bell, Loader2, Settings, Heart, Clock, History } from "lucide-react";
+import { Search, Plus, Edit, Trash2, Eye, Filter, BarChart3, Users, Calendar, FileText, MessageSquare, Bell, Loader2, Settings, Heart, Clock, History, MessageCircle, Lightbulb, ClipboardCheck, Users as UsersIcon, Calendar as CalendarIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import axios from "axios";
 
@@ -61,7 +60,7 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
 
   const contentTabs = [
     { id: "content", label: "Content", icon: FileText },
-    { id: "coping-strategies", label: "Coping Strategies", icon: Heart },
+    { id: "5a-management", label: "5A Management", icon: MessageCircle },
     { id: "notification-templates", label: "Notification Templates", icon: Bell },
     { id: "assist-history", label: "Assist History", icon: History },
     { id: "configuration", label: "System Configuration", icon: Settings },
@@ -241,14 +240,14 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
                 <div>
                   <h1 className="text-2xl md:text-3xl font-bold mb-2 text-[#1C3B5E]">
                     {activeContentTab === "content" && "Content Management"}
-                    {activeContentTab === "coping-strategies" && "Coping Strategies Management"}
+                    {activeContentTab === "5a-management" && "5A Methodology Management"}
                     {activeContentTab === "notification-templates" && "Notification Templates Management"}
                     {activeContentTab === "assist-history" && "Assist Plan History"}
                     {activeContentTab === "configuration" && "System Configuration"}
                   </h1>
                   <p className="text-sm md:text-base text-gray-600">
                     {activeContentTab === "content" && "Manage all public-facing content, campaigns, and user communications"}
-                    {activeContentTab === "coping-strategies" && "Manage coping strategies available to users in the ASSIST step"}
+                    {activeContentTab === "5a-management" && "Manage questions, content, and strategies for all 5A methodology steps"}
                     {activeContentTab === "notification-templates" && "Manage notification templates available to users in the ASSIST step"}
                     {activeContentTab === "assist-history" && "View completed assist plans and user progress"}
                     {activeContentTab === "configuration" && "Configure system settings, API keys, and global preferences"}
@@ -267,13 +266,6 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
                       <Plus className="w-5 h-5" />
                       <span>Create Content</span>
                     </Button>
-                    {/* <Button
-                      variant="outline"
-                      className="h-12 rounded-2xl flex items-center gap-2 px-6 border-gray-200 hover:border-[#20B2AA] hover:text-[#20B2AA] transition-all duration-200"
-                    >
-                      <FileText className="w-5 h-5" />
-                      <span className="hidden sm:inline">Export</span>
-                    </Button> */}
                   </div>
                 )}
               </div>
@@ -596,10 +588,8 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
             </div> */}
 
             </>
-            ) : activeContentTab === "coping-strategies" ? (
-              <CopingStrategies activeTab={activeContentTab} setActiveTab={setActiveContentTab} />
-            ) : activeContentTab === "notification-templates" ? (
-              <NotificationTemplates activeTab={activeContentTab} setActiveTab={setActiveContentTab} />
+            ) : activeContentTab === "5a-management" ? (
+              <FiveAManagement activeTab={activeContentTab} setActiveTab={setActiveContentTab} />
             ) : activeContentTab === "assist-history" ? (
               <AssistHistory activeTab={activeContentTab} setActiveTab={setActiveContentTab} />
             ) : (
