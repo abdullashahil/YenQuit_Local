@@ -4,7 +4,7 @@ import { QuitTrackerCard } from "./QuitTrackerCard";
 import { ProgressCalendar } from "./ProgressCalendar";
 import { AdaptiveAdviceModule } from "./AdaptiveAdviceModule";
 import { StatsSnapshot } from "./StatsSnapshot";
-import { MotivationalContent } from "./MotivationalContent";
+import { ResumeContent } from "./ResumeContent";
 import userService from "../../../services/userService";
 
 interface DashboardPageProps {
@@ -61,7 +61,7 @@ export function DashboardPage({ activeTab, setActiveTab, onLogout, onboardingNam
               <div className="lg:col-span-8 space-y-6">
                 <QuitTrackerCard />
                 <StatsSnapshot />
-                <MotivationalContent />
+                <ResumeContent />
               </div>
               
               {/* Right Column */}

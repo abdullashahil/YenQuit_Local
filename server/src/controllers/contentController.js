@@ -5,6 +5,11 @@ class ContentController {
   // Create new content
   static async createContent(req, res) {
     try {
+      // Debug: Log request data
+      console.log('Request body:', req.body);
+      console.log('Uploaded file:', req.file);
+      console.log('Request headers:', req.headers);
+
       const {
         title,
         category,
@@ -40,11 +45,22 @@ class ContentController {
           });
         }
       } else if (category === 'Image') {
-        if (!media_url) {
+        // For image category, either media_url or uploaded file should be present
+        console.log('Image validation check:');
+        console.log('media_url:', media_url);
+        console.log('media_url type:', typeof media_url);
+        console.log('media_url trimmed:', media_url?.trim());
+        console.log('req.file:', req.file);
+        console.log('req.file exists:', !!req.file);
+        
+        if ((!media_url || media_url.trim() === '') && !req.file) {
+          console.log('Image validation FAILED - no URL and no file');
           return res.status(400).json({
             success: false,
-            message: 'Image URL is required for image-based learning'
+            message: 'Either an image URL or uploaded file is required for image-based learning'
           });
+        } else {
+          console.log('Image validation PASSED');
         }
       } else if (category === 'Blog' || category === 'Quote') {
         if (!title) {
@@ -75,6 +91,8 @@ class ContentController {
       let finalMediaUrl = media_url;
       if (req.file) {
         finalMediaUrl = getFileUrl(req.file.filename);
+      } else if (media_url && media_url.trim() === '') {
+        finalMediaUrl = null; // Don't save empty strings
       }
 
       const contentData = {
@@ -226,10 +244,11 @@ class ContentController {
             });
           }
         } else if (category === 'Image') {
-          if (media_url !== undefined && !media_url.trim()) {
+          // For image category, either media_url or uploaded file should be present
+          if ((!media_url || media_url.trim() === '') && !req.file) {
             return res.status(400).json({
               success: false,
-              message: 'Image URL is required for image-based learning'
+              message: 'Either an image URL or uploaded file is required for image-based learning'
             });
           }
         } else if (category === 'Blog' || category === 'Quote') {
@@ -267,6 +286,8 @@ class ContentController {
           deleteFile(oldFilename);
         }
         finalMediaUrl = getFileUrl(req.file.filename);
+      } else if (media_url !== undefined && media_url.trim() === '') {
+        finalMediaUrl = null; // Don't save empty strings
       }
 
       const updateData = {};

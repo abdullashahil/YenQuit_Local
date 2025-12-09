@@ -94,6 +94,9 @@ export function ContentViewPage({ contentType, items, onBack }: ContentViewPageP
     // Handle video/podcast playback using local video modal
     if ((contentType === "video" || contentType === "podcast")) {
       handleVideoClick(content);
+    } else if (contentType === "image") {
+      // For images, we could show a modal or just log - the LearningSection already handles image modal
+      console.log('Selected image content:', content);
     } else {
       // Handle other content types (can be expanded based on requirements)
       console.log('Selected content:', content);
@@ -159,7 +162,7 @@ export function ContentViewPage({ contentType, items, onBack }: ContentViewPageP
       </div>
 
       {/* Floating Recommended Sidebar */}
-      <RecommendedSidebar />
+      {/* <RecommendedSidebar /> */}
       
       {/* Fullscreen Video Modal */}
       {fullscreenVideo && fullscreenVideo.id && (

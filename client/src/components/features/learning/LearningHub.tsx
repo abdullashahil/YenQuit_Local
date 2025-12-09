@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/router";
 import { VideoCard } from "./VideoCard";
 import { PodcastCard } from "./PodcastCard";
 import { ImageCard } from "./ImageCard";
@@ -16,6 +17,7 @@ interface LearningHubProps {
 }
 
 export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubProps) {
+  const router = useRouter();
   const [currentView, setCurrentView] = useState<"hub" | "content">("hub");
   const [contentType, setContentType] = useState<"video" | "podcast" | "image" | "blog" | "quote">("video");
   // Grouped content state with proper typing
@@ -85,6 +87,46 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
     return () => { isMounted = false; };
   }, []);
 
+  // Handle URL parameters for specific content
+  useEffect(() => {
+    if (router.isReady && router.query.contentId && router.query.category) {
+      const contentId = router.query.contentId as string;
+      const category = router.query.category as string;
+      
+      // Find the content in the fetched data
+      const findAndDisplayContent = () => {
+        let targetContent: PublicContentItem | null = null;
+        
+        switch (category.toLowerCase()) {
+          case 'video':
+            targetContent = content.videos.find(item => item.id === contentId) || null;
+            break;
+          case 'podcast':
+            targetContent = content.podcasts.find(item => item.id === contentId) || null;
+            break;
+          case 'image':
+            targetContent = content.images.find(item => item.id === contentId) || null;
+            break;
+          case 'blog':
+            targetContent = content.blogs.find(item => item.id === contentId) || null;
+            break;
+          case 'quote':
+            targetContent = content.quotes.find(item => item.id === contentId) || null;
+            break;
+        }
+        
+        if (targetContent) {
+          // Just track the content visit, don't auto-navigate to category view
+          handleContentSelect(targetContent);
+        }
+      };
+      
+      if (content.videos.length > 0 || content.podcasts.length > 0) {
+        findAndDisplayContent();
+      }
+    }
+  }, [router.isReady, router.query, content]);
+
   const handleViewMore = (type: "video" | "podcast" | "image" | "blog" | "quote") => {
     setContentType(type);
     setCurrentView("content");
@@ -127,7 +169,40 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
 
   // closeFullscreenVideo is already defined above
 
-  const handleContentSelect = (content: PublicContentItem) => {
+  const handleContentSelect = async (content: PublicContentItem) => {
+    // Track content visit
+    try {
+      const token = localStorage.getItem('accessToken');
+      console.log('LearningHub - Token from localStorage:', token ? 'Token exists' : 'No token found');
+      console.log('LearningHub - Tracking content visit for content ID:', content.id);
+      
+      if (token) {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+        console.log('LearningHub - Sending POST request to:', `${API_URL}/learning-progress`);
+        
+        const response = await fetch(`${API_URL}/learning-progress`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ contentId: content.id })
+        });
+        
+        console.log('LearningHub - API response status:', response.status);
+        if (response.ok) {
+          const data = await response.json();
+          console.log('LearningHub - Content tracked successfully:', data);
+        } else {
+          console.error('LearningHub - API error:', await response.text());
+        }
+      } else {
+        console.log('LearningHub - No token found, skipping content tracking');
+      }
+    } catch (error) {
+      console.error('LearningHub - Error tracking content visit:', error);
+    }
+
     if ((content.category === 'Video' || content.category === 'Podcast') && content.media_url) {
       handleVideoClick(content);
     } else {
@@ -214,6 +289,33 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
               </div>
             </div>
           </div>
+        </div>
+      );
+    }
+    
+    if (content.category === 'Image') {
+      return (
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="aspect-square bg-gray-100 flex items-center justify-center">
+            {content.media_url && (
+              <img
+                src={content.media_url}
+                alt={content.title || 'Image'}
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODgiIGhlaWdodD0iODgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgc3Ryb2tlPSIjMDAwIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBvcGFjaXR5PSIuMyIgZmlsbD0ibm9uZSIgc3Ryb2tlLXdpZHRoPSIzLjciPjxyZWN0IHg9IjE2IiB5PSIxNiIgd2lkdGg9IjU2IiBoZWlnaHQ9IjU2IiByeD0iNiIvPjxwYXRoIGQ9Im0xNiA1OCAxNi0xOCAzMiAzMiIvPjxjaXJjbGUgY3g9IjUzIiBjeT0iMzUiIHI9IjciLz48L3N2Zz4KCg==';
+                }}
+              />
+            )}
+          </div>
+          {content.title && (
+            <div className="p-4">
+              <h3 className="text-lg font-medium text-gray-800">{content.title}</h3>
+              {content.description && (
+                <p className="text-sm text-gray-600 mt-1">{content.description}</p>
+              )}
+            </div>
+          )}
         </div>
       );
     }
