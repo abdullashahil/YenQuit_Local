@@ -22,7 +22,6 @@ import { CampaignScheduler } from "./CampaignScheduler";
 import { InsightsNotifications } from "../features/community/InsightsNotifications";
 import { SystemConfiguration } from "./SystemConfiguration";
 import { FiveAManagement } from "./FiveAManagement";
-import { NotificationTemplates } from "./NotificationTemplates";
 import { AssistHistory } from "./AssistHistory";
 import { Search, Plus, Edit, Trash2, Eye, Filter, BarChart3, Users, Calendar, FileText, MessageSquare, Bell, Loader2, Settings, Heart, Clock, History, MessageCircle, Lightbulb, ClipboardCheck, Users as UsersIcon, Calendar as CalendarIcon } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -591,8 +590,6 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
             </>
             ) : activeContentTab === "5a-management" ? (
               <FiveAManagement activeTab={activeContentTab} setActiveTab={setActiveContentTab} />
-            ) : activeContentTab === "notification-templates" ? (
-              <NotificationTemplates activeTab={activeContentTab} setActiveTab={setActiveContentTab} />
             ) : activeContentTab === "assist-history" ? (
               <AssistHistory activeTab={activeContentTab} setActiveTab={setActiveContentTab} />
             ) : (
