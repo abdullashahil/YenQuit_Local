@@ -306,9 +306,10 @@ export async function completeAssistPlan(userId) {
       ]
     );
     
-    // Update user onboarding step
+    // Update user onboarding step - Mark as completed after assist (step 4)
+    // ARRANGE (step 5) is optional, so onboarding is complete after assist
     await client.query(
-      'UPDATE users SET onboarding_step = 4, updated_at = NOW() WHERE id = $1',
+      'UPDATE users SET onboarding_step = 4, onboarding_completed = true, updated_at = NOW() WHERE id = $1',
       [userId]
     );
     

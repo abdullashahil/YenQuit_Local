@@ -7,10 +7,11 @@ export default function Learning() {
   const router = useRouter()
 
   useEffect(() => {
-    // Check if user is authenticated
+    // Check if user is authenticated - look for accessToken in localStorage
     if (typeof window !== 'undefined') {
-      const userType = sessionStorage.getItem('userType')
-      if (!userType) {
+      const accessToken = localStorage.getItem('accessToken')
+      if (!accessToken) {
+        console.log('No access token found, redirecting to login')
         router.push('/login')
       }
     }

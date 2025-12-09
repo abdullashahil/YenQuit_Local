@@ -313,7 +313,7 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
                   <RadioGroup
                     value={typeof assessAnswers[`assess_${q.id}`] === 'string' ? assessAnswers[`assess_${q.id}`] : ''}
                     onValueChange={(value) => handleAssessAnswer(q.id.toString(), value)}
-                    className="space-y-3"
+                    className="space-y-1"
                   >
                     {q.options.map((option) => (
                       <div
@@ -375,7 +375,7 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
                 <RadioGroup
                   value={fagerstromAnswers[`q${q.id}`] || ''}
                   onValueChange={(value) => handleFagerstromAnswer(`q${q.id}`, value)}
-                  className="space-y-3"
+                  className="space-y-1"
                   disabled={submitted}
                 >
                   {q.options.map((option) => (
@@ -416,17 +416,30 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
           <HesitationLink />
 
           <div className="mt-4 flex justify-end">
-            <Button
-              onClick={handleNext}
-              disabled={!isFagerstromComplete || !isAssessComplete || submitted}
-              className="px-8 py-6 rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{
-                backgroundColor: isAssessComplete && !submitted ? '#20B2AA' : '#cccccc',
-                color: '#FFFFFF'
-              }}
-            >
-              Next: Get Personalized Assistance
-            </Button>
+            {submitted ? (
+              <Button
+                onClick={() => window.location.href = '/5a/assist'}
+                className="px-8 py-6 rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl"
+                style={{
+                  backgroundColor: '#20B2AA',
+                  color: '#FFFFFF'
+                }}
+              >
+                Continue to Next Step
+              </Button>
+            ) : (
+              <Button
+                onClick={handleNext}
+                disabled={!isFagerstromComplete || !isAssessComplete || submitted}
+                className="px-8 py-6 rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: isAssessComplete && !submitted ? '#20B2AA' : '#cccccc',
+                  color: '#FFFFFF'
+                }}
+              >
+                Next: Get Personalized Assistance
+              </Button>
+            )}
           </div>
         </div>
       </div>

@@ -19,6 +19,7 @@ export function FiveR_Roadblocks({ onNext, onBack }: FiveR_RoadblocksProps) {
   const [showResolutions, setShowResolutions] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -89,10 +90,23 @@ export function FiveR_Roadblocks({ onNext, onBack }: FiveR_RoadblocksProps) {
       ]);
     }
 
-    // Save to backend (async, don't wait for response)
-    saveUserPersonalRoadblock(questionId, response).catch(err => {
-      console.error('Failed to save personal roadblock response:', err);
-    });
+    // Mark as having unsaved changes (don't save to backend immediately)
+    setHasUnsavedChanges(true);
+  };
+
+  const handleSavePersonalResponses = async () => {
+    try {
+      // Save all personal responses to backend
+      const savePromises = userResponses.map(response => 
+        saveUserPersonalRoadblock(response.question_id, response.response)
+      );
+      
+      await Promise.all(savePromises);
+      setHasUnsavedChanges(false);
+      console.log('Personal responses saved successfully');
+    } catch (err) {
+      console.error('Failed to save personal roadblock responses:', err);
+    }
   };
 
   const handleBackToSelection = () => {
@@ -240,7 +254,12 @@ export function FiveR_Roadblocks({ onNext, onBack }: FiveR_RoadblocksProps) {
           {/* Personal Roadblock Section */}
           {personalQuestions.length > 0 && (
             <div className="mb-8">
-              <h2 className="text-[#1C3B5E] mb-6">Your Personal Roadblock (Optional)</h2>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-[#1C3B5E] text-2xl font-semibold">Your Personal Roadblock (Optional)</h2>
+                {hasUnsavedChanges && (
+                  <span className="text-sm text-orange-600 font-medium">You have unsaved changes</span>
+                )}
+              </div>
               
               <div className="space-y-4">
                 {personalQuestions.map((question) => {
@@ -261,6 +280,21 @@ export function FiveR_Roadblocks({ onNext, onBack }: FiveR_RoadblocksProps) {
                     </div>
                   );
                 })}
+              </div>
+
+              {/* Save Button for Personal Responses */}
+              <div className="mt-6 flex justify-end">
+                <Button
+                  onClick={handleSavePersonalResponses}
+                  disabled={!hasUnsavedChanges}
+                  className="px-6 py-3 rounded-xl transition-all duration-200"
+                  style={{
+                    backgroundColor: hasUnsavedChanges ? '#20B2AA' : '#cccccc',
+                    color: '#FFFFFF'
+                  }}
+                >
+                  {hasUnsavedChanges ? 'Save Personal Responses' : 'All Changes Saved'}
+                </Button>
               </div>
             </div>
           )}

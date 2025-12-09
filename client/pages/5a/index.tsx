@@ -155,20 +155,39 @@ export default function FiveAFlow() {
               index <= currentStepIndex ? 'text-[#20B2AA]' : 'text-gray-400'
             }`}
           >
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${
-              index <= currentStepIndex 
-                ? index === currentStepIndex 
-                  ? 'bg-[#20B2AA] text-white' 
-                  : 'bg-[#20B2AA] text-white'
-                : 'bg-gray-200'
-            }`}>
+            <div 
+              className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${
+                index <= currentStepIndex 
+                  ? index === currentStepIndex 
+                    ? 'bg-[#20B2AA] text-white' 
+                    : 'bg-[#20B2AA] text-white'
+                  : 'bg-gray-200'
+              }`}
+              style={{
+                ...(index === STEPS.length - 1 && {
+                  border: '2px dotted #9CA3AF'
+                })
+              }}
+            >
               {index + 1}
             </div>
-            <span className="text-xs font-medium capitalize">{step}</span>
+            <span className={`text-xs font-medium capitalize ${index === STEPS.length - 1 ? 'text-gray-500 italic' : ''}`}>
+              {step} {index === STEPS.length - 1 && '(Optional)'}
+            </span>
             {index < STEPS.length - 1 && (
-              <div className={`h-1 w-16 -mt-4 ${
-                index < currentStepIndex ? 'bg-[#20B2AA]' : 'bg-gray-200'
-              }`}></div>
+              <div 
+                className={`h-1 w-16 -mt-4 ${
+                  index < currentStepIndex 
+                    ? 'bg-[#20B2AA]' 
+                    : 'bg-gray-200'
+                }`}
+                style={{
+                  ...(index === STEPS.length - 2 && {
+                    borderTop: '2px dotted #9CA3AF',
+                    backgroundColor: 'transparent'
+                  })
+                }}
+              ></div>
             )}
           </div>
         ))}

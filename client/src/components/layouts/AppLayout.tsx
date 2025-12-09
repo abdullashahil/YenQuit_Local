@@ -12,6 +12,9 @@ export function AppLayout({ children, activeTab }: AppLayoutProps) {
 
   const handleLogout = () => {
     if (typeof window !== 'undefined') {
+      // Clear all authentication data
+      localStorage.removeItem('accessToken')
+      localStorage.removeItem('user')
       sessionStorage.clear()
     }
     router.push('/')

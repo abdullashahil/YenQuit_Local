@@ -108,7 +108,7 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
       }, 1000);
       
       if (redirectCountdown === 1) {
-        router.push('/5a/arrange');
+        router.push('/app');
       }
       
       return () => clearTimeout(timer);
@@ -217,6 +217,57 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-[#20B2AA]" />
           <p className="brand-text">Loading your personalized plan...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If user has already completed, show completion screen with redirect option
+  if (isCompleted) {
+    return (
+      <div className="min-h-screen p-4 md:p-6 lg:p-8" style={{ backgroundColor: '#FFFFFF' }}>
+        <div className="max-w-4xl mx-auto">
+          <OnboardingProgressBar
+            steps={['ASK', 'ADVISE', 'ASSESS', 'ASSIST', 'ARRANGE']}
+            currentStep={3}
+          />
+          
+          <div className="max-w-2xl mx-auto">
+            <div className="bg-white rounded-3xl shadow-lg p-8 border border-gray-100 brand-card mt-6">
+              <CheckCircle2 className="h-16 w-16 text-[#20B2AA] mx-auto mb-6" />
+              
+              <h1 className="brand-heading mb-4">Assistance Plan Completed!</h1>
+              
+              <p className="brand-text mb-8 text-lg">
+                You've already completed your personalized quit plan. Your quit date, coping strategies, and notifications have been set up successfully.
+              </p>
+              
+              <div className="space-y-4">
+                <Button
+                  onClick={() => router.push('/app')}
+                  className="w-full px-8 py-6 rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl"
+                  style={{
+                    backgroundColor: '#20B2AA',
+                    color: '#FFFFFF'
+                  }}
+                >
+                  Go to Dashboard
+                </Button>
+                
+                <Button
+                  onClick={() => window.location.href = '/5a/arrange'}
+                  variant="outline"
+                  className="w-full px-8 py-6 rounded-2xl transition-all duration-200"
+                  style={{
+                    borderColor: '#20B2AA',
+                    color: '#20B2AA'
+                  }}
+                >
+                  Review Optional Arrange Step
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -462,7 +513,7 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
                 className="px-8 py-6 rounded-2xl bg-[#1C3B5E] hover:bg-[#1C3B5E]/90 text-white"
               >
                 {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                {saving ? 'Saving...' : 'Continue to Arrange'}
+                {saving ? 'Saving...' : 'Complete & Continue to Dashboard'}
               </Button>
             </div>
           )}
@@ -474,7 +525,7 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 relative">
             <button
-              onClick={() => router.push('/5a/arrange')}
+              onClick={() => router.push('/app')}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
             >
               <X className="w-6 h-6" />
@@ -493,21 +544,30 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
               </p>
               
               <p className="text-gray-600 mb-6">
-                Your journey to a healthier life begins now. We're here to support you every step of the way.
+                Your personalized quit plan is ready! You can now access your dashboard and start your journey.
               </p>
               
               <div className="bg-gray-50 rounded-2xl p-4 mb-6">
-                <p className="text-sm text-gray-600 mb-2">Redirecting to next step in...</p>
+                <p className="text-sm text-gray-600 mb-2">Redirecting to dashboard in...</p>
                 <div className="text-3xl font-bold text-[#20B2AA]">{redirectCountdown}</div>
                 <p className="text-xs text-gray-500 mt-1">seconds</p>
               </div>
               
-              <Button
-                onClick={() => router.push('/5a/arrange')}
-                className="w-full px-6 py-3 rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 text-white"
-              >
-                Continue Now
-              </Button>
+              <div className="space-y-3">
+                <Button
+                  onClick={() => router.push('/app')}
+                  className="w-full px-6 py-3 rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 text-white"
+                >
+                  Go to Dashboard Now
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => router.push('/5a/arrange')}
+                  className="w-full px-6 py-3 rounded-2xl border-gray-300 text-gray-700 hover:bg-gray-50"
+                >
+                  Complete Optional Arrange Step
+                </Button>
+              </div>
             </div>
           </div>
         </div>

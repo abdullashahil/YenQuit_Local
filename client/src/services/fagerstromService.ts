@@ -19,10 +19,23 @@ export interface PaginatedFagerstromResponse {
   };
 }
 
-export async function getFagerstromQuestions(page = 1, limit = 50, activeOnly = true): Promise<PaginatedFagerstromResponse> {
+export async function getFagerstromQuestions(page = 1, limit = 50, activeOnly = true, tobaccoCategory?: string, getAll = false): Promise<PaginatedFagerstromResponse> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
-  const res = await fetch(`${API_URL}/api/fagerstrom?page=${page}&limit=${limit}&active=${activeOnly}`, {
+  
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+    active: activeOnly.toString()
+  });
+  
+  if (getAll) {
+    params.append('getAll', 'true');
+  } else if (tobaccoCategory) {
+    params.append('tobaccoCategory', tobaccoCategory);
+  }
+  
+  const res = await fetch(`${API_URL}/api/fagerstrom?${params}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error('Failed to fetch questions');
