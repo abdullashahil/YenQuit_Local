@@ -30,6 +30,38 @@ async function fetchAssessQuestions(): Promise<AssessQuestion[]> {
   return data.questions;
 }
 
+async function fetchAssessAnswers(): Promise<Record<string, string>> {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  if (!token) throw new Error('Unauthorized');
+  const res = await fetch(`${API_URL}/api/fivea/answers/assess`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) return {};
+  const data = await res.json();
+  const answers: Record<string, string> = {};
+  data.answers.forEach((answer: any) => {
+    answers[`assess_${answer.question_id}`] = answer.answer_text;
+  });
+  return answers;
+}
+
+async function fetchFagerstromAnswers(): Promise<Record<string, string>> {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  if (!token) throw new Error('Unauthorized');
+  const res = await fetch(`${API_URL}/api/fagerstrom/answers`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) return {};
+  const data = await res.json();
+  const answers: Record<string, string> = {};
+  data.answers.forEach((answer: any) => {
+    answers[`q${answer.question_id}`] = answer.answer_text;
+  });
+  return answers;
+}
+
 export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
   const [readiness, setReadiness] = useState<number[]>([5]);
   const [quitTimeline, setQuitTimeline] = useState('');
@@ -39,27 +71,52 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
   const [assessAnswers, setAssessAnswers] = useState<Record<string, number | string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [fagerstromData, assessData] = await Promise.all([
+        const [fagerstromData, assessData, savedAssessAnswers, savedFagerstromAnswers] = await Promise.all([
           getFagerstromQuestions(1, 100, true),
           fetchAssessQuestions(),
+          fetchAssessAnswers(),
+          fetchFagerstromAnswers(),
         ]);
+        
         setFagerstromQuestions(fagerstromData.questions);
         setAssessQuestions(assessData);
-        // Debug: log what we received
-        console.log('Assess questions from API:', assessData);
-        // Initialize assessAnswers: for slider questions default to 5, for radio empty
-        const initial: Record<string, number | string> = {};
+        
+        const hasSubmitted = Object.keys(savedAssessAnswers).length > 0;
+        setSubmitted(hasSubmitted);
+        
+        const initialAssess: Record<string, number | string> = {};
         assessData.forEach(q => {
-          console.log(`Question ${q.id}: options =`, q.options);
-          if (q.options === null || q.options.length === 0) {
-            initial[`assess_${q.id}`] = 5;
+          const key = `assess_${q.id}`;
+          if (savedAssessAnswers[key]) {
+            const savedValue = savedAssessAnswers[key];
+            if (q.options === null || q.options.length === 0) {
+              initialAssess[key] = parseInt(savedValue) || 5;
+            } else {
+              initialAssess[key] = savedValue;
+            }
+          } else {
+            if (q.options === null || q.options.length === 0) {
+              initialAssess[key] = 5;
+            }
           }
         });
-        setAssessAnswers(initial);
+        setAssessAnswers(initialAssess);
+        
+        const mappedFagerstromAnswers: Record<string, string> = {};
+        fagerstromData.questions.forEach(question => {
+          const savedAnswerKey = Object.keys(savedFagerstromAnswers).find(key => 
+            key === `q${question.id}`
+          );
+          if (savedAnswerKey) {
+            mappedFagerstromAnswers[`q${question.id}`] = savedFagerstromAnswers[savedAnswerKey];
+          }
+        });
+        setFagerstromAnswers(mappedFagerstromAnswers);
       } catch (e: any) {
         setError(e.message || 'Failed to load questions');
       } finally {
@@ -70,10 +127,12 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
   }, []);
 
   const handleFagerstromAnswer = (questionId: string, value: string) => {
+    if (submitted) return;
     setFagerstromAnswers(prev => ({ ...prev, [questionId]: value }));
   };
 
   const handleAssessAnswer = (questionId: string, value: number | string) => {
+    if (submitted) return;
     setAssessAnswers(prev => ({ ...prev, [`assess_${questionId}`]: value }));
   };
 
@@ -89,12 +148,32 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
   });
 
   const handleNext = async () => {
-    // Save Fagerström answers (existing endpoint)
+    if (submitted) {
+      onNext({
+        readinessScore: assessQuestions.find(q => q.options === null || q.options.length === 0) ? assessAnswers[`assess_${assessQuestions.find(q => q.options === null || q.options.length === 0)!.id}`] as number : readiness[0],
+        quitTimeline,
+        fagerstromAnswers,
+      });
+      return;
+    }
+    
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
       const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
       if (token) {
-        // Save assess answers to fivea_user_answers
+        const fagerstromPayload = Object.entries(fagerstromAnswers).map(([key, value]) => ({
+          question_id: parseInt(key.replace('q', '')),
+          answer_text: value,
+        }));
+        await fetch(`${API_URL}/api/fagerstrom/answers`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ answers: fagerstromPayload }),
+        });
+        
         const assessPayload = assessQuestions.map(q => ({
           question_id: q.id,
           answer: assessAnswers[`assess_${q.id}`]?.toString() || '',
@@ -116,6 +195,7 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
           },
           body: JSON.stringify({ step: 3 }),
         });
+        setSubmitted(true);
       }
     } catch (e) {
       // ignore and still navigate
@@ -167,7 +247,9 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
                 style={{
                   backgroundColor: '#FFFFFF',
                   border: '2px solid #E0E0E0',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+                  opacity: submitted ? 0.7 : 1,
+                  pointerEvents: submitted ? 'none' : 'auto'
                 }}
               >
                 <Label
@@ -184,14 +266,34 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
                 {/* Slider if options is null/empty */}
                 {(q.options === null || q.options.length === 0) ? (
                   <div>
-                    <Slider
-                      value={[assessAnswers[`assess_${q.id}`] as number || 5]}
-                      onValueChange={(val) => handleAssessAnswer(q.id.toString(), val[0])}
-                      min={1}
-                      max={10}
-                      step={1}
-                      className="mb-4"
-                    />
+                    <div
+                      className="relative mb-4"
+                      style={{
+                        padding: '4px 0',
+                        backgroundColor: '#F8FBFB',
+                        borderRadius: '12px',
+                        border: '1px solid #E0E0E0'
+                      }}
+                    >
+                      <Slider
+                        value={[assessAnswers[`assess_${q.id}`] as number || 5]}
+                        onValueChange={(val) => handleAssessAnswer(q.id.toString(), val[0])}
+                        min={1}
+                        max={10}
+                        step={1}
+                        disabled={submitted}
+                        className="w-full"
+                        style={{
+                          '--slider-track-height': '6px',
+                          '--slider-track-bg': '#E8F4F3',
+                          '--slider-range-bg': '#20B2AA',
+                          '--slider-thumb-size': '20px',
+                          '--slider-thumb-bg': '#20B2AA',
+                          '--slider-thumb-border': '#1C3B5E',
+                          '--slider-thumb-box-shadow': '0 2px 4px rgba(0,0,0,0.1)',
+                        } as React.CSSProperties}
+                      />
+                    </div>
                     <div
                       className="flex justify-between text-sm"
                       style={{ color: '#666666' }}
@@ -220,9 +322,9 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
                         style={{
                           backgroundColor: typeof assessAnswers[`assess_${q.id}`] === 'string' && assessAnswers[`assess_${q.id}`] === option ? 'rgba(32, 178, 170, 0.08)' : 'transparent',
                           border: `2px solid ${typeof assessAnswers[`assess_${q.id}`] === 'string' && assessAnswers[`assess_${q.id}`] === option ? '#20B2AA' : 'transparent'}`,
-                          cursor: 'pointer'
+                          cursor: submitted ? 'not-allowed' : 'pointer'
                         }}
-                        onClick={() => handleAssessAnswer(q.id.toString(), option)}
+                        onClick={() => !submitted && handleAssessAnswer(q.id.toString(), option)}
                       >
                         <RadioGroupItem
                           value={option}
@@ -232,11 +334,12 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
                             borderColor: '#20B2AA',
                             color: '#20B2AA'
                           }}
+                          disabled={submitted}
                         />
                         <Label
                           htmlFor={`assess-${q.id}-${option}`}
                           className="ml-4 cursor-pointer flex-1"
-                          style={{ color: '#333333' }}
+                          style={{ color: '#333333', cursor: submitted ? 'not-allowed' : 'pointer' }}
                         >
                           {option}
                         </Label>
@@ -254,17 +357,15 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
             {fagerstromQuestions.map((q, index) => (
               <div
                 key={q.id}
-                className="rounded-2xl p-6"
+                className="p-4 md:p-6 rounded-2xl border border-[#E0E0E0] bg-white transition-all duration-200"
                 style={{
-                  backgroundColor: '#FFFFFF',
-                  border: '2px solid #E0E0E0',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
+                  opacity: submitted ? 0.7 : 1,
+                  pointerEvents: submitted ? 'none' : 'auto'
                 }}
               >
                 <Label
-                  className="block mb-5"
+                  className="text-base md:text-lg font-medium text-[#333333] mb-4 block"
                   style={{
-                    color: '#1C3B5E',
                     fontSize: '1.05rem',
                     lineHeight: '1.5'
                   }}
@@ -275,6 +376,7 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
                   value={fagerstromAnswers[`q${q.id}`] || ''}
                   onValueChange={(value) => handleFagerstromAnswer(`q${q.id}`, value)}
                   className="space-y-3"
+                  disabled={submitted}
                 >
                   {q.options.map((option) => (
                     <div
@@ -283,9 +385,9 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
                       style={{
                         backgroundColor: fagerstromAnswers[`q${q.id}`] === option ? 'rgba(32, 178, 170, 0.08)' : 'transparent',
                         border: `2px solid ${fagerstromAnswers[`q${q.id}`] === option ? '#20B2AA' : 'transparent'}`,
-                        cursor: 'pointer'
+                        cursor: submitted ? 'not-allowed' : 'pointer'
                       }}
-                      onClick={() => handleFagerstromAnswer(`q${q.id}`, option)}
+                      onClick={() => !submitted && handleFagerstromAnswer(`q${q.id}`, option)}
                     >
                       <RadioGroupItem
                         value={option}
@@ -295,11 +397,12 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
                           borderColor: '#20B2AA',
                           color: '#20B2AA'
                         }}
+                        disabled={submitted}
                       />
                       <Label
                         htmlFor={`fagerstrom-${q.id}-${option}`}
                         className="ml-4 cursor-pointer flex-1"
-                        style={{ color: '#333333' }}
+                        style={{ color: '#333333', cursor: submitted ? 'not-allowed' : 'pointer' }}
                       >
                         {option}
                       </Label>
@@ -315,10 +418,10 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
           <div className="mt-4 flex justify-end">
             <Button
               onClick={handleNext}
-              disabled={!isFagerstromComplete || !isAssessComplete}
+              disabled={!isFagerstromComplete || !isAssessComplete || submitted}
               className="px-8 py-6 rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
-                backgroundColor: isFagerstromComplete && isAssessComplete ? '#20B2AA' : '#cccccc',
+                backgroundColor: isAssessComplete && !submitted ? '#20B2AA' : '#cccccc',
                 color: '#FFFFFF'
               }}
             >

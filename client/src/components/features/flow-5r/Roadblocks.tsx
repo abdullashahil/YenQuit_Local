@@ -1,72 +1,66 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../../ui/button';
 import { Textarea } from '../../ui/textarea';
 import { OnboardingProgressBar } from '../flow-shared/OnboardingProgressBar';
 import { AlertCircle, Lightbulb, Brain, Users, Coffee, Home, Check } from 'lucide-react';
+import { getRoadblocksContent, Roadblock } from '../../../services/roadblocksService';
+import { getPersonalRoadblockQuestions, getUserPersonalRoadblocks, saveUserPersonalRoadblock, PersonalRoadblockQuestion, UserPersonalRoadblock } from '../../../services/personalRoadblocksService';
 
 interface FiveR_RoadblocksProps {
   onNext: (data: any) => void;
   onBack: () => void;
 }
 
-const commonRoadblocks = [
-  {
-    id: 'stress',
-    title: 'Stress Management',
-    description: 'Smoking is my main way to cope with stress and anxiety.',
-    resolution: 'Learn alternative stress management techniques like deep breathing, meditation, or physical activity to replace smoking as a coping mechanism.'
-  },
-  {
-    id: 'social',
-    title: 'Social Situations',
-    description: 'I often smoke when I\'m with friends who smoke or in social settings.',
-    resolution: 'Plan ahead for social situations. Let friends know you\'re trying to quit, and have strategies ready like chewing gum or having non-smoking friends as support.'
-  },
-  {
-    id: 'cravings',
-    title: 'Nicotine Cravings',
-    description: 'The physical cravings for nicotine are too strong to resist.',
-    resolution: 'Consider nicotine replacement therapy (patches, gum) or prescription medications. Cravings typically peak at 2-3 days and decrease over 2-4 weeks.'
-  },
-  {
-    id: 'habit',
-    title: 'Habit & Routine',
-    description: 'Smoking is part of my daily routine (after meals, with coffee, etc.).',
-    resolution: 'Disrupt your smoking routines. Change your morning routine, take a different route to work, or switch to tea instead of coffee to break the association.'
-  },
-  {
-    id: 'withdrawal',
-    title: 'Withdrawal Symptoms',
-    description: 'I\'m afraid of withdrawal symptoms like irritability and weight gain.',
-    resolution: 'Withdrawal is temporary (2-4 weeks). Stay hydrated, exercise, and have healthy snacks ready. The benefits of quitting far outweigh these temporary discomforts.'
-  },
-  {
-    id: 'motivation',
-    title: 'Motivation',
-    description: 'I struggle to stay motivated to quit for the long term.',
-    resolution: 'Create a motivation list, set small milestones, and reward yourself. Track your progress and remember your reasons for quitting.'
-  }
-];
-
 export function FiveR_Roadblocks({ onNext, onBack }: FiveR_RoadblocksProps) {
+  const [commonRoadblocks, setCommonRoadblocks] = useState<Roadblock[]>([]);
+  const [personalQuestions, setPersonalQuestions] = useState<PersonalRoadblockQuestion[]>([]);
+  const [userResponses, setUserResponses] = useState<UserPersonalRoadblock[]>([]);
   const [selectedRoadblocks, setSelectedRoadblocks] = useState<string[]>([]);
   const [showResolutions, setShowResolutions] = useState(false);
-  const [personalRoadblock, setPersonalRoadblock] = useState('');
-  const [personalStrategy, setPersonalStrategy] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const toggleRoadblock = (id: string) => {
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [roadblocksData, questionsData] = await Promise.all([
+          getRoadblocksContent(),
+          getPersonalRoadblockQuestions()
+        ]);
+        
+        setCommonRoadblocks(roadblocksData.roadblocks);
+        setPersonalQuestions(questionsData.questions);
+
+        // Try to load user responses if authenticated
+        try {
+          const userResponsesData = await getUserPersonalRoadblocks();
+          setUserResponses(userResponsesData.responses);
+        } catch (err) {
+          // User not authenticated, continue without loading responses
+          console.log('User not authenticated, skipping personal responses');
+        }
+      } catch (err: any) {
+        setError(err.message || 'Failed to load roadblocks content');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  const toggleRoadblock = (id: number) => {
     setSelectedRoadblocks(prev => 
-      prev.includes(id) 
-        ? prev.filter(r => r !== id)
-        : [...prev, id]
+      prev.includes(id.toString()) 
+        ? prev.filter(r => r !== id.toString())
+        : [...prev, id.toString()]
     );
   };
 
   const handleNext = () => {
     onNext({ 
       selectedRoadblocks,
-      personalRoadblock,
-      personalStrategy
+      personalResponses: userResponses
     });
   };
 
@@ -74,9 +68,58 @@ export function FiveR_Roadblocks({ onNext, onBack }: FiveR_RoadblocksProps) {
     setShowResolutions(true);
   };
 
+  const handlePersonalResponseChange = (questionId: number, response: string) => {
+    // Update local state immediately for better UX
+    const existingResponse = userResponses.find(r => r.question_id === questionId);
+    
+    if (existingResponse) {
+      setUserResponses(prev => 
+        prev.map(r => r.question_id === questionId ? { ...r, response } : r)
+      );
+    } else {
+      setUserResponses(prev => [
+        ...prev,
+        {
+          id: 0, // temporary
+          question_id: questionId,
+          response,
+          question_text: personalQuestions.find(q => q.id === questionId)?.question_text || '',
+          question_type: personalQuestions.find(q => q.id === questionId)?.question_type || 'challenge'
+        }
+      ]);
+    }
+
+    // Save to backend (async, don't wait for response)
+    saveUserPersonalRoadblock(questionId, response).catch(err => {
+      console.error('Failed to save personal roadblock response:', err);
+    });
+  };
+
   const handleBackToSelection = () => {
     setShowResolutions(false);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white p-4 md:p-6 lg:p-8 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#20B2AA] mx-auto mb-4"></div>
+          <p className="text-[#333333]">Loading roadblocks information...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white p-4 md:p-6 lg:p-8 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">Error: {error}</p>
+          <Button onClick={() => window.location.reload()}>Try Again</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white p-4 md:p-6 lg:p-8">
@@ -130,7 +173,7 @@ export function FiveR_Roadblocks({ onNext, onBack }: FiveR_RoadblocksProps) {
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                   {commonRoadblocks.map((roadblock) => {
-                    const isSelected = selectedRoadblocks.includes(roadblock.id);
+                    const isSelected = selectedRoadblocks.includes(roadblock.id.toString());
                     return (
                       <div 
                         key={roadblock.id}
@@ -171,7 +214,7 @@ export function FiveR_Roadblocks({ onNext, onBack }: FiveR_RoadblocksProps) {
               <div className="space-y-6">
                 <div className="space-y-6">
                   {commonRoadblocks
-                    .filter(r => selectedRoadblocks.includes(r.id))
+                    .filter(r => selectedRoadblocks.includes(r.id.toString()))
                     .map((roadblock) => (
                       <div 
                         key={roadblock.id}
@@ -195,37 +238,32 @@ export function FiveR_Roadblocks({ onNext, onBack }: FiveR_RoadblocksProps) {
           </div>
 
           {/* Personal Roadblock Section */}
-          <div className="mb-8">
-            <h2 className="text-[#1C3B5E] mb-6">Your Personal Roadblock (Optional)</h2>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm mb-2" style={{ color: '#333333' }}>
-                  Describe a unique challenge you expect to face:
-                </label>
-                <Textarea
-                  value={personalRoadblock}
-                  onChange={(e) => setPersonalRoadblock(e.target.value)}
-                  placeholder="e.g., My spouse still smokes, I work in a high-stress environment..."
-                  className="rounded-xl border-2 min-h-24"
-                  style={{ borderColor: '#E0E0E0' }}
-                />
-              </div>
+          {personalQuestions.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-[#1C3B5E] mb-6">Your Personal Roadblock (Optional)</h2>
               
-              <div>
-                <label className="block text-sm mb-2" style={{ color: '#333333' }}>
-                  Your strategy to overcome it:
-                </label>
-                <Textarea
-                  value={personalStrategy}
-                  onChange={(e) => setPersonalStrategy(e.target.value)}
-                  placeholder="e.g., I'll ask my spouse to smoke outside only, I'll practice stress-relief techniques..."
-                  className="rounded-xl border-2 min-h-24"
-                  style={{ borderColor: '#E0E0E0' }}
-                />
+              <div className="space-y-4">
+                {personalQuestions.map((question) => {
+                  const userResponse = userResponses.find(r => r.question_id === question.id);
+                  
+                  return (
+                    <div key={question.id}>
+                      <label className="block text-sm mb-2" style={{ color: '#333333' }}>
+                        {question.question_text}
+                      </label>
+                      <Textarea
+                        value={userResponse?.response || ''}
+                        onChange={(e) => handlePersonalResponseChange(question.id, e.target.value)}
+                        placeholder={question.placeholder}
+                        className="rounded-xl border-2 min-h-24"
+                        style={{ borderColor: '#E0E0E0' }}
+                      />
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          </div>
+          )}
 
           {/* Navigation Buttons */}
           <div className="flex justify-between gap-4">

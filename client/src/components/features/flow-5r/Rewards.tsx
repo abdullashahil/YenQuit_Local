@@ -1,91 +1,76 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../../ui/button';
 import { OnboardingProgressBar } from '../flow-shared/OnboardingProgressBar';
-import { Heart, DollarSign, Sparkles, Users, Activity, Smile, CheckCircle2 } from 'lucide-react';
+import { Heart, DollarSign, Sparkles, Users, Activity, Smile, CheckCircle2, Clock, Sun, Calendar, TrendingUp, Award, Shield, Star } from 'lucide-react';
+import { getRewardsContent, Reward } from '../../../services/rewardsService';
 
 interface FiveR_RewardsProps {
   onNext: (data: any) => void;
 }
 
-const rewards = [
-  {
-    icon: Heart,
-    title: 'Improved Health',
-    timeline: 'Within 20 minutes to 15 years',
-    benefits: [
-      'Heart rate and blood pressure drop within 20 minutes',
-      'Circulation improves within 2-12 weeks',
-      'Lung function increases within 1-9 months',
-      'Heart disease risk halves within 1 year',
-      'Stroke risk equals non-smoker within 5-15 years'
-    ]
-  },
-  {
-    icon: DollarSign,
-    title: 'Financial Savings',
-    timeline: 'Immediate and ongoing',
-    benefits: [
-      'Average smoker saves $2,000+ per year',
-      'Lower health insurance premiums',
-      'Reduced medical expenses',
-      'More money for things you enjoy',
-      'Long-term wealth accumulation'
-    ]
-  },
-  {
-    icon: Sparkles,
-    title: 'Enhanced Appearance',
-    timeline: 'Within weeks to months',
-    benefits: [
-      'Clearer, more radiant skin',
-      'Whiter teeth and fresher breath',
-      'Reduced wrinkles and aging signs',
-      'Healthier hair and nails',
-      'Elimination of tobacco odor'
-    ]
-  },
-  {
-    icon: Activity,
-    title: 'Better Physical Performance',
-    timeline: 'Within 2 weeks to 3 months',
-    benefits: [
-      'Increased energy levels',
-      'Better endurance and stamina',
-      'Easier breathing during activity',
-      'Faster recovery from exercise',
-      'Improved athletic performance'
-    ]
-  },
-  {
-    icon: Smile,
-    title: 'Enhanced Quality of Life',
-    timeline: 'Immediate and ongoing',
-    benefits: [
-      'Improved sense of taste and smell',
-      'Better sleep quality',
-      'Reduced stress and anxiety over time',
-      'More confidence and self-esteem',
-      'Freedom from addiction'
-    ]
-  },
-  {
-    icon: Users,
-    title: 'Positive Impact on Others',
-    timeline: 'Immediate',
-    benefits: [
-      'Protect loved ones from secondhand smoke',
-      'Set a positive example for children',
-      'Improve relationships',
-      'More time with family and friends',
-      'Contribute to a healthier environment'
-    ]
-  }
-];
+// Icon mapping for dynamic icons
+const iconMap = {
+  Heart,
+  DollarSign,
+  Sparkles,
+  Users,
+  Activity,
+  Smile,
+  CheckCircle2,
+  Clock,
+  Sun,
+  Calendar,
+  TrendingUp,
+  Award,
+  Shield,
+  Star
+};
 
 export function FiveR_Rewards({ onNext }: FiveR_RewardsProps) {
+  const [rewards, setRewards] = useState<Reward[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await getRewardsContent();
+        setRewards(data.rewards);
+      } catch (err: any) {
+        setError(err.message || 'Failed to load rewards content');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
   const handleNext = () => {
-    onNext({});
+    onNext({ acknowledgedRewards: rewards.map(r => r.title) });
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white p-4 md:p-6 lg:p-8 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#20B2AA] mx-auto mb-4"></div>
+          <p className="text-[#333333]">Loading rewards information...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white p-4 md:p-6 lg:p-8 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">Error: {error}</p>
+          <Button onClick={() => window.location.reload()}>Try Again</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white p-4 md:p-6 lg:p-8">
@@ -126,11 +111,11 @@ export function FiveR_Rewards({ onNext }: FiveR_RewardsProps) {
           {/* Rewards Grid */}
           <div className="mb-8 space-y-4">
             {rewards.map((reward) => {
-              const Icon = reward.icon;
+              const Icon = iconMap[reward.icon_name as keyof typeof iconMap] || CheckCircle2;
               
               return (
                 <div
-                  key={reward.title}
+                  key={reward.id}
                   className="w-full text-left p-6 rounded-2xl border-2 transition-all hover:shadow-md bg-white border-gray-200"
                 >
                   <div className="flex items-start gap-4">

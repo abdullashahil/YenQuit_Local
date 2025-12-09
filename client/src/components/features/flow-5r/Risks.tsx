@@ -1,54 +1,73 @@
+import React, { useState, useEffect } from 'react';
 import { Button } from '../../ui/button';
 import { OnboardingProgressBar } from '../flow-shared/OnboardingProgressBar';
-import { AlertTriangle, Heart, Skull, Baby, Users, TrendingDown } from 'lucide-react';
+import { AlertTriangle, Heart, Skull, Baby, Users, TrendingDown, Activity, AlertCircle } from 'lucide-react';
+import { getRisksContent, HealthRisk, WarningBanner } from '../../../services/risksService';
 
 interface FiveR_RisksProps {
   onNext: (data: any) => void;
 }
 
-const healthRisks = [
-  {
-    icon: Heart,
-    title: 'Heart Disease & Stroke',
-    description: 'Tobacco use increases your risk of heart disease by 2-4 times and doubles your risk of stroke.',
-    severity: 'high'
-  },
-  {
-    icon: Skull,
-    title: 'Cancer',
-    description: 'Smoking causes about 90% of lung cancer deaths and increases risk for 15+ types of cancer.',
-    severity: 'high'
-  },
-  {
-    icon: TrendingDown,
-    title: 'Respiratory Problems',
-    description: 'COPD, emphysema, and chronic bronchitis are directly linked to tobacco use.',
-    severity: 'high'
-  },
-  {
-    icon: Baby,
-    title: 'Pregnancy Complications',
-    description: 'Tobacco use during pregnancy increases risks of premature birth, low birth weight, and birth defects.',
-    severity: 'medium'
-  },
-  {
-    icon: Users,
-    title: 'Secondhand Smoke Effects',
-    description: 'Your tobacco use puts family and friends at risk for respiratory infections and cancer.',
-    severity: 'medium'
-  },
-  {
-    icon: AlertTriangle,
-    title: 'Weakened Immune System',
-    description: 'Tobacco compromises your immune system, making you more susceptible to infections.',
-    severity: 'medium'
-  }
-];
+// Icon mapping for dynamic icons
+const iconMap = {
+  Heart,
+  Skull,
+  TrendingDown,
+  Activity,
+  Baby,
+  Users,
+  AlertTriangle,
+  AlertCircle,
+  Activity: Activity 
+};
 
 export function FiveR_Risks({ onNext }: FiveR_RisksProps) {
+  const [healthRisks, setHealthRisks] = useState<HealthRisk[]>([]);
+  const [warningBanners, setWarningBanners] = useState<WarningBanner[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await getRisksContent();
+        setHealthRisks(data.healthRisks);
+        setWarningBanners(data.warningBanners);
+      } catch (err: any) {
+        setError(err.message || 'Failed to load risks content');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
   const handleNext = () => {
     onNext({ acknowledgedRisks: healthRisks.map(r => r.title) });
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white p-4 md:p-6 lg:p-8 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#20B2AA] mx-auto mb-4"></div>
+          <p className="text-[#333333]">Loading health risks information...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white p-4 md:p-6 lg:p-8 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">Error: {error}</p>
+          <Button onClick={() => window.location.reload()}>Try Again</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white p-4 md:p-6 lg:p-8">
@@ -66,25 +85,28 @@ export function FiveR_Risks({ onNext }: FiveR_RisksProps) {
           </p>
 
           {/* Warning Banner */}
-          <div 
-            className="mb-8 p-6 rounded-2xl border-2"
-            style={{ 
-              backgroundColor: 'rgba(239, 68, 68, 0.05)',
-              borderColor: 'rgba(239, 68, 68, 0.2)'
-            }}
-          >
-            <div className="flex items-start gap-4">
-              <AlertTriangle className="text-red-500 flex-shrink-0 mt-1" size={24} />
-              <div>
-                <h3 className="text-[#1C3B5E] mb-2">Health Impact</h3>
-                <p className="text-[#333333] text-sm">
-                  Every cigarette you smoke damages your body. However, your body begins to heal 
-                  within <strong>20 minutes</strong> of your last cigarette, and significant health 
-                  improvements occur within weeks to months of quitting.
-                </p>
+          {warningBanners.map((banner) => {
+            const Icon = iconMap[banner.icon_name as keyof typeof iconMap] || AlertTriangle;
+            
+            return (
+              <div 
+                key={banner.id}
+                className="mb-8 p-6 rounded-2xl border-2"
+                style={{ 
+                  backgroundColor: 'rgba(239, 68, 68, 0.05)',
+                  borderColor: 'rgba(239, 68, 68, 0.2)'
+                }}
+              >
+                <div className="flex items-start gap-4">
+                  <Icon className="text-red-500 flex-shrink-0 mt-1" size={24} />
+                  <div>
+                    <h3 className="text-[#1C3B5E] mb-2">{banner.title}</h3>
+                    <p className="text-[#333333] text-sm">{banner.description}</p>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            );
+          })}
 
           {/* Health Risks Grid */}
           <div className="mb-8">
@@ -92,11 +114,11 @@ export function FiveR_Risks({ onNext }: FiveR_RisksProps) {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {healthRisks.map((risk) => {
-                const Icon = risk.icon;
+                const Icon = iconMap[risk.icon_name as keyof typeof iconMap] || AlertTriangle;
                 
                 return (
                   <div
-                    key={risk.title}
+                    key={risk.id}
                     className="text-left p-5 rounded-2xl border-2 transition-all hover:shadow-md bg-white border-gray-200"
                   >
                     <div className="flex items-start gap-4">
