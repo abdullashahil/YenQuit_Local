@@ -13,6 +13,7 @@ import publicContentRoutes from './routes/publicContentRoutes.js';
 import quitTrackerRoutes from './routes/quitTrackerRoutes.js';
 import fiverRoutes from './routes/fiver.js';
 import yenquitChatRoutes from './routes/yenquitChat.js';
+import learningProgressRoutes from './routes/learningProgress.js';
 import { startChatCleanupJob } from './jobs/chatCleanupJob.js';
 
 dotenv.config();
@@ -43,6 +44,7 @@ app.use('/api/content', publicContentRoutes);
 app.use('/api/content', contentRoutes);
 app.use('/api/assist', assistRoutes);
 app.use('/api/yenquit-chat', yenquitChatRoutes);
+app.use('/api/learning-progress', learningProgressRoutes);
 
 // Start chat cleanup job
 startChatCleanupJob();

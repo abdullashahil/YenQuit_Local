@@ -5,7 +5,7 @@ import { QuitTrackerCard } from '../../src/components/features/dashboard/QuitTra
 import { ProgressCalendar } from '../../src/components/features/dashboard/ProgressCalendar'
 import { AdaptiveAdviceModule } from '../../src/components/features/dashboard/AdaptiveAdviceModule'
 import { StatsSnapshot } from '../../src/components/features/dashboard/StatsSnapshot'
-import { MotivationalContent } from '../../src/components/features/dashboard/MotivationalContent'
+import { ResumeContent } from '../../src/components/features/dashboard/ResumeContent'
 import userService from '../../src/services/userService'
 
 export default function Dashboard() {
@@ -76,7 +76,7 @@ export default function Dashboard() {
             <div className="w-full lg:w-8/12 space-y-4 md:space-y-6">
               <QuitTrackerCard />
               <StatsSnapshot />
-              <MotivationalContent />
+              <ResumeContent />
             </div>
             
             {/* Sidebar */}

@@ -343,18 +343,25 @@ export function QuitTrackerCard() {
               }}
             />
           </div>
-          {progress.assistPlanData && progress.quitDate && (
+          {/* Always show date information when quit date is available */}
+          {progress.quitDate && (
             <div className="text-xs text-center space-y-1" style={{ color: "#666666" }}>
               <div>
-                {new Date(progress.quitDate) > new Date() ? (
-                  `Quit date: ${new Date(progress.quitDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
+                {progress.assistPlanData ? (
+                  new Date(progress.quitDate) > new Date() ? 
+                    `Quit date: ${new Date(progress.quitDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}` : 
+                    `Quit since ${new Date(progress.quitDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
                 ) : (
-                  `Quit since ${new Date(progress.quitDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
+                  new Date(progress.quitDate) > new Date() ? 
+                    `Quit date: ${new Date(progress.quitDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}` : 
+                    `Quit since ${new Date(progress.quitDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
                 )}
               </div>
-              <div>
-                Started: {new Date(progress.assistPlanData.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-              </div>
+              {progress.assistPlanData && (
+                <div>
+                  Started: {new Date(progress.assistPlanData.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -383,7 +390,11 @@ export function QuitTrackerCard() {
           className="w-full py-6 rounded-2xl text-white hover:opacity-90 transition-all shadow-md"
           style={{ backgroundColor: "#20B2AA" }}
         >
-          Log Daily Data
+          {progress?.logs?.some(log => {
+            const logDate = new Date(log.log_date).toDateString();
+            const today = new Date().toDateString();
+            return logDate === today;
+          }) ? "Update Today's Log" : "Log Daily Data"}
         </Button>
       </div>
 

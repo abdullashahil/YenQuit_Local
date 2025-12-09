@@ -184,7 +184,7 @@ At the very end of EVERY response, after following the 5-part structure above, a
 // POST /api/yenquit-chat
 router.post('/', async (req, res) => {
   try {
-    const { message, history = [], userState = {}, summary, userId } = req.body;
+    const { message, history = [], userState = {}, summary, userId, skipStorage = false } = req.body;
 
     // Validate request
     if (!message || typeof message !== 'string') {
@@ -202,7 +202,7 @@ router.post('/', async (req, res) => {
     }
 
     // Store user message in database
-    if (userId) {
+    if (userId && !skipStorage) {
       try {
         await appendChatMessage(userId, 'user', message);
       } catch (dbError) {
@@ -288,7 +288,7 @@ router.post('/', async (req, res) => {
     const cleanReply = contentLines.join('\n').trim();
 
     // Store AI response in database
-    if (userId) {
+    if (userId && !skipStorage) {
       try {
         await appendChatMessage(userId, 'assistant', cleanReply);
       } catch (dbError) {

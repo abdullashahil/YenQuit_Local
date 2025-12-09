@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { SavingsCalculator } from './SavingsCalculator';
 import userService from "../../../services/userService";
 import quitTrackerService from "../../../services/quitTrackerService";
+import learningProgressService from "../../../services/learningProgressService";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../ui/dialog";
 
 export function StatsSnapshot() {
@@ -16,6 +17,8 @@ export function StatsSnapshot() {
   const [showMilestoneDetails, setShowMilestoneDetails] = useState(false);
   const [milestones, setMilestones] = useState([]);
   const [isLoadingMilestones, setIsLoadingMilestones] = useState(true);
+  const [learningProgressCount, setLearningProgressCount] = useState(0);
+  const [isLoadingLearningProgress, setIsLoadingLearningProgress] = useState(true);
 
   // Fetch calculated savings
   useEffect(() => {
@@ -86,11 +89,29 @@ export function StatsSnapshot() {
     fetchSavings();
   }, []);
 
+  // Fetch learning progress count
+  useEffect(() => {
+    const fetchLearningProgress = async () => {
+      try {
+        setIsLoadingLearningProgress(true);
+        const progressResponse = await learningProgressService.getProgressCount();
+        setLearningProgressCount(progressResponse.count);
+      } catch (error) {
+        console.error('Error fetching learning progress count:', error);
+        setLearningProgressCount(0);
+      } finally {
+        setIsLoadingLearningProgress(false);
+      }
+    };
+
+    fetchLearningProgress();
+  }, []);
+
   // Calculate milestones based on user progress
   useEffect(() => {
     const calculateMilestones = async () => {
-      // Only calculate if health score is not loading
-      if (isLoadingHealth) return;
+      // Only calculate if health score and learning progress are not loading
+      if (isLoadingHealth || isLoadingLearningProgress) return;
       
       try {
         const logsResponse = await quitTrackerService.getLogs();
@@ -207,14 +228,14 @@ export function StatsSnapshot() {
             {
               id: 'learning_enthusiast',
               title: 'Learning Enthusiast',
-              description: 'Completed learning modules',
+              description: 'Completed at least 12 learning contents',
               icon: '📚',
               category: 'education',
-              achieved: true, // Assuming user has accessed learning hub
-              date: new Date().toISOString().split('T')[0],
+              achieved: learningProgressCount >= 12,
+              date: learningProgressCount >= 12 ? new Date().toISOString().split('T')[0] : null,
               color: '#795548',
               points: 20,
-              link: '/5r/relevance'
+              link: '/app/learning'
             },
             {
               id: 'mood_booster',
@@ -232,7 +253,17 @@ export function StatsSnapshot() {
           userMilestones = milestoneDefinitions.map(milestone => ({
             ...milestone,
             achieved: milestone.achieved,
-            progress: milestone.achieved ? 100 : calculateProgress(milestone.id, logs, smokeFreeRate, maxStreak, milestoneHealthScore, calculatedSavings)
+            progress: milestone.achieved
+              ? 100
+              : calculateProgress(
+                  milestone.id,
+                  logs,
+                  smokeFreeRate,
+                  maxStreak,
+                  milestoneHealthScore,
+                  calculatedSavings,
+                  learningProgressCount
+                )
           }));
           
           totalAchieved = userMilestones.filter(m => m.achieved).length;
@@ -246,7 +277,15 @@ export function StatsSnapshot() {
       }
     };
 
-    const calculateProgress = (milestoneId: string, logs: any[], smokeFreeRate: number, maxStreak: number, healthScore: number, savings: number) => {
+    const calculateProgress = (
+      milestoneId: string,
+      logs: any[],
+      smokeFreeRate: number,
+      maxStreak: number,
+      healthScore: number,
+      savings: number,
+      learningCount: number
+    ) => {
       switch (milestoneId) {
         case 'three_days':
           return Math.min(100, (maxStreak / 3) * 100);
@@ -262,13 +301,15 @@ export function StatsSnapshot() {
         case 'mood_booster':
           const avgMood = logs.length > 0 ? logs.reduce((sum: number, log: any) => sum + (log.mood || 5), 0) / logs.length : 5;
           return Math.min(100, (avgMood / 7) * 100);
+        case 'learning_enthusiast':
+          return Math.min(100, (learningCount / 12) * 100);
         default:
           return 0;
       }
     };
 
     calculateMilestones();
-  }, [!isLoadingHealth, healthScore, calculatedSavings]);
+  }, [!isLoadingHealth, !isLoadingLearningProgress, healthScore, calculatedSavings, learningProgressCount]);
 
   // Calculate health score based on user data
   useEffect(() => {
@@ -392,7 +433,7 @@ export function StatsSnapshot() {
   };
 
   const handleNavigation = (path: string) => {
-    window.location.href = path;
+    window.location.href = path.startsWith('/') ? path : `/${path}`;
   };
 
   const stats = [

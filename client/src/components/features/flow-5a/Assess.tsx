@@ -19,10 +19,10 @@ interface AssessQuestion {
 }
 
 async function fetchAssessQuestions(): Promise<AssessQuestion[]> {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
-  const res = await fetch(`${API_URL}/api/fivea/questions/assess`, {
+  const res = await fetch(`${API_URL}/fivea/questions/assess`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error('Failed to load assess questions');
@@ -91,7 +91,7 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
   const handleNext = async () => {
     // Save Fagerström answers (existing endpoint)
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
       const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
       if (token) {
         // Save assess answers to fivea_user_answers
@@ -99,7 +99,7 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
           question_id: q.id,
           answer: assessAnswers[`assess_${q.id}`]?.toString() || '',
         }));
-        await fetch(`${API_URL}/api/fivea/answers`, {
+        await fetch(`${API_URL}/fivea/answers`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -108,7 +108,7 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
           body: JSON.stringify({ answers: assessPayload }),
         });
         // Update onboarding step to 3 (assist)
-        await fetch(`${API_URL}/api/onboarding/progress`, {
+        await fetch(`${API_URL}/onboarding/progress`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
@@ -209,7 +209,7 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
                 ) : (
                   // Radio options if options array provided
                   <RadioGroup
-                    value={typeof assessAnswers[`assess_${q.id}`] === 'string' ? assessAnswers[`assess_${q.id}`] : ''}
+                    value={String(assessAnswers[`assess_${q.id}`] || '')}
                     onValueChange={(value) => handleAssessAnswer(q.id.toString(), value)}
                     className="space-y-3"
                   >

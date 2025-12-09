@@ -48,7 +48,7 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/login`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email, password: formData.password })
@@ -108,7 +108,7 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
   };
 
   const handleEmbeddedOnboardingComplete = async (data: OnboardingData, pathway: '5As' | '5Rs') => {
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
     const signupEmail = (typeof window !== 'undefined' && sessionStorage.getItem('signupEmail')) || data.email;
     const signupPassword = typeof window !== 'undefined' ? sessionStorage.getItem('signupPassword') : null;
     const signupFullName = (typeof window !== 'undefined' && sessionStorage.getItem('signupFullName')) || data.name;
@@ -137,7 +137,7 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
     };
 
     try {
-      const res = await fetch(`${API_URL}/api/auth/register`, {
+      const res = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

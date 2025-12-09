@@ -68,8 +68,8 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
         return;
       }
     } else if (category === 'Image') {
-      if (!mediaUrl.trim()) {
-        setError('Image URL is required for image-based learning');
+      if (!mediaUrl.trim() && !selectedFile) {
+        setError('Either an image URL or uploaded file is required for image-based learning');
         return;
       }
     } else if (category === 'Blog' || category === 'Quote') {
@@ -104,6 +104,14 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
       if (selectedFile) {
         formData.append('media', selectedFile);
       }
+
+      // Debug: Log FormData contents
+      console.log('FormData contents:');
+      console.log('title:', title.trim());
+      console.log('category:', category);
+      console.log('media_url:', mediaUrl);
+      console.log('selectedFile:', selectedFile ? selectedFile.name : 'No file selected');
+      console.log('selectedFile size:', selectedFile ? selectedFile.size : 'N/A');
 
       const url = editContent?.id 
         ? `${API_BASE_URL}/content/${editContent.id}`
@@ -342,14 +350,81 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
                       <div className="space-y-3">
                         <Label className="text-sm font-semibold text-[#1C3B5E] flex items-center gap-2">
                           <Image className="w-4 h-4" />
-                          Image URL <span className="text-red-500">*</span>
+                          Image Source
                         </Label>
-                        <Input
-                          value={mediaUrl}
-                          onChange={(e) => setMediaUrl(e.target.value)}
-                          placeholder="https://example.com/image.jpg"
-                          className="rounded-2xl border-gray-200 h-12 focus:border-[#20B2AA] focus:ring-[#20B2AA]/20"
-                        />
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-4">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="imageSource"
+                                checked={!mediaUrl}
+                                onChange={() => {
+                                  setMediaUrl("");
+                                  setSelectedFile(null);
+                                }}
+                                className="text-[#20B2AA]"
+                              />
+                              <span className="text-sm text-gray-700">Upload Image</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="imageSource"
+                                checked={mediaUrl && !selectedFile}
+                                onChange={() => {
+                                  setSelectedFile(null);
+                                }}
+                                className="text-[#20B2AA]"
+                              />
+                              <span className="text-sm text-gray-700">Image URL</span>
+                            </label>
+                          </div>
+                          
+                          {!mediaUrl ? (
+                            <div className="space-y-3">
+                              <div className="border-2 border-dashed border-gray-300 rounded-2xl p-6 text-center hover:border-[#20B2AA] transition-colors">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={handleFileUpload}
+                                  className="hidden"
+                                  id="image-upload"
+                                />
+                                <label htmlFor="image-upload" className="cursor-pointer">
+                                  <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                                  <p className="text-sm text-gray-600">
+                                    {selectedFile ? selectedFile.name : "Click to upload image"}
+                                  </p>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    PNG, JPG up to 10MB
+                                  </p>
+                                </label>
+                              </div>
+                              {selectedFile && (
+                                <div className="flex items-center gap-2 p-3 bg-green-50 rounded-xl">
+                                  <Image className="w-4 h-4 text-green-600" />
+                                  <span className="text-sm text-green-700">{selectedFile.name}</span>
+                                  <button
+                                    onClick={() => setSelectedFile(null)}
+                                    className="ml-auto text-red-500 hover:text-red-700"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              <Input
+                                value={mediaUrl}
+                                onChange={(e) => setMediaUrl(e.target.value)}
+                                placeholder="https://example.com/image.jpg"
+                                className="rounded-2xl border-gray-200 h-12 focus:border-[#20B2AA] focus:ring-[#20B2AA]/20"
+                              />
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>

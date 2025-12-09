@@ -26,15 +26,16 @@ export function ProgressCalendar() {
       try {
         // Fetch logs
         const logsResponse = await quitTrackerService.getLogs();
+        // console.log('Logs response:', logsResponse);
         setLogs(logsResponse.logs || []);
         
         // Fetch progress data to get quit date
         const progressResponse = await quitTrackerService.getProgress();
-        console.log('Progress response:', progressResponse);
+         // console.log('Progress response:', progressResponse);
         // Extract just the date part from the ISO string
         const fullQuitDate = progressResponse.quitDate;
         const quitDateOnly = fullQuitDate ? fullQuitDate.split('T')[0] : null;
-        console.log('Quit date only:', quitDateOnly);
+        // console.log('Quit date only:', quitDateOnly);
         setQuitDate(quitDateOnly);
       } catch (error) {
         // Error fetching data
@@ -90,29 +91,51 @@ export function ProgressCalendar() {
   //   // Removed to prevent modal popup
   // };
 
-  // Handle day cell rendering to highlight quit date with border
+  // Handle day cell rendering to highlight quit date and start date
   const handleDayCellDidMount = (info: any) => {
-    console.log('Day cell mounted - date:', info.date, 'dateStr:', info.dateStr, 'Quit date:', quitDate);
+    // console.log('Day cell mounted - date:', info.date, 'dateStr:', info.dateStr, 'Quit date:', quitDate);
     // Try different properties to get the date
     const cellDate = info.dateStr || (info.date && info.date.toISOString().split('T')[0]);
-    console.log('Cell date to check:', cellDate);
+    // console.log('Cell date to check:', cellDate);
+    // console.log('Logs array:', logs);
+    // console.log('Logs length:', logs.length);
+    
+    if (logs.length > 0) {
+      const lastLogDate = logs[logs.length - 1].log_date.split('T')[0]; // Extract date part only
+      // console.log('Last log date (original):', logs[logs.length - 1].log_date);
+      // console.log('Last log date (extracted):', lastLogDate);
+      // console.log('Date comparison:', cellDate, '===', lastLogDate, '=', cellDate === lastLogDate);
+      
+      // Highlight start date (first log date) in green
+      if (cellDate === lastLogDate) {
+        console.log('Start date found:', lastLogDate);
+        info.el.style.boxSizing = 'border-box';
+        info.el.style.zIndex = '10';
+        info.el.style.position = 'relative';
+        info.el.style.color = '#1C3B5E';
+        info.el.style.fontWeight = 'bold';
+        info.el.style.fontSize = '160%';
+        info.el.style.textShadow = '0 0 3px rgba(0, 6, 61, 0.5)';
+      }
+    }
+    
+    // Highlight quit date in red
     if (quitDate && cellDate === quitDate) {
-      console.log('Applying border and background to quit date:', cellDate);
-      // info.el.style.border = '3px solid #FF6B35';
-      // info.el.style.backgroundColor = '#81ca64ff';
+      // console.log('Applying red styling to quit date:', cellDate);
       info.el.style.boxSizing = 'border-box';
       info.el.style.zIndex = '10';
       info.el.style.position = 'relative';
       info.el.style.color = '#ff0000ff';
       info.el.style.fontWeight = 'bold';
       info.el.style.fontSize = '160%';
+      info.el.style.textShadow = '0 0 3px rgba(255, 0, 0, 0.5)';
     }
   };
 
   // Force re-render when quit date changes
   useEffect(() => {
     if (quitDate) {
-      console.log('Quit date updated, calendar should re-render');
+      // console.log('Quit date updated, calendar should re-render');
     }
   }, [quitDate]);
 
@@ -154,12 +177,6 @@ export function ProgressCalendar() {
             <div className="w-2.5 h-2.5 rounded-full border border-white shadow-sm" style={{ backgroundColor: '#f78c89ff' }}></div>
             <span className="text-xs text-gray-600">Smoked</span>
           </div>
-          {/* {quitDate && (
-            <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full border-2 border-orange-500 shadow-sm bg-white"></div>
-              <span className="text-xs text-gray-600">Quit Date</span>
-            </div>
-          )} */}
         </div>
       </div>
     </Card>

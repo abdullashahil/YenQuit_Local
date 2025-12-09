@@ -6,7 +6,7 @@ import axios from "axios"
 import ReactMarkdown from "react-markdown"
 
 const TEST_USER_ID = "d5799f0c-f707-415e-b9ea-68816351912c"; // Valid UUID for testing
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 interface Message {
   id: string
@@ -145,7 +145,7 @@ export function ChatArea({ communityId, onBack, onClose }: ChatAreaProps) {
     try {
       // In production, get userId from auth context
           const userId = TEST_USER_ID;
-      const response = await axios.get(`${API_BASE_URL}/api/yenquit-chat/history/${userId}`);
+      const response = await axios.get(`${API_BASE_URL}/yenquit-chat/history/${userId}`);
       
       if (response.data?.success && Array.isArray(response.data.history)) {
         const historyMessages = response.data.history.map((msg: any) => ({
@@ -232,7 +232,7 @@ export function ChatArea({ communityId, onBack, onClose }: ChatAreaProps) {
       // In production, get userId from auth context
           const userId = TEST_USER_ID;
       
-      const response = await axios.post(`${API_BASE_URL}/api/yenquit-chat`, {
+      const response = await axios.post(`${API_BASE_URL}/yenquit-chat`, {
         message: trimmed,
         history,
         summary,
