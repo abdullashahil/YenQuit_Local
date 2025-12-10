@@ -63,7 +63,7 @@ export function NewTrackerModal({ open, onOpenChange, onComplete }: NewTrackerMo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <Card className="w-full max-w-md rounded-3xl shadow-2xl">
+      <Card className="w-full max-w-md rounded-3xl shadow-2xl bg-white">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-bold" style={{ color: "#1C3B5E" }}>
@@ -80,18 +80,18 @@ export function NewTrackerModal({ open, onOpenChange, onComplete }: NewTrackerMo
         </div>
 
         {/* Content */}
-        <div className="p-6">
-          <div className="text-center mb-6">
-            <div className="p-3 rounded-2xl mb-4 mx-auto w-fit" style={{ backgroundColor: "#20B2AA20" }}>
-              <Calendar className="w-6 h-6" style={{ color: "#20B2AA" }} />
+          <div className="p-6">
+            <div className="text-center mb-6">
+              <div className="p-3 rounded-2xl mb-4 mx-auto w-fit" style={{ backgroundColor: "#20B2AA20" }}>
+                <Calendar className="w-6 h-6" style={{ color: "#20B2AA" }} />
+              </div>
+              <h3 className="text-lg font-semibold mb-2" style={{ color: "#1C3B5E" }}>
+                Choose Your New Quit Date
+              </h3>
+              <p className="text-sm" style={{ color: "#333333" }}>
+                Select a future date to begin your new quit tracking journey
+              </p>
             </div>
-            <h3 className="text-lg font-semibold mb-2" style={{ color: "#1C3B5E" }}>
-              Choose Your New Quit Date
-            </h3>
-            <p className="text-sm" style={{ color: "#333333" }}>
-              Select a future date to begin your new quit tracking journey
-            </p>
-          </div>
 
           {/* Date Picker */}
           <div className="space-y-4">

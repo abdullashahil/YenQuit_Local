@@ -6,8 +6,11 @@ import { DailyLogModal } from "./DailyLogModal";
 import { SelfEfficacyModal } from "./SelfEfficacyModal";
 import { NewTrackerModal } from "./NewTrackerModal";
 import { LogsModal } from "./LogsModal";
+import { PostEfficacyAndFeedbackModal } from "./PostEfficacyAndFeedbackModal";
 import { useState, useEffect } from "react";
 import quitTrackerService from "../../../services/quitTrackerService";
+
+import userService from "../../../services/userService";
 
 interface ProgressData {
   quitDate: string | null;
@@ -22,12 +25,16 @@ interface ProgressData {
   hasCompletedPostSelfEfficacy?: boolean;
   isQuitDatePassed?: boolean;
   assistPlanData?: any;
+  is30DaysCompleted?: boolean;
+  hasCompletedFeedback?: boolean;
+  joinDate?: string | null;
 }
 
 export function QuitTrackerCard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isQuestionnaireOpen, setIsQuestionnaireOpen] = useState(false);
   const [isPostSelfEfficacyOpen, setIsPostSelfEfficacyOpen] = useState(false);
+  const [isPostEfficacyAndFeedbackOpen, setIsPostEfficacyAndFeedbackOpen] = useState(false);
   const [isNewTrackerOpen, setIsNewTrackerOpen] = useState(false);
   const [isLogsModalOpen, setIsLogsModalOpen] = useState(false);
   const [progress, setProgress] = useState<ProgressData | null>(null);
@@ -39,9 +46,19 @@ export function QuitTrackerCard() {
     try {
       setIsLoading(true);
       setError(null);
-      
-      const progressData = await quitTrackerService.getProgress();
-      
+
+      const progressData = await quitTrackerService.getProgress() as ProgressData;
+
+      // Fetch user profile to get join date
+      try {
+        const profileResponse = await userService.getProfile();
+        if (profileResponse.success && profileResponse.data.join_date) {
+          progressData.joinDate = profileResponse.data.join_date;
+        }
+      } catch (e) {
+        console.error("Error fetching profile for join date", e);
+      }
+
       setProgress(progressData);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch progress data');
@@ -55,6 +72,7 @@ export function QuitTrackerCard() {
     fetchProgress();
   }, []);
 
+  // ... (keeping other handlers same)
   // Handle questionnaire completion
   const handleQuestionnaireComplete = () => {
     setIsQuestionnaireOpen(false);
@@ -64,6 +82,12 @@ export function QuitTrackerCard() {
   // Handle post self-efficacy completion
   const handlePostSelfEfficacyComplete = () => {
     setIsPostSelfEfficacyOpen(false);
+    fetchProgress(); // Refresh progress data
+  };
+
+  // Handle post efficacy and feedback completion
+  const handlePostEfficacyAndFeedbackComplete = () => {
+    setIsPostEfficacyAndFeedbackOpen(false);
     fetchProgress(); // Refresh progress data
   };
 
@@ -86,25 +110,27 @@ export function QuitTrackerCard() {
   // Format last entry date
   const formatLastEntry = (lastEntry: string | null) => {
     if (!lastEntry) return 'No entries yet';
-    
+
     const date = new Date(lastEntry);
     const today = new Date();
-    
+
     if (date.toDateString() === today.toDateString()) {
       return `Today`;
     }
-    
+
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
     if (date.toDateString() === yesterday.toDateString()) {
       return `Yesterday`;
     }
-    
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
+
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
       day: 'numeric'
     });
   };
+
+  // ... (keeping other render logic same until "Started:" part)
 
   // Show loading state
   if (isLoading) {
@@ -143,7 +169,7 @@ export function QuitTrackerCard() {
           <p className="text-sm mb-6" style={{ color: "#333333" }}>
             Answer a few questions to personalize your quit tracking experience
           </p>
-          <Button 
+          <Button
             onClick={handleStartTracking}
             className="w-full py-6 rounded-2xl text-white hover:opacity-90 transition-all shadow-md"
             style={{ backgroundColor: "#20B2AA" }}
@@ -151,10 +177,42 @@ export function QuitTrackerCard() {
             Start Tracking Journey
           </Button>
         </div>
-        <SelfEfficacyModal 
-          open={isQuestionnaireOpen} 
-          onOpenChange={setIsQuestionnaireOpen} 
+        <SelfEfficacyModal
+          open={isQuestionnaireOpen}
+          onOpenChange={setIsQuestionnaireOpen}
           onComplete={handleQuestionnaireComplete}
+        />
+      </Card>
+    );
+
+  }
+
+  // Show 30-day check-in and feedback state
+  if (progress?.is30DaysCompleted && !progress?.hasCompletedFeedback) {
+    return (
+      <Card className="p-4 md:p-6 lg:p-8 rounded-2xl md:rounded-3xl shadow-lg border-0">
+        <div className="text-center py-12">
+          <div className="p-4 rounded-2xl mb-4 mx-auto w-fit" style={{ backgroundColor: "#20B2AA20" }}>
+            <Target className="w-8 h-8" style={{ color: "#20B2AA" }} />
+          </div>
+          <h2 className="text-xl md:text-2xl mb-2" style={{ color: "#1C3B5E" }}>Congratulations on 30 Days!</h2>
+          <p className="text-sm mb-6" style={{ color: "#333333" }}>
+            You've reached a major milestone. Let's review your progress and get your feedback.
+          </p>
+
+          <Button
+            onClick={() => setIsPostEfficacyAndFeedbackOpen(true)}
+            className="w-full py-6 rounded-2xl text-white hover:opacity-90 transition-all shadow-md"
+            style={{ backgroundColor: "#20B2AA" }}
+          >
+            Complete 30-Day Check-in
+          </Button>
+        </div>
+        <PostEfficacyAndFeedbackModal
+          open={isPostEfficacyAndFeedbackOpen}
+          onOpenChange={setIsPostEfficacyAndFeedbackOpen}
+          onComplete={handlePostEfficacyAndFeedbackComplete}
+          hasCompletedPostSelfEfficacy={progress.hasCompletedPostSelfEfficacy}
         />
       </Card>
     );
@@ -172,7 +230,7 @@ export function QuitTrackerCard() {
           <p className="text-sm mb-6" style={{ color: "#333333" }}>
             Congratulations! You've reached your quit date. Let's review your progress.
           </p>
-          
+
           {/* Progress Graph */}
           <div className="mb-6 p-4 rounded-2xl" style={{ backgroundColor: "#F8F9FA" }}>
             <h3 className="text-lg font-semibold mb-3" style={{ color: "#1C3B5E" }}>Your Progress</h3>
@@ -186,9 +244,9 @@ export function QuitTrackerCard() {
                 <span className="font-semibold" style={{ color: "#20B2AA" }}>{progress.successRate}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
+                <div
                   className="h-full rounded-full transition-all duration-300"
-                  style={{ 
+                  style={{
                     width: `${progress.progressPercentage}%`,
                     backgroundColor: "#20B2AA"
                   }}
@@ -196,20 +254,20 @@ export function QuitTrackerCard() {
               </div>
             </div>
           </div>
-          
-          <Button 
-            onClick={() => setIsPostSelfEfficacyOpen(true)}
+
+          <Button
+            onClick={() => setIsPostEfficacyAndFeedbackOpen(true)}
             className="w-full py-6 rounded-2xl text-white hover:opacity-90 transition-all shadow-md"
             style={{ backgroundColor: "#20B2AA" }}
           >
-            Start Post Self-Efficacy Questions
+            Start Post Self-Efficacy Questions and feedbacks
           </Button>
         </div>
-        <SelfEfficacyModal 
-          open={isPostSelfEfficacyOpen} 
-          onOpenChange={setIsPostSelfEfficacyOpen} 
-          onComplete={handlePostSelfEfficacyComplete}
-          isPostSelfEfficacy={true}
+        <PostEfficacyAndFeedbackModal
+          open={isPostEfficacyAndFeedbackOpen}
+          onOpenChange={setIsPostEfficacyAndFeedbackOpen}
+          onComplete={handlePostEfficacyAndFeedbackComplete}
+          hasCompletedPostSelfEfficacy={false}
         />
       </Card>
     );
@@ -227,7 +285,7 @@ export function QuitTrackerCard() {
           <p className="text-sm mb-6" style={{ color: "#333333" }}>
             You've successfully completed your quit journey. Here's your progress summary.
           </p>
-          
+
           {/* Progress Graph */}
           <div className="mb-6 p-4 rounded-2xl" style={{ backgroundColor: "#F8F9FA" }}>
             <h3 className="text-lg font-semibold mb-3" style={{ color: "#1C3B5E" }}>Your Progress Summary</h3>
@@ -241,9 +299,9 @@ export function QuitTrackerCard() {
                 <span className="font-semibold" style={{ color: "#20B2AA" }}>{progress.successRate}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
+                <div
                   className="h-full rounded-full transition-all duration-300"
-                  style={{ 
+                  style={{
                     width: `${progress.progressPercentage}%`,
                     backgroundColor: "#20B2AA"
                   }}
@@ -251,8 +309,8 @@ export function QuitTrackerCard() {
               </div>
             </div>
           </div>
-          
-          <Button 
+
+          <Button
             onClick={() => setIsNewTrackerOpen(true)}
             className="w-full py-6 rounded-2xl text-white hover:opacity-90 transition-all shadow-md"
             style={{ backgroundColor: "#20B2AA" }}
@@ -260,9 +318,9 @@ export function QuitTrackerCard() {
             Would you like to keep a tracker?
           </Button>
         </div>
-        <NewTrackerModal 
-          open={isNewTrackerOpen} 
-          onOpenChange={setIsNewTrackerOpen} 
+        <NewTrackerModal
+          open={isNewTrackerOpen}
+          onOpenChange={setIsNewTrackerOpen}
           onComplete={handleNewTrackerComplete}
         />
       </Card>
@@ -279,7 +337,7 @@ export function QuitTrackerCard() {
           </div>
           <h2 className="text-xl md:text-2xl mb-2" style={{ color: "#1C3B5E" }}>Set Your Quit Date</h2>
           <p className="text-sm mb-6" style={{ color: "#333333" }}>Set your quit date to begin tracking your progress</p>
-          <Button 
+          <Button
             onClick={() => setIsModalOpen(true)}
             className="w-full py-6 rounded-2xl text-white hover:opacity-90 transition-all shadow-md"
             style={{ backgroundColor: "#20B2AA" }}
@@ -325,8 +383,8 @@ export function QuitTrackerCard() {
           <div className="flex justify-between text-sm" style={{ color: "#333333" }}>
             <span>
               {progress.assistPlanData && progress.quitDate ? (
-                new Date(progress.quitDate) > new Date() ? 
-                  `Progress to Quit Date` : 
+                new Date(progress.quitDate) > new Date() ?
+                  `Progress to Quit Date` :
                   `Journey Progress`
               ) : (
                 'Progress to 30-day goal'
@@ -337,7 +395,7 @@ export function QuitTrackerCard() {
           <div className="h-3 rounded-full bg-gray-100">
             <div
               className="h-full rounded-full transition-all duration-500"
-              style={{ 
+              style={{
                 width: `${Math.min(progress.progressPercentage, 100)}%`,
                 backgroundColor: "#20B2AA"
               }}
@@ -348,19 +406,25 @@ export function QuitTrackerCard() {
             <div className="text-xs text-center space-y-1" style={{ color: "#666666" }}>
               <div>
                 {progress.assistPlanData ? (
-                  new Date(progress.quitDate) > new Date() ? 
-                    `Quit date: ${new Date(progress.quitDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}` : 
+                  new Date(progress.quitDate) > new Date() ?
+                    `Quit date: ${new Date(progress.quitDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}` :
                     `Quit since ${new Date(progress.quitDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
                 ) : (
-                  new Date(progress.quitDate) > new Date() ? 
-                    `Quit date: ${new Date(progress.quitDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}` : 
+                  new Date(progress.quitDate) > new Date() ?
+                    `Quit date: ${new Date(progress.quitDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}` :
                     `Quit since ${new Date(progress.quitDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
                 )}
               </div>
-              {progress.assistPlanData && (
+              {progress.joinDate ? (
                 <div>
-                  Started: {new Date(progress.assistPlanData.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  Started: {new Date(progress.joinDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </div>
+              ) : (
+                progress.assistPlanData && (
+                  <div>
+                    Started: {new Date(progress.assistPlanData.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </div>
+                )
               )}
             </div>
           )}
@@ -385,7 +449,7 @@ export function QuitTrackerCard() {
         </div>
 
         {/* Log Daily Data Button */}
-        <Button 
+        <Button
           onClick={() => setIsModalOpen(true)}
           className="w-full py-6 rounded-2xl text-white hover:opacity-90 transition-all shadow-md"
           style={{ backgroundColor: "#20B2AA" }}
@@ -399,23 +463,23 @@ export function QuitTrackerCard() {
       </div>
 
       {/* Daily Log Modal */}
-      <DailyLogModal 
-        open={isModalOpen} 
-        onOpenChange={setIsModalOpen} 
+      <DailyLogModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
         onLogChange={handleLogChange}
         quitDate={progress.quitDate}
       />
-      
+
       {/* Self-Efficacy Modal */}
-      <SelfEfficacyModal 
-        open={isQuestionnaireOpen} 
-        onOpenChange={setIsQuestionnaireOpen} 
+      <SelfEfficacyModal
+        open={isQuestionnaireOpen}
+        onOpenChange={setIsQuestionnaireOpen}
         onComplete={handleQuestionnaireComplete}
       />
-      
+
       {/* Logs Modal */}
-      <LogsModal 
-        open={isLogsModalOpen} 
+      <LogsModal
+        open={isLogsModalOpen}
         onOpenChange={setIsLogsModalOpen}
       />
     </Card>

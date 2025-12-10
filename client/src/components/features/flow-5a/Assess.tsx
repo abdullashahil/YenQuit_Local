@@ -31,10 +31,10 @@ async function fetchAssessQuestions(): Promise<AssessQuestion[]> {
 }
 
 async function fetchAssessAnswers(): Promise<Record<string, string>> {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
-  const res = await fetch(`${API_URL}/api/fivea/answers/assess`, {
+  const res = await fetch(`${API_URL}/fivea/answers/assess`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) return {};
@@ -47,10 +47,10 @@ async function fetchAssessAnswers(): Promise<Record<string, string>> {
 }
 
 async function fetchFagerstromAnswers(): Promise<Record<string, string>> {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
-  const res = await fetch(`${API_URL}/api/fagerstrom/answers`, {
+  const res = await fetch(`${API_URL}/fagerstrom/answers`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) return {};
@@ -82,13 +82,13 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
           fetchAssessAnswers(),
           fetchFagerstromAnswers(),
         ]);
-        
+
         setFagerstromQuestions(fagerstromData.questions);
         setAssessQuestions(assessData);
-        
+
         const hasSubmitted = Object.keys(savedAssessAnswers).length > 0;
         setSubmitted(hasSubmitted);
-        
+
         const initialAssess: Record<string, number | string> = {};
         assessData.forEach(q => {
           const key = `assess_${q.id}`;
@@ -106,10 +106,10 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
           }
         });
         setAssessAnswers(initialAssess);
-        
+
         const mappedFagerstromAnswers: Record<string, string> = {};
         fagerstromData.questions.forEach(question => {
-          const savedAnswerKey = Object.keys(savedFagerstromAnswers).find(key => 
+          const savedAnswerKey = Object.keys(savedFagerstromAnswers).find(key =>
             key === `q${question.id}`
           );
           if (savedAnswerKey) {
@@ -156,7 +156,7 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
       });
       return;
     }
-    
+
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
       const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
@@ -165,7 +165,7 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
           question_id: parseInt(key.replace('q', '')),
           answer_text: value,
         }));
-        await fetch(`${API_URL}/api/fagerstrom/answers`, {
+        await fetch(`${API_URL}/fagerstrom/answers`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -173,7 +173,7 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
           },
           body: JSON.stringify({ answers: fagerstromPayload }),
         });
-        
+
         const assessPayload = assessQuestions.map(q => ({
           question_id: q.id,
           answer: assessAnswers[`assess_${q.id}`]?.toString() || '',

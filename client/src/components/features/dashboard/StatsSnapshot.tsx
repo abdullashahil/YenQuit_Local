@@ -25,18 +25,18 @@ export function StatsSnapshot() {
     const fetchSavings = async () => {
       try {
         setIsLoadingSavings(true);
-        
+
         // Fetch user answers to get smoking count and price
         const answersResponse = await userService.getUserAnswers();
         if (answersResponse.success && answersResponse.data) {
           let smokingCount = 0;
           let cigarettePrice = 17; // Default fallback
-          
+
           // Get smoking count from question_id 10
           const smokingAnswer = answersResponse.data.find((answer: any) => answer.question_id === 10);
           if (smokingAnswer && smokingAnswer.answer_text) {
             const smokingText = smokingAnswer.answer_text;
-            
+
             if (smokingText.includes('Less than 5')) {
               smokingCount = 5;
             } else if (smokingText.includes('5-10')) {
@@ -47,12 +47,12 @@ export function StatsSnapshot() {
               smokingCount = 25;
             }
           }
-          
+
           // Get price per cigarette from question_id 11
           const priceAnswer = answersResponse.data.find((answer: any) => answer.question_id === 11);
           if (priceAnswer && priceAnswer.answer_text) {
             const priceText = priceAnswer.answer_text;
-            
+
             if (priceText.includes('₹')) {
               const match = priceText.match(/₹(\d+)/g);
               if (match && match.length > 0) {
@@ -61,17 +61,17 @@ export function StatsSnapshot() {
               }
             }
           }
-          
+
           // Fetch daily logs to calculate total cigarettes smoked
           const logsResponse = await quitTrackerService.getLogs();
           if (logsResponse.logs) {
             const logs = logsResponse.logs;
-            
+
             // Sum up all cigarettes smoked from logs
             const totalSmoked = logs.reduce((sum: number, log: any) => {
               return sum + (log.cigarettes_count || 0);
             }, 0);
-            
+
             // Calculate savings using the real formula
             const savings = (logs.length * smokingCount - totalSmoked) * cigarettePrice;
             setCalculatedSavings(savings);
@@ -112,24 +112,30 @@ export function StatsSnapshot() {
     const calculateMilestones = async () => {
       // Only calculate if health score and learning progress are not loading
       if (isLoadingHealth || isLoadingLearningProgress) return;
-      
+
       try {
         const logsResponse = await quitTrackerService.getLogs();
         const answersResponse = await userService.getUserAnswers();
-        
+        const profileResponse = await userService.getProfile();
+
         let userMilestones = [];
         let totalAchieved = 0;
-        
+        let joinDate = null;
+
+        if (profileResponse.success && profileResponse.data.join_date) {
+          joinDate = profileResponse.data.join_date;
+        }
+
         if (logsResponse.logs && answersResponse.success) {
           const logs = logsResponse.logs;
           const smokeFreeDays = logs.filter((log: any) => !log.smoked).length;
           const totalDays = logs.length;
           const smokeFreeRate = totalDays > 0 ? (smokeFreeDays / totalDays) * 100 : 0;
-          
+
           // Calculate streak (consecutive smoke-free days)
           let currentStreak = 0;
           let maxStreak = 0;
-          
+
           for (let i = logs.length - 1; i >= 0; i--) {
             if (!logs[i].smoked) {
               currentStreak++;
@@ -138,11 +144,11 @@ export function StatsSnapshot() {
               currentStreak = 0;
             }
           }
-          
+
           // Use the already calculated health score from the state
           // This ensures consistency with the health score modal
           const milestoneHealthScore = healthScore;
-          
+
           // Milestone definitions
           const milestoneDefinitions = [
             {
@@ -152,7 +158,7 @@ export function StatsSnapshot() {
               icon: '🚀',
               category: 'journey',
               achieved: totalDays >= 1,
-              date: logs.length > 0 ? logs[logs.length - 1].log_date : null,
+              date: joinDate || (logs.length > 0 ? logs[logs.length - 1].log_date : null),
               color: '#4CAF50',
               points: 10
             },
@@ -249,26 +255,26 @@ export function StatsSnapshot() {
               points: 25
             }
           ];
-          
+
           userMilestones = milestoneDefinitions.map(milestone => ({
             ...milestone,
             achieved: milestone.achieved,
             progress: milestone.achieved
               ? 100
               : calculateProgress(
-                  milestone.id,
-                  logs,
-                  smokeFreeRate,
-                  maxStreak,
-                  milestoneHealthScore,
-                  calculatedSavings,
-                  learningProgressCount
-                )
+                milestone.id,
+                logs,
+                smokeFreeRate,
+                maxStreak,
+                milestoneHealthScore,
+                calculatedSavings,
+                learningProgressCount
+              )
           }));
-          
+
           totalAchieved = userMilestones.filter(m => m.achieved).length;
         }
-        
+
         setMilestones(userMilestones);
       } catch (error) {
         console.error('Error calculating milestones:', error);
@@ -319,37 +325,37 @@ export function StatsSnapshot() {
         if (logsResponse.logs && logsResponse.logs.length > 0) {
           const logs = logsResponse.logs;
           let score = 100; // Start with perfect score
-          
+
           // Calculate smoke-free days percentage
           const smokeFreeDays = logs.filter((log: any) => !log.smoked).length;
           const smokeFreePercentage = (smokeFreeDays / logs.length) * 100;
-          
+
           // Calculate average cravings and mood
           const avgCravings = logs.reduce((sum: number, log: any) => sum + (log.cravings_level || 5), 0) / logs.length;
           const avgMood = logs.reduce((sum: number, log: any) => sum + (log.mood || 5), 0) / logs.length;
-          
+
           // Deduct points based on smoking
           score -= (100 - smokeFreePercentage) * 0.4; // 40% weight for smoke-free days
-          
+
           // Deduct points for high cravings (lower cravings = better)
           if (avgCravings > 7) {
             score -= 15;
           } else if (avgCravings > 5) {
             score -= 8;
           }
-          
+
           // Deduct points for poor mood (higher mood = better)
           if (avgMood < 3) {
             score -= 15;
           } else if (avgMood < 5) {
             score -= 8;
           }
-          
+
           // Bonus points for consistency
           if (logs.length >= 7) {
             score += 5; // Consistency bonus
           }
-          
+
           // Ensure score stays within 0-100 range
           score = Math.max(0, Math.min(100, Math.round(score)));
           setHealthScore(score);
@@ -489,7 +495,7 @@ export function StatsSnapshot() {
 
   // Filter out any undefined stats (commented out)
   const visibleStats = stats.filter(stat => stat);
-  
+
   // Calculate responsive column classes based on number of visible stats
   const getGridCols = (count: number) => {
     if (count <= 2) return 'grid-cols-2';
@@ -506,8 +512,8 @@ export function StatsSnapshot() {
           const Icon = stat.icon;
 
           return (
-            <Card 
-              key={index} 
+            <Card
+              key={index}
               className={`p-4 md:p-5 lg:p-6 rounded-2xl md:rounded-3xl shadow-lg border-0 hover:shadow-xl transition-all cursor-pointer flex flex-col items-center ${stat.onClick ? 'hover:scale-[1.02]' : ''}`}
               onClick={stat.onClick}
             >
@@ -535,7 +541,7 @@ export function StatsSnapshot() {
         })}
       </div>
 
-      <SavingsCalculator 
+      <SavingsCalculator
         isOpen={showSavingsCalculator}
         onClose={() => setShowSavingsCalculator(false)}
       />
@@ -613,7 +619,7 @@ export function StatsSnapshot() {
             </div>
           </div>
           <div className="flex justify-end">
-            <button 
+            <button
               onClick={() => setShowHealthDetails(false)}
               className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-800 transition-colors"
             >
@@ -646,10 +652,10 @@ export function StatsSnapshot() {
               {['journey', 'consistency', 'health', 'financial', 'control', 'education', 'wellness'].map(category => {
                 const categoryMilestones = milestones.filter(m => m.category === category);
                 if (categoryMilestones.length === 0) return null;
-                
+
                 const categoryTitles = {
                   journey: '🚀 Journey Milestones',
-                  consistency: '⚔️ Consistency Milestones', 
+                  consistency: '⚔️ Consistency Milestones',
                   health: '❤️ Health Milestones',
                   financial: '💰 Financial Milestones',
                   control: '🧘 Control Milestones',
@@ -689,7 +695,7 @@ export function StatsSnapshot() {
                             {!milestone.achieved && milestone.progress > 0 && (
                               <div className="mt-2">
                                 <div className="w-full bg-gray-200 rounded-full h-2">
-                                  <div 
+                                  <div
                                     className="bg-blue-500 h-2 rounded-full transition-all duration-300"
                                     style={{ width: `${milestone.progress}%` }}
                                   ></div>
@@ -697,7 +703,7 @@ export function StatsSnapshot() {
                               </div>
                             )}
                             {milestone.link && (
-                              <button 
+                              <button
                                 onClick={() => handleNavigation(milestone.link)}
                                 className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"
                               >
@@ -736,7 +742,7 @@ export function StatsSnapshot() {
             </div>
           </div>
           <div className="flex justify-end">
-            <button 
+            <button
               onClick={() => setShowMilestoneDetails(false)}
               className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-800 transition-colors"
             >

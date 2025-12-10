@@ -1,6 +1,7 @@
 import * as fiveaService from '../services/fiveaService.js';
 import * as userService from '../services/userService.js';
 import UserModel from '../models/UserModel.js';
+import axios from 'axios';
 
 export async function getQuestionsByStep(req, res, next) {
   try {
@@ -148,16 +149,93 @@ export async function getAdvise(req, res, next) {
     const content = await fiveaService.getAdviseContent(severity.severity_level);
     if (!content) return res.status(404).json({ error: 'Advise content not found for this severity level.' });
 
-    // Fetch user profile to get actual age
+    // Check if we already have a cached AI message in the database
+    const existingHistory = await fiveaService.getAdviseHistory(userId);
+
+    // If we have existing history with the same severity level, use the cached AI message
+    if (existingHistory && existingHistory.severity_level === severity.severity_level && existingHistory.ai_message) {
+      return res.json({
+        severity: severity.severity_level,
+        video: existingHistory.selected_video || content.video_url,
+        quote: existingHistory.selected_quote || content.why_quitting_quote,
+        ai_message: existingHistory.ai_message,
+        cached: true
+      });
+    }
+
+    // Fetch user profile and ASK answers
     const profile = await UserModel.getProfileByUserId(userId);
-    const userAge = profile?.age || '20';
-    // Template interpolation for ai_message with actual user age
-    const aiMessage = content.ai_message_template.replace('{{age}}', userAge.toString());
+    const userAge = profile?.age || 25;
+    const tobaccoType = profile?.tobacco_type || 'smoked';
+    const askAnswers = await fiveaService.getUserAnswers(userId, 'ask');
+
+    // Generate AI-powered personalized advice
+    let aiMessage = content.ai_message_template.replace('{{age}}', userAge.toString());
+
+    try {
+      // Build context from user answers
+      const answersContext = askAnswers.map(a =>
+        `Q: ${a.question_text}\nA: ${a.answer_text}`
+      ).join('\n\n');
+
+      const prompt = `You are a compassionate tobacco cessation counselor. Generate a short, personalized motivational message (2-3 sentences) for a user who wants to quit tobacco.
+
+USER PROFILE:
+- Age: ${userAge}
+- Tobacco type: ${tobaccoType}
+- Severity level: ${severity.severity_level}
+- Severity score: ${severity.score}
+
+USER'S RESPONSES TO ASSESSMENT:
+${answersContext}
+
+INSTRUCTIONS:
+- Write 2-3 sentences maximum
+- Be warm, encouraging, and specific to their situation
+- Mention relevant health benefits based on their age and usage pattern
+- Include a motivating statistic or fact if relevant
+- Sound human and supportive, not robotic
+- Do NOT use phrases like "I'm here to help" or "As an AI"
+- Focus on their specific situation and the positive impact of quitting
+
+Generate only the personalized message, nothing else.`;
+
+      const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:5000/api';
+      const response = await axios.post(`${API_BASE_URL}/yenquit-chat`, {
+        message: prompt,
+        history: [],
+        summary: null,
+        skipStorage: true
+      });
+
+      const generatedMessage = response.data?.reply || response.data?.message;
+      if (generatedMessage) {
+        // Clean up the message - remove INTENT and SUMMARY lines if present
+        const lines = generatedMessage.split('\n').filter(line =>
+          !line.startsWith('INTENT:') && !line.startsWith('SUMMARY:')
+        );
+        aiMessage = lines.join('\n').trim();
+      }
+
+      // Cache the generated AI message immediately
+      await fiveaService.saveAdviseHistory(userId, {
+        severity_level: severity.severity_level,
+        selected_video: content.video_url,
+        selected_quote: content.why_quitting_quote,
+        ai_message: aiMessage
+      });
+
+    } catch (aiError) {
+      console.error('Failed to generate AI advice:', aiError);
+      // Fall back to template message if AI generation fails
+    }
+
     res.json({
       severity: severity.severity_level,
       video: content.video_url,
       quote: content.why_quitting_quote,
       ai_message: aiMessage,
+      cached: false
     });
   } catch (err) {
     next(err);

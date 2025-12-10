@@ -9,9 +9,10 @@ interface ExtendedFiveAAdviseProps extends FiveA_AdviseProps {
   video?: string;
   quote?: string;
   ai_message?: string;
+  loading?: boolean;
 }
 
-export function FiveA_Advise({ onNext, userData = {}, video, quote, ai_message }: ExtendedFiveAAdviseProps) {
+export function FiveA_Advise({ onNext, userData = {}, video, quote, ai_message, loading = false }: ExtendedFiveAAdviseProps) {
   return (
     <div className="min-h-screen p-4 md:p-6 lg:p-8" style={{ backgroundColor: '#FFFFFF' }}>
       <div className="max-w-4xl mx-auto">
@@ -20,20 +21,20 @@ export function FiveA_Advise({ onNext, userData = {}, video, quote, ai_message }
           currentStep={1}
         />
 
-        <div 
+        <div
           className="rounded-2xl md:rounded-3xl p-6 md:p-8 lg:p-10"
-          style={{ 
+          style={{
             backgroundColor: '#FFFFFF',
             boxShadow: '0 10px 40px rgba(28, 59, 94, 0.12)'
           }}
         >
-          <h1 
+          <h1
             className="text-2xl md:text-3xl lg:text-4xl mb-2"
             style={{ color: '#1C3B5E' }}
           >
             Step 2: Personalized Advice to Quit
           </h1>
-          <p 
+          <p
             className="text-sm md:text-base mb-6 md:mb-8 lg:mb-10"
             style={{ color: '#333333', opacity: 0.7 }}
           >
@@ -41,34 +42,34 @@ export function FiveA_Advise({ onNext, userData = {}, video, quote, ai_message }
           </p>
 
           {/* Video Placeholder */}
-          <div 
+          <div
             className="rounded-2xl overflow-hidden mb-8 aspect-video flex items-center justify-center"
-            style={{ 
+            style={{
               backgroundColor: '#1C3B5E',
               boxShadow: '0 4px 12px rgba(28, 59, 94, 0.15)'
             }}
           >
             {video ? (
-            <div className="w-full h-full">
-              {video.includes('youtube.com') || video.includes('youtu.be') ? (
-                <iframe
-                  src={video.includes('youtube.com') ? video.replace('watch?v=', 'embed/') : video.replace('youtu.be/', 'www.youtube.com/embed/')}
-                  className="w-full h-full"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  title="Advise Video"
-                />
-              ) : (
-                <video controls className="w-full h-full">
-                  <source src={video} type="video/mp4" />
-                  Your browser does not support the video tag.
-                </video>
-              )}
-            </div>
-          ) : (
+              <div className="w-full h-full">
+                {video.includes('youtube.com') || video.includes('youtu.be') ? (
+                  <iframe
+                    src={video.includes('youtube.com') ? video.replace('watch?v=', 'embed/') : video.replace('youtu.be/', 'www.youtube.com/embed/')}
+                    className="w-full h-full"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    title="Advise Video"
+                  />
+                ) : (
+                  <video controls className="w-full h-full">
+                    <source src={video} type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
+                )}
+              </div>
+            ) : (
               <div className="text-center" style={{ color: '#FFFFFF' }}>
-                <div 
+                <div
                   className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 transition-transform duration-200 hover:scale-110 cursor-pointer"
                   style={{ backgroundColor: '#20B2AA' }}
                 >
@@ -83,21 +84,21 @@ export function FiveA_Advise({ onNext, userData = {}, video, quote, ai_message }
           </div>
 
           {/* Motivational Message */}
-          <div 
+          <div
             className="rounded-2xl p-8 mb-6 text-center"
-            style={{ 
+            style={{
               background: 'linear-gradient(135deg, #1C3B5E 0%, #2a5a7e 100%)',
               color: '#FFFFFF',
               boxShadow: '0 4px 12px rgba(28, 59, 94, 0.2)'
             }}
           >
-            <div 
+            <div
               className="inline-block px-4 py-1 rounded-full mb-4"
               style={{ backgroundColor: 'rgba(32, 178, 170, 0.2)' }}
             >
               <span style={{ fontSize: '0.875rem' }}>Why Quitting Matters</span>
             </div>
-            <p 
+            <p
               className="mb-3"
               style={{ fontSize: '1.25rem', lineHeight: '1.6' }}
             >
@@ -109,18 +110,18 @@ export function FiveA_Advise({ onNext, userData = {}, video, quote, ai_message }
           </div>
 
           {/* AI Personalized Message */}
-          <div 
+          <div
             className="rounded-2xl p-7"
-            style={{ 
+            style={{
               backgroundColor: 'rgba(32, 178, 170, 0.08)',
               borderLeft: '4px solid #20B2AA',
               boxShadow: '0 2px 8px rgba(32, 178, 170, 0.1)'
             }}
           >
             <div className="flex items-start gap-4">
-              <div 
+              <div
                 className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ 
+                style={{
                   backgroundColor: '#20B2AA',
                   color: '#FFFFFF'
                 }}
@@ -128,21 +129,29 @@ export function FiveA_Advise({ onNext, userData = {}, video, quote, ai_message }
                 <span style={{ fontSize: '0.875rem' }}>AI</span>
               </div>
               <div className="flex-1">
-                <p 
+                <p
                   className="mb-1"
-                  style={{ 
+                  style={{
                     color: '#20B2AA'
                   }}
                 >
                   Personalized Insight
                 </p>
-                <div style={{ color: '#333333', lineHeight: '1.6' }}>
-                  <p className="mb-3">{ai_message || 'As a 25-year-old user, quitting now may add 10 healthy years to your life. Studies show that people who quit before age 40 reduce their risk of dying from smoking-related disease by about 90%.'}</p>
-                  <p style={{ color: '#333333', opacity: 0.85, lineHeight: '1.6' }}>
-                    Your investment in health today will compound over the years, giving you more time 
-                    with loved ones and greater quality of life.
-                  </p>
-                </div>
+                {loading ? (
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-full"></div>
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-5/6"></div>
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-4/6"></div>
+                  </div>
+                ) : (
+                  <div style={{ color: '#333333', lineHeight: '1.6' }}>
+                    <p className="mb-3">{ai_message || 'As a 25-year-old user, quitting now may add 10 healthy years to your life. Studies show that people who quit before age 40 reduce their risk of dying from smoking-related disease by about 90%.'}</p>
+                    <p style={{ color: '#333333', opacity: 0.85, lineHeight: '1.6' }}>
+                      Your investment in health today will compound over the years, giving you more time
+                      with loved ones and greater quality of life.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

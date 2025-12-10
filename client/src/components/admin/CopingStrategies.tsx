@@ -59,11 +59,11 @@ export function CopingStrategies({ activeTab, setActiveTab }: CopingStrategiesPr
         name: formData.name.trim(),
         description: formData.description.trim() || null
       });
-      
+
       // Reset form
       setFormData({ name: '', description: '' });
       setShowCreateForm(false);
-      
+
       // Reload strategies
       await loadStrategies();
     } catch (error) {
@@ -86,10 +86,10 @@ export function CopingStrategies({ activeTab, setActiveTab }: CopingStrategiesPr
         name: formData.name.trim(),
         description: formData.description.trim() || null
       });
-      
+
       setEditing(null);
       setFormData({ name: '', description: '' });
-      
+
       await loadStrategies();
     } catch (error) {
       console.error('Error updating strategy:', error);
@@ -131,11 +131,13 @@ export function CopingStrategies({ activeTab, setActiveTab }: CopingStrategiesPr
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-[#20B2AA]" />
-          <p className="text-gray-600">Loading strategies...</p>
-        </div>
+      <div className="space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="p-4 rounded-xl bg-gray-50 animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+            <div className="h-3 bg-gray-200 rounded w-full"></div>
+          </div>
+        ))}
       </div>
     );
   }
@@ -151,9 +153,9 @@ export function CopingStrategies({ activeTab, setActiveTab }: CopingStrategiesPr
         <Button
           onClick={() => setShowCreateForm(!showCreateForm)}
           className="h-12 rounded-2xl flex items-center gap-2 px-6 shadow-lg hover:shadow-xl transition-all duration-200"
-          style={{ 
+          style={{
             background: "linear-gradient(135deg, #20B2AA 0%, #1C9B94 100%)",
-            color: "white" 
+            color: "white"
           }}
         >
           <Plus className="w-5 h-5" />
@@ -273,7 +275,7 @@ export function CopingStrategies({ activeTab, setActiveTab }: CopingStrategiesPr
                       <p className="text-gray-600 mb-2">{strategy.description}</p>
                     )}
                     <p className="text-sm text-gray-500">
-                      Created: {new Date(strategy.created_at).toLocaleDateString()} | 
+                      Created: {new Date(strategy.created_at).toLocaleDateString()} |
                       Updated: {new Date(strategy.updated_at).toLocaleDateString()}
                     </p>
                   </div>

@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export interface FiveAQuestion {
   id: number;
@@ -20,6 +20,8 @@ export interface CreateFiveAQuestionRequest {
   options?: string[];
   step: 'ask' | 'advise' | 'assess' | 'assist' | 'arrange';
   tobacco_category: string;
+  content_type?: string;
+  content_data?: any;
 }
 
 export interface UpdateFiveAQuestionRequest {
@@ -27,6 +29,8 @@ export interface UpdateFiveAQuestionRequest {
   question_type: 'radio' | 'text' | 'textarea' | 'checkbox';
   options?: string[];
   tobacco_category?: string;
+  content_type?: string;
+  content_data?: any;
 }
 
 // Get all questions for a specific step (admin)
@@ -34,7 +38,7 @@ export async function getFiveAQuestions(step: string, includeInactive: boolean =
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
 
-  const res = await fetch(`${API_URL}/api/admin/5a/questions?step=${step}&include_inactive=${includeInactive}`, {
+  const res = await fetch(`${API_URL}/admin/5a/questions?step=${step}&include_inactive=${includeInactive}`, {
     headers: {
       'Authorization': `Bearer ${token}`,
     },
@@ -51,7 +55,7 @@ export async function getFiveAQuestion(id: number): Promise<FiveAQuestion> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
 
-  const res = await fetch(`${API_URL}/api/admin/5a/questions/${id}`, {
+  const res = await fetch(`${API_URL}/admin/5a/questions/${id}`, {
     headers: {
       'Authorization': `Bearer ${token}`,
     },
@@ -68,7 +72,7 @@ export async function createFiveAQuestion(question: CreateFiveAQuestionRequest):
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
 
-  const res = await fetch(`${API_URL}/api/admin/5a/questions`, {
+  const res = await fetch(`${API_URL}/admin/5a/questions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -88,7 +92,7 @@ export async function updateFiveAQuestion(id: number, question: UpdateFiveAQuest
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
 
-  const res = await fetch(`${API_URL}/api/admin/5a/questions/${id}`, {
+  const res = await fetch(`${API_URL}/admin/5a/questions/${id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -108,7 +112,7 @@ export async function softDeleteFiveAQuestion(id: number): Promise<{ message: st
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
 
-  const res = await fetch(`${API_URL}/api/admin/5a/questions/${id}/deactivate`, {
+  const res = await fetch(`${API_URL}/admin/5a/questions/${id}/deactivate`, {
     method: 'PATCH',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -126,7 +130,7 @@ export async function reactivateFiveAQuestion(id: number): Promise<{ message: st
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
 
-  const res = await fetch(`${API_URL}/api/admin/5a/questions/${id}/activate`, {
+  const res = await fetch(`${API_URL}/admin/5a/questions/${id}/activate`, {
     method: 'PATCH',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -144,7 +148,7 @@ export async function deleteFiveAQuestion(id: number): Promise<{ message: string
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
 
-  const res = await fetch(`${API_URL}/api/admin/5a/questions/${id}`, {
+  const res = await fetch(`${API_URL}/admin/5a/questions/${id}`, {
     method: 'DELETE',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -162,7 +166,7 @@ export async function reorderFiveAQuestions(step: string, questionOrders: { id: 
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
 
-  const res = await fetch(`${API_URL}/api/admin/5a/questions/reorder`, {
+  const res = await fetch(`${API_URL}/admin/5a/questions/reorder`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',

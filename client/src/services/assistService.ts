@@ -92,24 +92,24 @@ export interface UpsertNotificationsRequest {
 
 // Coping Strategies
 export const getCopingStrategies = async (isActiveOnly = true): Promise<CopingStrategy[]> => {
-  const response = await apiRequest(`/api/assist/strategies${isActiveOnly ? '?active=true' : '?active=false'}`);
+  const response = await apiRequest(`/assist/strategies${isActiveOnly ? '?active=true' : '?active=false'}`);
   return response.data;
 };
 
 // Notification Templates
 export const getNotificationTemplates = async (isActiveOnly = true): Promise<NotificationTemplate[]> => {
-  const response = await apiRequest(`/api/assist/notification-templates${isActiveOnly ? '?active=true' : '?active=false'}`);
+  const response = await apiRequest(`/assist/notification-templates${isActiveOnly ? '?active=true' : '?active=false'}`);
   return response.data;
 };
 
 // User Assist Plan
 export const getUserAssistPlan = async (): Promise<AssistPlan | null> => {
-  const response = await apiRequest('/api/assist/users/me/assist');
+  const response = await apiRequest('/assist/users/me/assist');
   return response.data;
 };
 
 export const createOrUpdateUserAssistPlan = async (data: CreateAssistPlanRequest): Promise<AssistPlan> => {
-  const response = await apiRequest('/api/assist/users/me/assist', {
+  const response = await apiRequest('/assist/users/me/assist', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -117,7 +117,7 @@ export const createOrUpdateUserAssistPlan = async (data: CreateAssistPlanRequest
 };
 
 export const completeAssistPlan = async () => {
-  const response = await apiRequest('/api/assist/users/me/assist/complete', {
+  const response = await apiRequest('/assist/users/me/assist/complete', {
     method: 'POST',
   });
   return response.data;
@@ -125,12 +125,12 @@ export const completeAssistPlan = async () => {
 
 // User Notifications
 export const getUserNotifications = async (): Promise<UserNotification[]> => {
-  const response = await apiRequest('/api/assist/users/me/notifications');
+  const response = await apiRequest('/assist/users/me/notifications');
   return response.data;
 };
 
 export const upsertUserNotifications = async (data: UpsertNotificationsRequest): Promise<UserNotification[]> => {
-  const response = await apiRequest('/api/assist/users/me/notifications', {
+  const response = await apiRequest('/assist/users/me/notifications', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -139,7 +139,7 @@ export const upsertUserNotifications = async (data: UpsertNotificationsRequest):
 
 // Admin Functions
 export const createCopingStrategy = async (data: { name: string; description?: string }): Promise<CopingStrategy> => {
-  const response = await apiRequest('/api/assist/admin/assist/strategies', {
+  const response = await apiRequest('/assist/admin/assist/strategies', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -147,7 +147,7 @@ export const createCopingStrategy = async (data: { name: string; description?: s
 };
 
 export const updateCopingStrategy = async (id: number, data: { name?: string; description?: string; is_active?: boolean }): Promise<CopingStrategy> => {
-  const response = await apiRequest(`/api/assist/admin/assist/strategies/${id}`, {
+  const response = await apiRequest(`/assist/admin/assist/strategies/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   });
@@ -155,14 +155,14 @@ export const updateCopingStrategy = async (id: number, data: { name?: string; de
 };
 
 export const softDeleteCopingStrategy = async (id: number) => {
-  const response = await apiRequest(`/api/assist/admin/assist/strategies/${id}`, {
+  const response = await apiRequest(`/assist/admin/assist/strategies/${id}`, {
     method: 'DELETE',
   });
   return response.data;
 };
 
 export const createNotificationTemplate = async (data: { key: string; title: string; default_time?: string }): Promise<NotificationTemplate> => {
-  const response = await apiRequest('/api/assist/admin/assist/notification-templates', {
+  const response = await apiRequest('/assist/admin/assist/notification-templates', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -170,7 +170,7 @@ export const createNotificationTemplate = async (data: { key: string; title: str
 };
 
 export const updateNotificationTemplate = async (id: number, data: { key?: string; title?: string; default_time?: string; is_active?: boolean }): Promise<NotificationTemplate> => {
-  const response = await apiRequest(`/api/assist/admin/assist/notification-templates/${id}`, {
+  const response = await apiRequest(`/assist/admin/assist/notification-templates/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   });
@@ -178,13 +178,13 @@ export const updateNotificationTemplate = async (id: number, data: { key?: strin
 };
 
 export const softDeleteNotificationTemplate = async (id: number) => {
-  const response = await apiRequest(`/api/assist/admin/assist/notification-templates/${id}`, {
+  const response = await apiRequest(`/assist/admin/assist/notification-templates/${id}`, {
     method: 'DELETE',
   });
   return response.data;
 };
 
 export const getAssistHistory = async (page = 1, limit = 50) => {
-  const response = await apiRequest(`/api/assist/admin/assist/history?page=${page}&limit=${limit}`);
+  const response = await apiRequest(`/assist/admin/assist/history?page=${page}&limit=${limit}`);
   return response;
 };

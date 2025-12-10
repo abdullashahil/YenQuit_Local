@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export interface PersonalRoadblockQuestion {
   id: number;
@@ -26,7 +26,7 @@ export interface UserPersonalRoadblocksContent {
 
 // Get personal roadblock questions for the Roadblocks page
 export async function getPersonalRoadblockQuestions(): Promise<PersonalRoadblocksContent> {
-  const res = await fetch(`${API_URL}/api/personal-roadblocks/questions`);
+  const res = await fetch(`${API_URL}/personal-roadblocks/questions`);
   if (!res.ok) {
     throw new Error('Failed to fetch personal roadblock questions');
   }
@@ -38,7 +38,7 @@ export async function getUserPersonalRoadblocks(): Promise<UserPersonalRoadblock
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
 
-  const res = await fetch(`${API_URL}/api/personal-roadblocks/responses`, {
+  const res = await fetch(`${API_URL}/personal-roadblocks/responses`, {
     headers: {
       'Authorization': `Bearer ${token}`,
     },
@@ -55,7 +55,7 @@ export async function saveUserPersonalRoadblock(questionId: number, response: st
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
 
-  const res = await fetch(`${API_URL}/api/personal-roadblocks/responses`, {
+  const res = await fetch(`${API_URL}/personal-roadblocks/responses`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -75,7 +75,7 @@ export async function deleteUserPersonalRoadblock(questionId: number): Promise<{
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
 
-  const res = await fetch(`${API_URL}/api/personal-roadblocks/responses/${questionId}`, {
+  const res = await fetch(`${API_URL}/personal-roadblocks/responses/${questionId}`, {
     method: 'DELETE',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -93,7 +93,7 @@ export async function createPersonalRoadblockQuestion(questionData: Partial<Pers
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
 
-  const res = await fetch(`${API_URL}/api/personal-roadblocks/questions`, {
+  const res = await fetch(`${API_URL}/personal-roadblocks/questions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -112,7 +112,7 @@ export async function updatePersonalRoadblockQuestion(id: number, questionData: 
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
 
-  const res = await fetch(`${API_URL}/api/personal-roadblocks/questions/${id}`, {
+  const res = await fetch(`${API_URL}/personal-roadblocks/questions/${id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -131,7 +131,7 @@ export async function deletePersonalRoadblockQuestion(id: number): Promise<{ mes
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
 
-  const res = await fetch(`${API_URL}/api/personal-roadblocks/questions/${id}`, {
+  const res = await fetch(`${API_URL}/personal-roadblocks/questions/${id}`, {
     method: 'DELETE',
     headers: {
       'Authorization': `Bearer ${token}`,

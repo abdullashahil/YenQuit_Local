@@ -8,12 +8,12 @@ export default function Arrange() {
 
   const handleComplete = () => {
     // Optionally persist any arrange data in context beforehand
-    ;(async () => {
+    ; (async () => {
       try {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
         const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null
         if (token) {
-          await fetch(`${API_URL}/api/onboarding/progress`, {
+          await fetch(`${API_URL}/onboarding/progress`, {
             method: 'PATCH',
             headers: {
               'Content-Type': 'application/json',

@@ -25,21 +25,21 @@ export default function AskPage() {
   useEffect(() => {
     const fetchQuestionsAndAnswers = async () => {
       try {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
         const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
         if (!token) {
           setError('Unauthorized');
           return;
         }
         // Fetch questions
-        const qRes = await fetch(`${API_URL}/api/fivea/questions/ask`, {
+        const qRes = await fetch(`${API_URL}/fivea/questions/ask`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!qRes.ok) throw new Error('Failed to fetch questions');
         const qData = await qRes.json();
         setQuestions(qData.questions || []);
         // Fetch existing answers
-        const aRes = await fetch(`${API_URL}/api/fivea/answers/ask`, {
+        const aRes = await fetch(`${API_URL}/fivea/answers/ask`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (aRes.ok) {
@@ -58,14 +58,14 @@ export default function AskPage() {
 
   const handleNext = async (answers: Record<string, string>) => {
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
       const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
       if (token) {
         const payload: Record<string, string> = {};
         questions.forEach(q => {
           payload[q.id] = answers[`q${q.id}`] || '';
         });
-        const res = await fetch(`${API_URL}/api/fivea/ask/submit`, {
+        const res = await fetch(`${API_URL}/fivea/ask/submit`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -82,7 +82,22 @@ export default function AskPage() {
     router.push('/5a/advise');
   };
 
-  if (loading) return <div style={{ padding: 32 }}>Loading questions…</div>;
+  if (loading) return (
+    <div className="min-h-screen p-4 md:p-6 lg:p-8" style={{ backgroundColor: '#FFFFFF' }}>
+      <div className="max-w-4xl mx-auto space-y-4">
+        {/* Skeleton for questions */}
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="p-6 rounded-xl bg-gray-50 animate-pulse">
+            <div className="h-5 bg-gray-200 rounded w-3/4 mb-4"></div>
+            <div className="space-y-2">
+              <div className="h-4 bg-gray-200 rounded w-full"></div>
+              <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
   if (error) return <div style={{ padding: 32, color: 'red' }}>Error: {error}</div>;
 
   return <FiveA_Ask onNext={handleNext} questions={questions} savedAnswers={savedAnswers} submitted={submitted} />;
