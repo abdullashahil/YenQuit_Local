@@ -7,7 +7,9 @@ export interface FagerstromQuestion {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  tobacco_category?: string;
 }
+
 
 export interface PaginatedFagerstromResponse {
   questions: FagerstromQuestion[];
@@ -22,20 +24,20 @@ export interface PaginatedFagerstromResponse {
 export async function getFagerstromQuestions(page = 1, limit = 50, activeOnly = true, tobaccoCategory?: string, getAll = false): Promise<PaginatedFagerstromResponse> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
-  
+
   const params = new URLSearchParams({
     page: page.toString(),
     limit: limit.toString(),
     active: activeOnly.toString()
   });
-  
+
   if (getAll) {
     params.append('getAll', 'true');
   } else if (tobaccoCategory) {
     params.append('tobaccoCategory', tobaccoCategory);
   }
-  
-  const res = await fetch(`${API_URL}/api/fagerstrom?${params}`, {
+
+  const res = await fetch(`${API_URL}/fagerstrom?${params}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error('Failed to fetch questions');
@@ -45,7 +47,7 @@ export async function getFagerstromQuestions(page = 1, limit = 50, activeOnly = 
 export async function getFagerstromQuestionById(id: number): Promise<FagerstromQuestion> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
-  const res = await fetch(`${API_URL}/api/fagerstrom/${id}`, {
+  const res = await fetch(`${API_URL}/fagerstrom/${id}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error('Failed to fetch question');
@@ -55,7 +57,7 @@ export async function getFagerstromQuestionById(id: number): Promise<FagerstromQ
 export async function createFagerstromQuestion(payload: { question_text: string; options: string[] }): Promise<FagerstromQuestion> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
-  const res = await fetch(`${API_URL}/api/fagerstrom`, {
+  const res = await fetch(`${API_URL}/fagerstrom`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -70,7 +72,7 @@ export async function createFagerstromQuestion(payload: { question_text: string;
 export async function updateFagerstromQuestion(id: number, payload: Partial<{ question_text: string; options: string[]; is_active: boolean }>): Promise<FagerstromQuestion> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
-  const res = await fetch(`${API_URL}/api/fagerstrom/${id}`, {
+  const res = await fetch(`${API_URL}/fagerstrom/${id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -85,7 +87,7 @@ export async function updateFagerstromQuestion(id: number, payload: Partial<{ qu
 export async function softDeleteFagerstromQuestion(id: number): Promise<{ message: string; id: number; is_active: boolean }> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
-  const res = await fetch(`${API_URL}/api/fagerstrom/${id}`, {
+  const res = await fetch(`${API_URL}/fagerstrom/${id}`, {
     method: 'DELETE',
     headers: { Authorization: `Bearer ${token}` },
   });

@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export interface Reward {
   id: number;
@@ -15,7 +15,7 @@ export interface RewardsContent {
 
 // Get all rewards content for the Rewards page
 export async function getRewardsContent(): Promise<RewardsContent> {
-  const res = await fetch(`${API_URL}/api/rewards/content`);
+  const res = await fetch(`${API_URL}/rewards/content`);
   if (!res.ok) {
     throw new Error('Failed to fetch rewards content');
   }
@@ -24,7 +24,7 @@ export async function getRewardsContent(): Promise<RewardsContent> {
 
 // Get rewards only
 export async function getRewards(): Promise<Reward[]> {
-  const res = await fetch(`${API_URL}/api/rewards/rewards`);
+  const res = await fetch(`${API_URL}/rewards/rewards`);
   if (!res.ok) {
     throw new Error('Failed to fetch rewards');
   }
@@ -37,7 +37,7 @@ export async function createReward(rewardData: Partial<Reward>): Promise<Reward>
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
 
-  const res = await fetch(`${API_URL}/api/rewards/rewards`, {
+  const res = await fetch(`${API_URL}/rewards/rewards`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -56,7 +56,7 @@ export async function updateReward(id: number, rewardData: Partial<Reward>): Pro
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
 
-  const res = await fetch(`${API_URL}/api/rewards/rewards/${id}`, {
+  const res = await fetch(`${API_URL}/rewards/rewards/${id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -75,7 +75,7 @@ export async function deleteReward(id: number): Promise<{ message: string; rewar
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
 
-  const res = await fetch(`${API_URL}/api/rewards/rewards/${id}`, {
+  const res = await fetch(`${API_URL}/rewards/rewards/${id}`, {
     method: 'DELETE',
     headers: {
       'Authorization': `Bearer ${token}`,

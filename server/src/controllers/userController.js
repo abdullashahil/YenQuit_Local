@@ -27,7 +27,7 @@ export async function getProfile(req, res, next) {
   try {
     const user = await UserModel.findById(req.user.userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
-    
+
     // Return only profile-safe fields
     const profile = {
       id: user.id,
@@ -39,9 +39,10 @@ export async function getProfile(req, res, next) {
       country: user.country,
       bio: user.bio,
       avatar_url: user.avatar_url,
-      created_at: user.created_at
+      created_at: user.created_at,
+      join_date: user.join_date
     };
-    
+
     res.json({ success: true, data: profile });
   } catch (err) {
     next(err);
@@ -52,32 +53,32 @@ export async function updateProfile(req, res, next) {
   try {
     const allowedFields = ['full_name', 'phone', 'age', 'gender', 'country', 'bio'];
     const updateData = {};
-    
+
     allowedFields.forEach(field => {
       if (req.body[field] !== undefined) {
         updateData[field] = req.body[field];
       }
     });
-    
+
     if (Object.keys(updateData).length === 0) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'No valid profile fields provided' 
+      return res.status(400).json({
+        success: false,
+        message: 'No valid profile fields provided'
       });
     }
-    
+
     const updated = await UserModel.updateProfile(req.user.userId, updateData);
     if (!updated) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Failed to update profile' 
+      return res.status(400).json({
+        success: false,
+        message: 'Failed to update profile'
       });
     }
-    
-    res.json({ 
-      success: true, 
-      message: 'Profile updated successfully', 
-      data: updated 
+
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: updated
     });
   } catch (err) {
     next(err);
@@ -88,9 +89,9 @@ export async function logout(req, res, next) {
   try {
     // For JWT tokens, client-side token removal is sufficient
     // Server could implement token blacklisting if needed
-    res.json({ 
-      success: true, 
-      message: 'Logout successful' 
+    res.json({
+      success: true,
+      message: 'Logout successful'
     });
   } catch (err) {
     next(err);
@@ -100,19 +101,19 @@ export async function logout(req, res, next) {
 export async function uploadAvatar(req, res, next) {
   try {
     if (!req.file) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'No file uploaded' 
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded'
       });
     }
-    
+
     const avatarUrl = `/uploads/avatars/${req.file.filename}`;
     const updated = await UserModel.updateProfile(req.user.userId, { avatar_url: avatarUrl });
-    
-    res.json({ 
-      success: true, 
-      message: 'Avatar uploaded successfully', 
-      data: { avatar_url: avatarUrl, profile: updated } 
+
+    res.json({
+      success: true,
+      message: 'Avatar uploaded successfully',
+      data: { avatar_url: avatarUrl, profile: updated }
     });
   } catch (err) {
     next(err);
@@ -138,7 +139,7 @@ export async function createUser(req, res, next) {
       addiction_level,
       join_date
     } = req.body;
-    
+
     // Validate required fields
     if (!email || !password) {
       return res.status(400).json({
@@ -176,7 +177,7 @@ export async function createUser(req, res, next) {
       addiction_level,
       join_date
     });
-    
+
     res.status(201).json({
       success: true,
       message: 'User created successfully',
@@ -197,10 +198,10 @@ export async function getAllUsers(req, res, next) {
       role = '',
       status = ''
     } = req.query;
-    
+
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
-    
+
     const result = await UserModel.findAll(
       pageNum,
       limitNum,
@@ -208,7 +209,7 @@ export async function getAllUsers(req, res, next) {
       role,
       status
     );
-    
+
     res.json({
       success: true,
       message: 'Users retrieved successfully',
@@ -224,7 +225,7 @@ export async function getAllUsers(req, res, next) {
 export async function getUserById(req, res, next) {
   try {
     const { id } = req.params;
-    
+
     if (!id) {
       return res.status(400).json({
         success: false,
@@ -233,7 +234,7 @@ export async function getUserById(req, res, next) {
     }
 
     const user = await UserModel.findById(id);
-    
+
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -347,7 +348,7 @@ export async function deleteUser(req, res, next) {
 export async function getUserStats(req, res, next) {
   try {
     const stats = await UserModel.getStats();
-    
+
     res.json({
       success: true,
       message: 'User statistics retrieved successfully',
@@ -364,7 +365,7 @@ export async function getAdminProfile(req, res, next) {
   try {
     const user = await UserModel.findById(req.user.userId);
     if (!user) return res.status(404).json({ error: 'Admin not found' });
-    
+
     // Return admin profile data
     const adminProfile = {
       id: user.id,
@@ -373,7 +374,7 @@ export async function getAdminProfile(req, res, next) {
       created_at: user.created_at,
       updated_at: user.updated_at
     };
-    
+
     res.json({
       success: true,
       data: adminProfile
@@ -387,7 +388,7 @@ export async function getAdminProfile(req, res, next) {
 export async function updateAdminProfile(req, res, next) {
   try {
     const { name, email } = req.body;
-    
+
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (email && !emailRegex.test(email)) {
@@ -396,7 +397,7 @@ export async function updateAdminProfile(req, res, next) {
         message: 'Invalid email format'
       });
     }
-    
+
     // Check if email already exists for another user
     if (email && email !== req.user.email) {
       const existingUser = await UserModel.findByEmail(email);
@@ -407,12 +408,12 @@ export async function updateAdminProfile(req, res, next) {
         });
       }
     }
-    
+
     // Update admin profile
     const updateData = {};
     if (name !== undefined) updateData.full_name = name;
     if (email !== undefined) updateData.email = email;
-    
+
     const updated = await UserModel.update(req.user.userId, updateData);
     if (!updated) {
       return res.status(400).json({
@@ -420,7 +421,7 @@ export async function updateAdminProfile(req, res, next) {
         message: 'No fields updated'
       });
     }
-    
+
     res.json({
       success: true,
       message: 'Profile updated successfully',
@@ -441,7 +442,7 @@ export async function updateAdminProfile(req, res, next) {
 export async function changeAdminPassword(req, res, next) {
   try {
     const { currentPassword, newPassword } = req.body;
-    
+
     // Validate inputs
     if (!currentPassword || !newPassword) {
       return res.status(400).json({
@@ -449,7 +450,7 @@ export async function changeAdminPassword(req, res, next) {
         message: 'Current password and new password are required'
       });
     }
-    
+
     // Validate password rules
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     if (!passwordRegex.test(newPassword)) {
@@ -458,7 +459,7 @@ export async function changeAdminPassword(req, res, next) {
         message: 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character'
       });
     }
-    
+
     // Get current user with password
     const user = await UserModel.findByIdWithPassword(req.user.userId);
     if (!user) {
@@ -467,7 +468,7 @@ export async function changeAdminPassword(req, res, next) {
         message: 'User not found'
       });
     }
-    
+
     // Verify current password
     const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password_hash);
     if (!isCurrentPasswordValid) {
@@ -476,13 +477,13 @@ export async function changeAdminPassword(req, res, next) {
         message: 'Current password is incorrect'
       });
     }
-    
+
     // Hash new password
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
-    
+
     // Update password
     await UserModel.updatePassword(req.user.userId, hashedNewPassword);
-    
+
     res.json({
       success: true,
       message: 'Password changed successfully'
@@ -502,7 +503,7 @@ export async function changeAdminPassword(req, res, next) {
 export async function getAdmins(req, res, next) {
   try {
     const admins = await UserModel.getAllAdmins();
-    
+
     res.json({
       success: true,
       data: admins,
@@ -521,23 +522,23 @@ export async function getAdmins(req, res, next) {
 export async function promoteUser(req, res, next) {
   try {
     const { id } = req.params;
-    
+
     if (!id) {
       return res.status(400).json({
         success: false,
         message: 'User ID is required'
       });
     }
-    
+
     const promotedUser = await UserModel.promoteUser(id);
-    
+
     if (!promotedUser) {
       return res.status(404).json({
         success: false,
         message: 'User not found or already an admin'
       });
     }
-    
+
     res.json({
       success: true,
       message: 'User promoted to admin successfully',
@@ -556,14 +557,14 @@ export async function promoteUser(req, res, next) {
 export async function demoteAdmin(req, res, next) {
   try {
     const { id } = req.params;
-    
+
     if (!id) {
       return res.status(400).json({
         success: false,
         message: 'Admin ID is required'
       });
     }
-    
+
     // Prevent admin from demoting themselves
     if (req.user.userId === id) {
       return res.status(400).json({
@@ -571,16 +572,16 @@ export async function demoteAdmin(req, res, next) {
         message: 'Cannot demote yourself'
       });
     }
-    
+
     const demotedAdmin = await UserModel.demoteAdmin(id);
-    
+
     if (!demotedAdmin) {
       return res.status(404).json({
         success: false,
         message: 'Admin not found or already a user'
       });
     }
-    
+
     res.json({
       success: true,
       message: 'Admin demoted to user successfully',
@@ -599,7 +600,7 @@ export async function demoteAdmin(req, res, next) {
 export async function getNonAdminUsers(req, res, next) {
   try {
     const users = await UserModel.getNonAdminUsers();
-    
+
     res.json({
       success: true,
       data: users,

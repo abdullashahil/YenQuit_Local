@@ -75,7 +75,7 @@ export function RoleManagement() {
     try {
       setUserSearchLoading(true);
       setError("");
-      
+
       // Get all non-admin users and filter by email
       const response = await roleManagementService.getNonAdminUsers();
       if (response.success) {
@@ -91,23 +91,23 @@ export function RoleManagement() {
   };
 
   const handlePromoteUser = async (userId: string) => {
-  try {
-    setLoading(true);
-    setError("");
-    
-    const response = await roleManagementService.promoteUser(userId);
-    
-    if (response.success) {
-      setSuccess("User promoted to admin successfully!");
-      setSearchedUser(null);
-      loadAdmins();
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await roleManagementService.promoteUser(userId);
+
+      if (response.success) {
+        setSuccess("User promoted to admin successfully!");
+        setSearchedUser(null);
+        loadAdmins();
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to promote user");
+    } finally {
+      setLoading(false);
     }
-  } catch (err: any) {
-    setError(err.message || "Failed to promote user");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleDemoteAdmin = async (adminId: string) => {
     if (!confirm("Are you sure you want to demote this admin to a regular user?")) {
@@ -117,9 +117,9 @@ export function RoleManagement() {
     try {
       setLoading(true);
       setError("");
-      
+
       const response = await roleManagementService.demoteAdmin(adminId);
-      
+
       if (response.success) {
         setSuccess("Admin demoted to user successfully!");
         loadAdmins();
@@ -201,11 +201,16 @@ export function RoleManagement() {
               </div>
             </div>
           </div>
-          
+
           <div className="p-6">
             {loading ? (
-              <div className="text-center py-8">
-                <div className="text-gray-500">Loading...</div>
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="p-4 rounded-xl bg-gray-50 animate-pulse">
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-full"></div>
+                  </div>
+                ))}
               </div>
             ) : filteredAdmins.length === 0 ? (
               <div className="text-center py-8">
@@ -246,11 +251,10 @@ export function RoleManagement() {
                       </TableCell>
                       <TableCell>{formatDate(admin.created_at)}</TableCell>
                       <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          admin.status === 'active' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${admin.status === 'active'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-800'
+                          }`}>
                           {admin.status}
                         </span>
                       </TableCell>
@@ -285,7 +289,7 @@ export function RoleManagement() {
               </div>
             </div>
           </div>
-          
+
           <div className="p-6 space-y-4">
             <div className="space-y-3">
               <Label className="text-sm font-medium text-[#1C3B5E]">User Email</Label>
@@ -306,8 +310,11 @@ export function RoleManagement() {
             </div>
 
             {userSearchLoading && (
-              <div className="text-center py-4">
-                <div className="text-gray-500">Searching...</div>
+              <div className="space-y-2">
+                <div className="p-4 rounded-xl bg-gray-50 animate-pulse">
+                  <div className="h-4 bg-gray-200 rounded w-2/3 mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                </div>
               </div>
             )}
 

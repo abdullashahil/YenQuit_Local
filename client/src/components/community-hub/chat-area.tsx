@@ -140,27 +140,27 @@ export function ChatArea({ communityId, onBack, onClose }: ChatAreaProps) {
 
   const fetchChatHistory = useCallback(async () => {
     if (!isYenAI) return;
-    
+
     setIsLoadingHistory(true);
     try {
       // In production, get userId from auth context
-          const userId = TEST_USER_ID;
+      const userId = TEST_USER_ID;
       const response = await axios.get(`${API_BASE_URL}/yenquit-chat/history/${userId}`);
-      
+
       if (response.data?.success && Array.isArray(response.data.history)) {
         const historyMessages = response.data.history.map((msg: any) => ({
           id: `${msg.role}-${msg.timestamp || Date.now()}`,
           author: msg.role === 'user' ? 'You' : 'YenAI',
-          avatar: msg.role === 'user' 
+          avatar: msg.role === 'user'
             ? "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop"
             : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23333333' width='100' height='100'/%3E%3Ctext x='50' y='50' fontSize='60' fill='white' textAnchor='middle' dy='.3em'%E2%9C%A8%3C/text%3E%3C/svg%3E",
           content: msg.content,
-          timestamp: msg.timestamp 
+          timestamp: msg.timestamp
             ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             : 'Just now',
           isOwn: msg.role === 'user'
         }));
-        
+
         setYenaiMessages(historyMessages.length > 0 ? historyMessages : communityData["yenai-chat"].messages);
       } else {
         setYenaiMessages(communityData["yenai-chat"].messages);
@@ -230,8 +230,8 @@ export function ChatArea({ communityId, onBack, onClose }: ChatAreaProps) {
       }))
 
       // In production, get userId from auth context
-          const userId = TEST_USER_ID;
-      
+      const userId = TEST_USER_ID;
+
       const response = await axios.post(`${API_BASE_URL}/yenquit-chat`, {
         message: trimmed,
         history,
@@ -306,8 +306,13 @@ export function ChatArea({ communityId, onBack, onClose }: ChatAreaProps) {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 bg-white">
         {isLoadingHistory && (
-          <div className="flex justify-center py-4">
-            <div className="animate-pulse text-gray-500 text-sm">Loading chat history...</div>
+          <div className="space-y-3">
+            {[1, 2].map((i) => (
+              <div key={i} className="p-4 rounded-xl bg-gray-50 animate-pulse">
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-full"></div>
+              </div>
+            ))}
           </div>
         )}
         {messagesToRender.map((message) => (
@@ -328,13 +333,12 @@ export function ChatArea({ communityId, onBack, onClose }: ChatAreaProps) {
             <div className={`flex flex-col ${message.isOwn ? "items-end" : "items-start"}`}>
               {!message.isOwn && <p className="text-xs font-semibold text-gray-700 mb-1">{message.author}</p>}
               <div
-                className={`px-4 py-2 rounded-lg max-w-xs md:max-w-md lg:max-w-lg ${
-                  message.isOwn
+                className={`px-4 py-2 rounded-lg max-w-xs md:max-w-md lg:max-w-lg ${message.isOwn
                     ? "bg-[#2D9B8F] text-white rounded-br-none"
                     : isYenAI
                       ? "bg-gradient-to-r from-[#D4F5ED] to-white text-gray-900 rounded-bl-none border border-[#B2E8D8]"
                       : "bg-gray-100 text-gray-900 rounded-bl-none"
-                }`}
+                  }`}
               >
                 {isYenAI && !message.isOwn ? (
                   <div className="text-sm break-words prose prose-sm max-w-none">
@@ -367,7 +371,7 @@ export function ChatArea({ communityId, onBack, onClose }: ChatAreaProps) {
             <div className="flex flex-col items-start">
               <p className="text-xs font-semibold text-gray-700 mb-1">YenAI</p>
               <div className="px-4 py-2 rounded-lg max-w-xs md:max-w-md lg:max-w-lg bg-gradient-to-r from-[#D4F5ED] to-white text-gray-900 rounded-bl-none border border-[#B2E8D8] flex items-center">
-              <p>...</p>
+                <p>...</p>
               </div>
             </div>
           </div>

@@ -5,19 +5,20 @@ import { useEffect, useState } from 'react';
 export default function AdvisePage() {
   const router = useRouter();
   const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [aiLoading, setAiLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchAdvise = async () => {
       try {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
         const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
         if (!token) {
           setError('Unauthorized');
+          setAiLoading(false);
           return;
         }
-        const res = await fetch(`${API_URL}/api/fivea/advise`, {
+        const res = await fetch(`${API_URL}/fivea/advise`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) throw new Error('Failed to load advise content');
@@ -26,7 +27,7 @@ export default function AdvisePage() {
       } catch (e: any) {
         setError(e.message || 'Failed to load advise');
       } finally {
-        setLoading(false);
+        setAiLoading(false);
       }
     };
     fetchAdvise();
@@ -35,10 +36,10 @@ export default function AdvisePage() {
   const handleComplete = async () => {
     if (!data) return;
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
       const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
       if (token) {
-        await fetch(`${API_URL}/api/fivea/advise/complete`, {
+        await fetch(`${API_URL}/fivea/advise/complete`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -56,8 +57,7 @@ export default function AdvisePage() {
     router.push('/5a/assess');
   };
 
-  if (loading) return <div style={{ padding: 32 }}>Loading advise…</div>;
   if (error) return <div style={{ padding: 32, color: 'red' }}>Error: {error}</div>;
 
-  return <FiveA_Advise onNext={handleComplete} userData={{}} video={data?.video} quote={data?.quote} ai_message={data?.ai_message} />;
+  return <FiveA_Advise onNext={handleComplete} userData={{}} video={data?.video} quote={data?.quote} ai_message={data?.ai_message} loading={aiLoading} />;
 }

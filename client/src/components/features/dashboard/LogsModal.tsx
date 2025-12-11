@@ -46,12 +46,12 @@ export function LogsModal({ open, onOpenChange }: LogsModalProps) {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await quitTrackerService.getAllLogs({
         page: currentPage,
         limit: 50
       });
-      
+
       setLogs(response.logs);
       setPagination(response.pagination);
     } catch (err: any) {
@@ -131,8 +131,13 @@ export function LogsModal({ open, onOpenChange }: LogsModalProps) {
         {/* Content */}
         <div className="p-6 overflow-y-auto" style={{ maxHeight: "calc(90vh - 200px)" }}>
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#20B2AA]"></div>
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="p-4 rounded-xl bg-gray-50 animate-pulse">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-full"></div>
+                </div>
+              ))}
             </div>
           ) : error ? (
             <div className="text-center py-12">
@@ -165,9 +170,8 @@ export function LogsModal({ open, onOpenChange }: LogsModalProps) {
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`p-2 rounded-xl ${
-                          log.smoked ? "bg-red-100" : "bg-green-100"
-                        }`}
+                        className={`p-2 rounded-xl ${log.smoked ? "bg-red-100" : "bg-green-100"
+                          }`}
                       >
                         {log.smoked ? (
                           <XCircle className="w-5 h-5 text-red-600" />
@@ -186,11 +190,10 @@ export function LogsModal({ open, onOpenChange }: LogsModalProps) {
                     </div>
                     <div className="text-right">
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          log.smoked
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${log.smoked
                             ? "bg-red-100 text-red-800"
                             : "bg-green-100 text-green-800"
-                        }`}
+                          }`}
                       >
                         {log.smoked ? "Smoked" : "Smoke-Free"}
                       </span>

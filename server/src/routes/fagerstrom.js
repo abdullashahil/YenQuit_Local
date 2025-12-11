@@ -11,7 +11,11 @@ router.get('/', authenticateJWT, fagerstromController.getFagerstromQuestions);
 router.get('/answers', authenticateJWT, fagerstromController.getFagerstromUserAnswers);
 router.post('/answers', authenticateJWT, fagerstromController.saveFagerstromAnswers);
 
-// Question by ID (must come after /answers)
+// Session history routes
+router.get('/sessions/history', authenticateJWT, fagerstromController.getFagerstromSessionHistory);
+router.get('/sessions/latest', authenticateJWT, fagerstromController.getLatestFagerstromSession);
+
+// Question by ID (must come after /answers and /sessions)
 router.get('/:id', authenticateJWT, fagerstromController.getFagerstromQuestionById);
 
 // Admin CRUD
@@ -20,3 +24,4 @@ router.put('/:id', authenticateJWT, fagerstromController.updateFagerstromQuestio
 router.delete('/:id', authenticateJWT, fagerstromController.softDeleteFagerstromQuestion);
 
 export default router;
+

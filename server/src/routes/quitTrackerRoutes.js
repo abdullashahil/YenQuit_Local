@@ -14,7 +14,10 @@ import {
   getSettings,
   updateSettings,
   getAllLogs,
-  getAdminUserProgress
+
+  getAdminUserProgress,
+  getFeedbackQuestions,
+  saveUserFeedbackHandler
 } from '../controllers/quitTrackerController.js';
 
 const router = express.Router();
@@ -31,6 +34,10 @@ router.get('/questionnaire', getQuestionnaire);
 router.get('/questionnaire/responses', getUserQuestionnaireResponses);
 router.post('/questionnaire/responses', saveQuestionnaireResponses);
 router.post('/post-self-efficacy/responses', savePostSelfEfficacyResponsesHandler);
+
+// Feedback endpoints
+router.get('/feedback/questions', getFeedbackQuestions);
+router.post('/feedback', saveUserFeedbackHandler);
 
 // Settings endpoints
 router.get('/settings', getSettings);

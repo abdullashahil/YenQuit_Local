@@ -14,7 +14,7 @@ interface AssessQuestion {
   updated_at: string;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 async function getAuthHeaders() {
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
@@ -23,7 +23,7 @@ async function getAuthHeaders() {
 }
 
 async function fetchAssessQuestions(): Promise<AssessQuestion[]> {
-  const res = await fetch(`${API_URL}/api/fivea/admin/questions`, {
+  const res = await fetch(`${API_URL}/fivea/admin/questions`, {
     headers: await getAuthHeaders(),
   });
   if (!res.ok) throw new Error('Failed to fetch');
@@ -32,7 +32,7 @@ async function fetchAssessQuestions(): Promise<AssessQuestion[]> {
 }
 
 async function createAssessQuestion(payload: { step: string; question_text: string; options: string[] | null }) {
-  const res = await fetch(`${API_URL}/api/fivea/admin/questions`, {
+  const res = await fetch(`${API_URL}/fivea/admin/questions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders()) },
     body: JSON.stringify(payload),
@@ -42,7 +42,7 @@ async function createAssessQuestion(payload: { step: string; question_text: stri
 }
 
 async function updateAssessQuestion(id: number, payload: Partial<{ question_text: string; options: string[] | null; is_active: boolean }>) {
-  const res = await fetch(`${API_URL}/api/fivea/admin/questions/${id}`, {
+  const res = await fetch(`${API_URL}/fivea/admin/questions/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders()) },
     body: JSON.stringify(payload),
@@ -52,7 +52,7 @@ async function updateAssessQuestion(id: number, payload: Partial<{ question_text
 }
 
 async function softDeleteAssessQuestion(id: number) {
-  const res = await fetch(`${API_URL}/api/fivea/admin/questions/${id}`, {
+  const res = await fetch(`${API_URL}/fivea/admin/questions/${id}`, {
     method: 'DELETE',
     headers: await getAuthHeaders(),
   });

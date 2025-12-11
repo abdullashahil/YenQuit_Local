@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export interface Roadblock {
   id: number;
@@ -14,7 +14,7 @@ export interface RoadblocksContent {
 
 // Get all roadblocks content for the Roadblocks page
 export async function getRoadblocksContent(): Promise<RoadblocksContent> {
-  const res = await fetch(`${API_URL}/api/roadblocks/content`);
+  const res = await fetch(`${API_URL}/roadblocks/content`);
   if (!res.ok) {
     throw new Error('Failed to fetch roadblocks content');
   }
@@ -23,7 +23,7 @@ export async function getRoadblocksContent(): Promise<RoadblocksContent> {
 
 // Get roadblocks only
 export async function getRoadblocks(): Promise<Roadblock[]> {
-  const res = await fetch(`${API_URL}/api/roadblocks/roadblocks`);
+  const res = await fetch(`${API_URL}/roadblocks/roadblocks`);
   if (!res.ok) {
     throw new Error('Failed to fetch roadblocks');
   }
@@ -36,7 +36,7 @@ export async function createRoadblock(roadblockData: Partial<Roadblock>): Promis
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
 
-  const res = await fetch(`${API_URL}/api/roadblocks/roadblocks`, {
+  const res = await fetch(`${API_URL}/roadblocks/roadblocks`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -55,7 +55,7 @@ export async function updateRoadblock(id: number, roadblockData: Partial<Roadblo
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
 
-  const res = await fetch(`${API_URL}/api/roadblocks/roadblocks/${id}`, {
+  const res = await fetch(`${API_URL}/roadblocks/roadblocks/${id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -74,7 +74,7 @@ export async function deleteRoadblock(id: number): Promise<{ message: string; ro
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
 
-  const res = await fetch(`${API_URL}/api/roadblocks/roadblocks/${id}`, {
+  const res = await fetch(`${API_URL}/roadblocks/roadblocks/${id}`, {
     method: 'DELETE',
     headers: {
       'Authorization': `Bearer ${token}`,

@@ -20,24 +20,24 @@ export function SavingsCalculator({ isOpen, onClose }: SavingsCalculatorProps) {
   const [totalLogs, setTotalLogs] = useState(0);
   const [totalCigarettesSmoked, setTotalCigarettesSmoked] = useState(0);
   const [calculatedSavings, setCalculatedSavings] = useState(0);
-  
+
   // Fetch user data from fivea_user_answers
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         setIsLoading(true);
-        
+
         // Fetch user answers to get smoking count and price
         const answersResponse = await userService.getUserAnswers();
         if (answersResponse.success && answersResponse.data) {
           let smokingCount = 0;
           let cigarettePrice = 17; // Default fallback
-          
+
           // Get smoking count from question_id 10
           const smokingAnswer = answersResponse.data.find((answer: any) => answer.question_id === 10);
           if (smokingAnswer && smokingAnswer.answer_text) {
             const smokingText = smokingAnswer.answer_text;
-            
+
             if (smokingText.includes('Less than 5')) {
               smokingCount = 5;
             } else if (smokingText.includes('5-10')) {
@@ -48,12 +48,12 @@ export function SavingsCalculator({ isOpen, onClose }: SavingsCalculatorProps) {
               smokingCount = 25; // Reasonable max for "More than 20"
             }
           }
-          
+
           // Get price per cigarette from question_id 11
           const priceAnswer = answersResponse.data.find((answer: any) => answer.question_id === 11);
           if (priceAnswer && priceAnswer.answer_text) {
             const priceText = priceAnswer.answer_text;
-            
+
             if (priceText.includes('₹')) {
               const match = priceText.match(/₹(\d+)/g);
               if (match && match.length > 0) {
@@ -62,22 +62,22 @@ export function SavingsCalculator({ isOpen, onClose }: SavingsCalculatorProps) {
               }
             }
           }
-          
+
           setUserSmokingCount(smokingCount);
           setPricePerCigarette(cigarettePrice);
-          
+
           // Fetch daily logs to calculate total cigarettes smoked
           const logsResponse = await quitTrackerService.getLogs();
           if (logsResponse.logs) {
             const logs = logsResponse.logs;
             setTotalLogs(logs.length);
-            
+
             // Sum up all cigarettes smoked from logs
             const totalSmoked = logs.reduce((sum: number, log: any) => {
               return sum + (log.cigarettes_count || 0);
             }, 0);
             setTotalCigarettesSmoked(totalSmoked);
-            
+
             // Calculate savings using the real formula
             const savings = Math.max(0, (logs.length * smokingCount - totalSmoked) * cigarettePrice);
             setCalculatedSavings(savings);
@@ -94,12 +94,12 @@ export function SavingsCalculator({ isOpen, onClose }: SavingsCalculatorProps) {
       fetchUserData();
     }
   }, [isOpen]);
-  
+
   // Manual calculation for user input
   const calculateSavings = () => {
     return Math.round(cigarettesPerDay * days * pricePerCigarette);
   };
-  
+
   // Real calculation based on user data
   const calculateRealSavings = () => {
     if (totalLogs === 0) return 0;
@@ -119,11 +119,13 @@ export function SavingsCalculator({ isOpen, onClose }: SavingsCalculatorProps) {
         </DialogHeader>
         <div className="grid gap-4 py-4">
           {isLoading ? (
-            <div className="text-center py-4">
-              <div className="animate-pulse">
-                <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                <div className="h-8 bg-gray-200 rounded"></div>
-              </div>
+            <div className="space-y-3">
+              {[1, 2].map((i) => (
+                <div key={i} className="p-4 rounded-xl bg-gray-50 animate-pulse">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-full"></div>
+                </div>
+              ))}
             </div>
           ) : (
             <>
@@ -151,10 +153,10 @@ export function SavingsCalculator({ isOpen, onClose }: SavingsCalculatorProps) {
                   <p>• Difference: {totalCigarettesSmoked - (totalLogs * userSmokingCount)} cigarettes</p>
                 </div>
               </div>
-              
+
               <div className="border-t pt-4">
                 <p className="text-sm text-gray-600 mb-3">Estimate savings for different scenarios:</p>
-                
+
                 <div className="space-y-2">
                   <div className="space-y-2">
                     <Label htmlFor="cigarettes" className="text-gray-700">Cigarettes per day</Label>

@@ -7,31 +7,31 @@ export async function getFagerstromQuestions(req, res, next) {
     const limit = Math.min(Math.max(parseInt(req.query.limit) || 50, 1), 200);
     const isActiveOnly = req.query.active !== 'false';
     const getAll = req.query.getAll === 'true';
-    
+
     // Get user's tobacco type for filtering (only if not explicitly provided and not getAll)
     const userId = req.user?.userId;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    
+
     let tobaccoCategory;
-    
+
     if (getAll) {
       // When getAll is true, don't filter by tobacco category
       tobaccoCategory = null;
     } else {
       tobaccoCategory = req.query.tobaccoCategory; // Allow explicit override for admin
-      
+
       // If no explicit category provided, use user's profile
       if (!tobaccoCategory) {
         const profile = await UserModel.getProfileByUserId(userId);
         const tobaccoType = profile?.tobacco_type || 'smoked'; // Default to 'smoked' if no profile
-        
+
         // Map tobacco_type to tobacco_category
         // - smokeless -> smokeless
         // - smoked, both, null, anything else -> smoked
         tobaccoCategory = tobaccoType === 'smokeless' ? 'smokeless' : 'smoked';
       }
     }
-    
+
     const questions = await fagerstromService.getFagerstromQuestions(page, limit, isActiveOnly, tobaccoCategory);
     const total = await fagerstromService.getFagerstromQuestionCount(isActiveOnly, tobaccoCategory);
     res.json({
@@ -94,8 +94,9 @@ export async function getFagerstromUserAnswers(req, res, next) {
   try {
     const userId = req.user?.userId;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    
-    const answers = await fagerstromService.getFagerstromUserAnswers(userId);
+
+    const sessionId = req.query.sessionId || null;
+    const answers = await fagerstromService.getFagerstromUserAnswers(userId, sessionId);
     res.json({ answers });
   } catch (err) {
     next(err);
@@ -106,15 +107,40 @@ export async function saveFagerstromAnswers(req, res, next) {
   try {
     const userId = req.user?.userId;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-    
+
     const { answers } = req.body;
     if (!Array.isArray(answers) || answers.length === 0) {
       return res.status(400).json({ error: 'answers array is required' });
     }
-    
+
     const result = await fagerstromService.saveFagerstromAnswers(userId, answers);
     res.json(result);
   } catch (err) {
     next(err);
   }
 }
+
+export async function getFagerstromSessionHistory(req, res, next) {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const sessions = await fagerstromService.getFagerstromSessionHistory(userId);
+    res.json({ sessions });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getLatestFagerstromSession(req, res, next) {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const session = await fagerstromService.getLatestFagerstromSession(userId);
+    res.json({ session });
+  } catch (err) {
+    next(err);
+  }
+}
+

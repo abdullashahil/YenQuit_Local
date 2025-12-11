@@ -1,10 +1,10 @@
 import { query, getClient } from '../db/index.js';
 
-export async function getQuestionsByStep(step, tobaccoCategory) { 
+export async function getQuestionsByStep(step, tobaccoCategory) {
   const category = tobaccoCategory || 'smoked';
 
   // For 'assess' step, show questions to all users regardless of tobacco category
-  const whereClause = step === 'assess' 
+  const whereClause = step === 'assess'
     ? `WHERE step = $1 AND is_active = TRUE`
     : `WHERE step = $1 AND is_active = TRUE AND tobacco_category = $2`;
 
@@ -19,7 +19,7 @@ export async function getQuestionsByStep(step, tobaccoCategory) {
   );
 
   return result.rows;
-} 
+}
 
 export async function getAllQuestions() {
   const res = await query(
@@ -241,6 +241,18 @@ export async function saveAdviseHistory(userId, { severity_level, selected_video
      ON CONFLICT (user_id) DO UPDATE SET severity_level = EXCLUDED.severity_level, selected_video = EXCLUDED.selected_video, selected_quote = EXCLUDED.selected_quote, ai_message = EXCLUDED.ai_message, created_at = NOW()
      RETURNING user_id, severity_level, selected_video, selected_quote, ai_message, created_at`,
     [userId, severity_level, selected_video, selected_quote, ai_message]
+  );
+  return res.rows[0];
+}
+
+export async function getAdviseHistory(userId) {
+  const res = await query(
+    `SELECT user_id, severity_level, selected_video, selected_quote, ai_message, created_at
+     FROM fivea_advise_history
+     WHERE user_id = $1
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [userId]
   );
   return res.rows[0];
 }

@@ -4,6 +4,7 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import quitTrackerService from "../../../services/quitTrackerService";
+import userService from "../../../services/userService";
 
 interface DailyLog {
   id: string;
@@ -18,6 +19,7 @@ interface DailyLog {
 export function ProgressCalendar() {
   const [logs, setLogs] = useState<DailyLog[]>([]);
   const [quitDate, setQuitDate] = useState<string | null>(null);
+  const [joinDate, setJoinDate] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch daily logs data and quit date
@@ -26,19 +28,49 @@ export function ProgressCalendar() {
       try {
         // Fetch logs
         const logsResponse = await quitTrackerService.getLogs();
-        // console.log('Logs response:', logsResponse);
         setLogs(logsResponse.logs || []);
-        
+
         // Fetch progress data to get quit date
         const progressResponse = await quitTrackerService.getProgress();
-         // console.log('Progress response:', progressResponse);
-        // Extract just the date part from the ISO string
         const fullQuitDate = progressResponse.quitDate;
-        const quitDateOnly = fullQuitDate ? fullQuitDate.split('T')[0] : null;
-        // console.log('Quit date only:', quitDateOnly);
+        let quitDateOnly = null;
+
+        if (fullQuitDate) {
+          const dateObj = new Date(fullQuitDate);
+          const year = dateObj.getFullYear();
+          const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+          const day = String(dateObj.getDate()).padStart(2, '0');
+          quitDateOnly = `${year}-${month}-${day}`;
+        }
+
         setQuitDate(quitDateOnly);
+
+        // Use joinDate from progress response (which comes from profile) or fallback to assist plan
+        let joinDateSource = progressResponse.joinDate;
+
+        if (!joinDateSource && progressResponse.assistPlanData && progressResponse.assistPlanData.updated_at) {
+          // Fallback to assist plan date if no profile join date (matching QuitTrackerCard logic)
+          joinDateSource = progressResponse.assistPlanData.updated_at;
+        }
+
+        if (joinDateSource) {
+          // Fix timezone issue: Create date object and use UTC methods or specific locale
+          // The issue is likely that split('T')[0] takes the UTC date, but FullCalendar might be using local time
+          // converting the ISO string to a Date object first is safer
+          const dateObj = new Date(joinDateSource);
+          // Format as YYYY-MM-DD using local time
+          const year = dateObj.getFullYear();
+          const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+          const day = String(dateObj.getDate()).padStart(2, '0');
+          const joinDateOnly = `${year}-${month}-${day}`;
+
+          console.log('Setting join date from:', joinDateSource, 'to:', joinDateOnly);
+          setJoinDate(joinDateOnly);
+        }
+
       } catch (error) {
         // Error fetching data
+        console.error("Error fetching calendar data:", error);
       } finally {
         setIsLoading(false);
       }
@@ -55,7 +87,7 @@ export function ProgressCalendar() {
       // Non-smoke days - check cravings and mood
       const cravings = log.cravings_level || 5; // Default to medium if not set
       const mood = log.mood || 5; // Default to medium if not set
-      
+
       // High cravings (7-10) OR bad mood (1-3) = teal color
       if (cravings >= 7 || mood <= 3) {
         return '#20B2AA'; // Teal for non-smoke days with high cravings/bad mood
@@ -86,42 +118,32 @@ export function ProgressCalendar() {
     });
   }
 
-  // Remove date click handler to disable modal popup
-  // const handleDateClick = (arg: any) => {
-  //   // Removed to prevent modal popup
-  // };
-
   // Handle day cell rendering to highlight quit date and start date
   const handleDayCellDidMount = (info: any) => {
-    // console.log('Day cell mounted - date:', info.date, 'dateStr:', info.dateStr, 'Quit date:', quitDate);
-    // Try different properties to get the date
-    const cellDate = info.dateStr || (info.date && info.date.toISOString().split('T')[0]);
-    // console.log('Cell date to check:', cellDate);
-    // console.log('Logs array:', logs);
-    // console.log('Logs length:', logs.length);
-    
-    if (logs.length > 0) {
-      const lastLogDate = logs[logs.length - 1].log_date.split('T')[0]; // Extract date part only
-      // console.log('Last log date (original):', logs[logs.length - 1].log_date);
-      // console.log('Last log date (extracted):', lastLogDate);
-      // console.log('Date comparison:', cellDate, '===', lastLogDate, '=', cellDate === lastLogDate);
-      
-      // Highlight start date (first log date) in green
-      if (cellDate === lastLogDate) {
-        console.log('Start date found:', lastLogDate);
-        info.el.style.boxSizing = 'border-box';
-        info.el.style.zIndex = '10';
-        info.el.style.position = 'relative';
-        info.el.style.color = '#1C3B5E';
-        info.el.style.fontWeight = 'bold';
-        info.el.style.fontSize = '160%';
-        info.el.style.textShadow = '0 0 3px rgba(0, 6, 61, 0.5)';
-      }
+    // Fix: Use dateStr from FullCalendar or manually format local date to avoid UTC shift
+    // toISOString() converts 00:00 local to previous day UTC (e.g. 18:30 previous day)
+    let cellDate = info.dateStr;
+    if (!cellDate && info.date) {
+      const year = info.date.getFullYear();
+      const month = String(info.date.getMonth() + 1).padStart(2, '0');
+      const day = String(info.date.getDate()).padStart(2, '0');
+      cellDate = `${year}-${month}-${day}`;
     }
-    
+
+    // Highlight start date (join_date) in green
+    if (joinDate && cellDate === joinDate) {
+      console.log('Start date found:', joinDate);
+      info.el.style.boxSizing = 'border-box';
+      info.el.style.zIndex = '10';
+      info.el.style.position = 'relative';
+      info.el.style.color = '#1C3B5E';
+      info.el.style.fontWeight = 'bold';
+      info.el.style.fontSize = '160%';
+      info.el.style.textShadow = '0 0 3px rgba(0, 6, 61, 0.5)';
+    }
+
     // Highlight quit date in red
     if (quitDate && cellDate === quitDate) {
-      // console.log('Applying red styling to quit date:', cellDate);
       info.el.style.boxSizing = 'border-box';
       info.el.style.zIndex = '10';
       info.el.style.position = 'relative';
@@ -132,12 +154,10 @@ export function ProgressCalendar() {
     }
   };
 
-  // Force re-render when quit date changes
+  // Force re-render when dates change
   useEffect(() => {
-    if (quitDate) {
-      // console.log('Quit date updated, calendar should re-render');
-    }
-  }, [quitDate]);
+    // console.log('Dates updated, calendar should re-render');
+  }, [quitDate, joinDate]);
 
   return (
     <Card className="rounded-2xl shadow-sm border border-gray-100 w-full bg-white">

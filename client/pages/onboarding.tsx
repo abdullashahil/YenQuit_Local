@@ -12,7 +12,7 @@ export default function Onboarding() {
       sessionStorage.setItem('userType', 'standard')
     }
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
     const signupEmail = (typeof window !== 'undefined' && sessionStorage.getItem('signupEmail')) || data.email
     const signupPassword = typeof window !== 'undefined' ? sessionStorage.getItem('signupPassword') : null
     const signupFullName = (typeof window !== 'undefined' && sessionStorage.getItem('signupFullName')) || data.name
@@ -44,7 +44,7 @@ export default function Onboarding() {
 
     // Try to register the user with profile
     try {
-      const res = await fetch(`${API_URL}/api/auth/register`, {
+      const res = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -66,7 +66,7 @@ export default function Onboarding() {
 
     // Login to obtain tokens and user info
     try {
-      const loginRes = await fetch(`${API_URL}/api/auth/login`, {
+      const loginRes = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: signupEmail, password: signupPassword })

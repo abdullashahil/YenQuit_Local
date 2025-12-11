@@ -37,11 +37,11 @@ const hasUserCompletedStep = async (step: Step, fiveAData: FiveAData): Promise<b
     // For step > 0, verify via API that previous step has answers
     const stepIndex = STEPS.indexOf(step);
     if (stepIndex > 0) {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
       const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
       if (!token) return false;
       const prevStepNum = stepIndex; // steps are 0-based in API
-      const res = await fetch(`${API_URL}/api/fivea/answers/${prevStepNum}`, {
+      const res = await fetch(`${API_URL}/fivea/answers/${prevStepNum}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) return false;
@@ -95,7 +95,7 @@ export default function FiveAFlow() {
     // Update the data in context
     const updatedData: FiveAData = { ...fiveAData, [currentStep]: data };
     setFiveAData(updatedData);
-    
+
     // Move to the next step
     const nextStep = getNextStep(currentStep);
     if (nextStep) {
@@ -116,14 +116,14 @@ export default function FiveAFlow() {
       case 'ask':
         return <FiveA_Ask onNext={handleNext} />;
       case 'advise':
-        return <FiveA_Advise 
+        return <FiveA_Advise
           onNext={() => handleNext({})}
-          userData={fiveAData.ask || {}} 
+          userData={fiveAData.ask || {}}
         />;
       case 'assess':
         return <FiveA_Assess onNext={handleNext} />;
       case 'assist':
-        return <FiveA_Assist 
+        return <FiveA_Assist
           onNext={handleNext}
           onComplete={() => {
             handleNext({});
@@ -144,25 +144,23 @@ export default function FiveAFlow() {
     <div className="mb-8">
       <div className="flex justify-between mb-2">
         {STEPS.map((step, index) => (
-          <div 
+          <div
             key={step}
             onClick={() => {
               if (index <= currentStepIndex) {
                 router.push(`/5a?step=${step}`, undefined, { shallow: true });
               }
             }}
-            className={`flex flex-col items-center cursor-pointer ${
-              index <= currentStepIndex ? 'text-[#20B2AA]' : 'text-gray-400'
-            }`}
+            className={`flex flex-col items-center cursor-pointer ${index <= currentStepIndex ? 'text-[#20B2AA]' : 'text-gray-400'
+              }`}
           >
-            <div 
-              className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${
-                index <= currentStepIndex 
-                  ? index === currentStepIndex 
-                    ? 'bg-[#20B2AA] text-white' 
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${index <= currentStepIndex
+                  ? index === currentStepIndex
+                    ? 'bg-[#20B2AA] text-white'
                     : 'bg-[#20B2AA] text-white'
                   : 'bg-gray-200'
-              }`}
+                }`}
               style={{
                 ...(index === STEPS.length - 1 && {
                   border: '2px dotted #9CA3AF'
@@ -175,12 +173,11 @@ export default function FiveAFlow() {
               {step} {index === STEPS.length - 1 && '(Optional)'}
             </span>
             {index < STEPS.length - 1 && (
-              <div 
-                className={`h-1 w-16 -mt-4 ${
-                  index < currentStepIndex 
-                    ? 'bg-[#20B2AA]' 
+              <div
+                className={`h-1 w-16 -mt-4 ${index < currentStepIndex
+                    ? 'bg-[#20B2AA]'
                     : 'bg-gray-200'
-                }`}
+                  }`}
                 style={{
                   ...(index === STEPS.length - 2 && {
                     borderTop: '2px dotted #9CA3AF',

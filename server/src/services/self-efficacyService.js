@@ -40,13 +40,13 @@ export async function getPostSelfEfficacyResponses(userId) {
 // Save user's pre self-efficacy responses
 export async function savePreSelfEfficacyResponses(userId, responses) {
   const client = await getClient();
-  
+
   try {
     await client.query('BEGIN');
-    
+
     // Delete existing responses for this user
     await client.query('DELETE FROM pre_self_efficacy WHERE user_id = $1', [userId]);
-    
+
     // Insert new responses
     for (const response of responses) {
       const { questionId, value } = response;
@@ -55,7 +55,16 @@ export async function savePreSelfEfficacyResponses(userId, responses) {
         VALUES ($1, $2, $3)
       `, [userId, questionId, value]);
     }
-    
+
+
+    // Update profiles join_date when completing pre-self-efficacy
+    // This marks the user's official start of the journey
+    await client.query(`
+      UPDATE profiles 
+      SET join_date = NOW(), updated_at = NOW() 
+      WHERE user_id = $1
+    `, [userId]);
+
     await client.query('COMMIT');
     return true;
   } catch (error) {
@@ -69,13 +78,13 @@ export async function savePreSelfEfficacyResponses(userId, responses) {
 // Save user's post self-efficacy responses
 export async function savePostSelfEfficacyResponses(userId, responses) {
   const client = await getClient();
-  
+
   try {
     await client.query('BEGIN');
-    
+
     // Delete existing responses for this user
     await client.query('DELETE FROM post_self_efficacy WHERE user_id = $1', [userId]);
-    
+
     // Insert new responses
     for (const response of responses) {
       const { questionId, value } = response;
@@ -84,7 +93,7 @@ export async function savePostSelfEfficacyResponses(userId, responses) {
         VALUES ($1, $2, $3)
       `, [userId, questionId, value]);
     }
-    
+
     await client.query('COMMIT');
     return true;
   } catch (error) {
@@ -103,13 +112,13 @@ export async function hasUserCompletedPreSelfEfficacy(userId) {
     JOIN quit_tracker_questions q ON qr.question_id = q.id
     WHERE qr.user_id = $1 AND q.is_active = true
   `, [userId]);
-  
+
   const totalQuestions = await query(`
     SELECT COUNT(*) as total_count
     FROM quit_tracker_questions
     WHERE is_active = true
   `);
-  
+
   return res.rows[0].completed_count === totalQuestions.rows[0].total_count;
 }
 
@@ -121,13 +130,13 @@ export async function hasUserCompletedPostSelfEfficacy(userId) {
     JOIN quit_tracker_questions q ON qr.question_id = q.id
     WHERE qr.user_id = $1 AND q.is_active = true
   `, [userId]);
-  
+
   const totalQuestions = await query(`
     SELECT COUNT(*) as total_count
     FROM quit_tracker_questions
     WHERE is_active = true
   `);
-  
+
   return res.rows[0].completed_count === totalQuestions.rows[0].total_count;
 }
 
@@ -144,6 +153,39 @@ export async function hasUserCompletedQuestionnaire(userId) {
   return hasUserCompletedPreSelfEfficacy(userId);
 }
 
+// Get all active feedback questions
+export async function getFeedbackQuestions() {
+  const res = await query(`
+    SELECT id, question_text, options, display_order
+    FROM quit_tracker_feedback_questions
+    WHERE is_active = true
+    ORDER BY display_order ASC
+  `);
+  return res.rows;
+}
+
+// Save user's feedback responses
+export async function saveUserFeedback(userId, responses) {
+  const res = await query(`
+    INSERT INTO quit_tracker_user_feedback (user_id, responses)
+    VALUES ($1, $2)
+    RETURNING id
+  `, [userId, JSON.stringify(responses)]);
+
+  return res.rows[0];
+}
+
+// Check if user has provided feedback
+export async function hasUserProvidedFeedback(userId) {
+  const res = await query(`
+    SELECT COUNT(*) as completed_count
+    FROM quit_tracker_user_feedback
+    WHERE user_id = $1
+  `, [userId]);
+
+  return parseInt(res.rows[0].completed_count) > 0;
+}
+
 // Get user's quit tracker settings
 export async function getUserSettings(userId) {
   const res = await query(`
@@ -151,14 +193,14 @@ export async function getUserSettings(userId) {
     FROM quit_tracker_settings
     WHERE user_id = $1
   `, [userId]);
-  
+
   if (res.rows.length === 0) {
     // Create default settings
     await query(`
       INSERT INTO quit_tracker_settings (user_id, goal_days, daily_reminder_time, is_tracking_enabled)
       VALUES ($1, 30, '09:00:00', true)
     `, [userId]);
-    
+
     return {
       goal_days: 30,
       daily_reminder_time: '09:00:00',
@@ -167,20 +209,20 @@ export async function getUserSettings(userId) {
       updated_at: new Date()
     };
   }
-  
+
   return res.rows[0];
 }
 
 // Update user's quit tracker settings
 export async function updateUserSettings(userId, settings) {
   const { goalDays, reminderTime, isTrackingEnabled } = settings;
-  
+
   const res = await query(`
     UPDATE quit_tracker_settings
     SET goal_days = $1, daily_reminder_time = $2, is_tracking_enabled = $3, updated_at = NOW()
     WHERE user_id = $4
     RETURNING goal_days, daily_reminder_time, is_tracking_enabled, updated_at
   `, [goalDays, reminderTime, isTrackingEnabled, userId]);
-  
+
   return res.rows[0];
 }

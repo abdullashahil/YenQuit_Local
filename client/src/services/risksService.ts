@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export interface HealthRisk {
   id: number;
@@ -24,7 +24,7 @@ export interface RisksContent {
 
 // Get all risks content for the Risks page
 export async function getRisksContent(): Promise<RisksContent> {
-  const res = await fetch(`${API_URL}/api/risks/content`);
+  const res = await fetch(`${API_URL}/risks/content`);
   if (!res.ok) {
     throw new Error('Failed to fetch risks content');
   }
@@ -33,7 +33,7 @@ export async function getRisksContent(): Promise<RisksContent> {
 
 // Get health risks only
 export async function getHealthRisks(): Promise<HealthRisk[]> {
-  const res = await fetch(`${API_URL}/api/risks/health-risks`);
+  const res = await fetch(`${API_URL}/risks/health-risks`);
   if (!res.ok) {
     throw new Error('Failed to fetch health risks');
   }
@@ -43,7 +43,7 @@ export async function getHealthRisks(): Promise<HealthRisk[]> {
 
 // Get warning banners only
 export async function getWarningBanners(): Promise<WarningBanner[]> {
-  const res = await fetch(`${API_URL}/api/risks/warning-banners`);
+  const res = await fetch(`${API_URL}/risks/warning-banners`);
   if (!res.ok) {
     throw new Error('Failed to fetch warning banners');
   }
@@ -56,7 +56,7 @@ export async function createHealthRisk(riskData: Partial<HealthRisk>): Promise<H
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
 
-  const res = await fetch(`${API_URL}/api/risks/health-risks`, {
+  const res = await fetch(`${API_URL}/risks/health-risks`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -75,7 +75,7 @@ export async function updateHealthRisk(id: number, riskData: Partial<HealthRisk>
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
 
-  const res = await fetch(`${API_URL}/api/risks/health-risks/${id}`, {
+  const res = await fetch(`${API_URL}/risks/health-risks/${id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -94,7 +94,7 @@ export async function deleteHealthRisk(id: number): Promise<{ message: string; h
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
 
-  const res = await fetch(`${API_URL}/api/risks/health-risks/${id}`, {
+  const res = await fetch(`${API_URL}/risks/health-risks/${id}`, {
     method: 'DELETE',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -111,7 +111,7 @@ export async function createWarningBanner(bannerData: Partial<WarningBanner>): P
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
 
-  const res = await fetch(`${API_URL}/api/risks/warning-banners`, {
+  const res = await fetch(`${API_URL}/risks/warning-banners`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -130,7 +130,7 @@ export async function updateWarningBanner(id: number, bannerData: Partial<Warnin
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
 
-  const res = await fetch(`${API_URL}/api/risks/warning-banners/${id}`, {
+  const res = await fetch(`${API_URL}/risks/warning-banners/${id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -149,7 +149,7 @@ export async function deleteWarningBanner(id: number): Promise<{ message: string
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
   if (!token) throw new Error('Unauthorized');
 
-  const res = await fetch(`${API_URL}/api/risks/warning-banners/${id}`, {
+  const res = await fetch(`${API_URL}/risks/warning-banners/${id}`, {
     method: 'DELETE',
     headers: {
       'Authorization': `Bearer ${token}`,
