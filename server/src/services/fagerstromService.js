@@ -98,14 +98,33 @@ export async function getFagerstromQuestionCount(isActiveOnly = true, tobaccoCat
   return parseInt(res.rows[0].count, 10);
 }
 
-export async function getFagerstromUserAnswers(userId) {
-  const res = await query(
-    `SELECT question_id, answer_text, created_at, updated_at
+export async function getFagerstromUserAnswers(userId, sessionId = null) {
+  let queryText, queryParams;
+
+  if (sessionId) {
+    // Get answers for a specific session
+    queryText = `SELECT question_id, answer_text, created_at, updated_at, session_ref
      FROM fagerstrom_user_answers
-     WHERE user_id = $1
-     ORDER BY question_id ASC`,
-    [userId]
-  );
+     WHERE user_id = $1 AND session_ref = $2
+     ORDER BY question_id ASC`;
+    queryParams = [userId, sessionId];
+  } else {
+    // Get answers from the most recent session
+    queryText = `SELECT fua.question_id, fua.answer_text, fua.created_at, fua.updated_at, fua.session_ref
+     FROM fagerstrom_user_answers fua
+     INNER JOIN fagerstrom_sessions fs ON fua.session_ref = fs.id
+     WHERE fua.user_id = $1
+     AND fs.id = (
+       SELECT id FROM fagerstrom_sessions 
+       WHERE user_id = $1 
+       ORDER BY created_at DESC 
+       LIMIT 1
+     )
+     ORDER BY fua.question_id ASC`;
+    queryParams = [userId];
+  }
+
+  const res = await query(queryText, queryParams);
   return res.rows;
 }
 
@@ -113,26 +132,110 @@ export async function saveFagerstromAnswers(userId, answers) {
   const client = await getClient();
   try {
     await client.query('BEGIN');
-    
+
+    // Create a new session for this test
+    const sessionResult = await client.query(
+      `INSERT INTO fagerstrom_sessions (user_id) VALUES ($1) RETURNING id`,
+      [userId]
+    );
+    const sessionId = sessionResult.rows[0].id;
+
+    // Calculate Fagerstrom score based on answers
+    let score = 0;
+
     for (const answer of answers) {
       const { question_id, answer_text } = answer;
-      
-      // Insert or update answer
+
+      // Insert answer linked to the session
       await client.query(
-        `INSERT INTO fagerstrom_user_answers (user_id, question_id, answer_text)
-         VALUES ($1, $2, $3)
-         ON CONFLICT (user_id, question_id) 
-         DO UPDATE SET answer_text = EXCLUDED.answer_text, updated_at = NOW()`,
-        [userId, question_id, answer_text]
+        `INSERT INTO fagerstrom_user_answers (user_id, question_id, answer_text, session_ref)
+         VALUES ($1, $2, $3, $4)`,
+        [userId, question_id, answer_text, sessionId]
       );
+
+      // Calculate score based on standard Fagerstrom scoring
+      // This is a simplified version - adjust based on your actual questions
+      score += calculateAnswerScore(question_id, answer_text);
     }
-    
+
+    // Update the session with the calculated score
+    await client.query(
+      `UPDATE fagerstrom_sessions SET score = $1 WHERE id = $2`,
+      [score, sessionId]
+    );
+
     await client.query('COMMIT');
-    return { success: true };
+    return { success: true, sessionId, score };
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
   } finally {
     client.release();
   }
+}
+
+// Helper function to calculate score for each answer
+function calculateAnswerScore(questionId, answerText) {
+  // Standard Fagerstrom Test scoring
+  // Adjust these mappings based on your actual question IDs and answer options
+  const scoringMap = {
+    1: { // How soon after waking do you smoke?
+      'Within 5 minutes': 3,
+      '6-30 minutes': 2,
+      '31-60 minutes': 1,
+      'After 60 minutes': 0
+    },
+    2: { // Do you find it difficult to refrain from smoking in places where it is forbidden?
+      'Yes': 1,
+      'No': 0
+    },
+    3: { // Which cigarette would you hate most to give up?
+      'The first one in the morning': 1,
+      'Any other': 0
+    },
+    4: { // How many cigarettes per day do you smoke?
+      '10 or less': 0,
+      '11-20': 1,
+      '21-30': 2,
+      '31 or more': 3
+    },
+    5: { // Do you smoke more frequently during the first hours after waking?
+      'Yes': 1,
+      'No': 0
+    },
+    6: { // Do you smoke if you are so ill that you are in bed most of the day?
+      'Yes': 1,
+      'No': 0
+    }
+  };
+
+  const questionScoring = scoringMap[questionId];
+  if (!questionScoring) return 0;
+
+  return questionScoring[answerText] || 0;
+}
+
+// Get all sessions for a user with scores
+export async function getFagerstromSessionHistory(userId) {
+  const res = await query(
+    `SELECT id, score, created_at, updated_at
+     FROM fagerstrom_sessions
+     WHERE user_id = $1
+     ORDER BY created_at DESC`,
+    [userId]
+  );
+  return res.rows;
+}
+
+// Get the latest session with score
+export async function getLatestFagerstromSession(userId) {
+  const res = await query(
+    `SELECT id, score, created_at, updated_at
+     FROM fagerstrom_sessions
+     WHERE user_id = $1
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [userId]
+  );
+  return res.rows[0] || null;
 }

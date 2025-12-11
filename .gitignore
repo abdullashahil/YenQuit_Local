@@ -137,3 +137,4 @@ large-avatar.*
 create-admin.js
 create-admin.sql
 
+server/run-fagerstrom-migration.js

@@ -7,7 +7,9 @@ export interface FagerstromQuestion {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  tobacco_category?: string;
 }
+
 
 export interface PaginatedFagerstromResponse {
   questions: FagerstromQuestion[];
