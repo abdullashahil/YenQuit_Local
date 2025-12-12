@@ -16,8 +16,8 @@ import {
 } from "lucide-react"
 import axios from "axios"
 import ReactMarkdown from "react-markdown"
-import socketService, { OnlineUser } from "../../services/socketService" 
-import { useNotifications } from "../../contexts/NotificationContext" 
+import socketService, { OnlineUser } from "../../services/socketService"
+import { useNotifications } from "../../contexts/NotificationContext"
 
 // Config for API bases
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
@@ -103,7 +103,7 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
   const [error, setError] = useState<string | null>(null)
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null)
   const [editingMessage, setEditingMessage] = useState<ChatMessage | null>(null)
-  const [typingUsers, setTypingUsers] = useState<{id: string, name: string}[]>([])
+  const [typingUsers, setTypingUsers] = useState<{ id: string, name: string }[]>([])
   const [showOnlineUsers, setShowOnlineUsers] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -116,9 +116,13 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
 
 
   const fetchYenaiHistory = useCallback(async () => {
+    // If no user is logged in, we can't fetch personalized history
+    // We could potentialy use a temporary ID or just show empty, 
+    // but here we depend on currentUser.
+    const userId = currentUser?.id || TEST_USER_ID
+
     setIsLoadingHistory(true)
     try {
-      const userId = TEST_USER_ID 
       const response = await axios.get(`${YENAI_API_BASE}/yenquit-chat/history/${userId}`)
       if (response.data?.success && Array.isArray(response.data.history)) {
         const historyMessages: YenaiMessage[] = response.data.history.map((msg: any) => ({
@@ -172,7 +176,7 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
     } finally {
       setIsLoadingHistory(false)
     }
-  }, [])
+  }, [currentUser?.id]) // Depend on currentUser.id
 
   // YenAI: Send message to API
   const handleSendYenaiMessage = async (messageInputValue: string) => {
@@ -204,7 +208,8 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
         content: msg.content,
       }))
 
-      const userId = TEST_USER_ID 
+      // Use the actual user ID if available, otherwise fallback (or fail)
+      const userId = currentUser?.id || TEST_USER_ID
 
       const response = await axios.post(`${YENAI_API_BASE}/yenquit-chat`, {
         message: trimmed,
@@ -243,21 +248,21 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
     async () => {
       const c = community
       if (!c) return
-      
+
       // Additional defensive check - don't fetch if user is not a member
       if (!isYenAI && !c.user_role) {
         console.log('DEBUG: Blocking message fetch for non-member')
         return
       }
-      
+
       if (typeof window === 'undefined') return
-      
+
       const token = localStorage.getItem("accessToken")
       if (!token) {
         setError("Please log in to view messages")
         return
       }
-      
+
       setIsLoading(true)
       try {
         const res = await axios.get(`${API_BASE}/api/chat/${c.id}/messages/latest?limit=50`, {
@@ -284,18 +289,18 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
   const initializeSocket = useCallback(
     (c?: Community) => {
       if (!c) return
-      
+
       // Additional defensive check - don't initialize socket if user is not a member
       if (!isYenAI && !c.user_role) {
         console.log('DEBUG: Blocking socket initialization for non-member')
         return
       }
-      
+
       if (typeof window === 'undefined') return
-      
+
       const token = localStorage.getItem("accessToken")
       const userId = currentUser?.id
-      
+
       if (!token || !userId) {
         console.error("Authentication token or user ID not found")
         setError("Please log in to join the chat")
@@ -313,7 +318,7 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
           console.log('DEBUG: Received new message:', message)
           setMessages((prev) => [...prev, message])
           scrollToBottom()
-          
+
           // Increment unread count if message is not from current user
           if (message.user_id !== currentUser?.id && community && !isYenAI) {
             incrementUnreadCount(community.id)
@@ -335,10 +340,10 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
         socketService.onUserTyping(({ userId: typingUserId }: { userId: string }) => {
           if (typingUserId !== userId) {
             // Look up user from online users or messages to get the name
-            const typingUser = onlineUsers.find(u => u.user_id === typingUserId) || 
-                              messages.find(m => m.user_id === typingUserId)
+            const typingUser = onlineUsers.find(u => u.user_id === typingUserId) ||
+              messages.find(m => m.user_id === typingUserId)
             const userName = typingUser?.full_name || typingUser?.email || 'Someone'
-            
+
             setTypingUsers((prev) => {
               const exists = prev.find(u => u.id === typingUserId)
               if (!exists) {
@@ -382,18 +387,18 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
       return
     }
 
-    fetchMessages(community)
-    
+    fetchMessages()
+
     // Initialize socket connection (only once per user)
     const cleanup = initializeSocket(community)
-    
+
     return cleanup
   }, [community, isYenAI, fetchYenaiHistory, fetchMessages, initializeSocket])
 
   // Separate effect to handle community changes for socket
   useEffect(() => {
     if (!community || isYenAI) return
-    
+
     // Only join/leave community when it changes, don't disconnect completely
     if (socketService.isConnected()) {
       const currentCommunity = socketService.getCurrentCommunity()
@@ -416,8 +421,8 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
     new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
 
   const isOwnMessage = (message: ChatMessage) => {
-  return message.user_id === currentUser?.id
-}
+    return message.user_id === currentUser?.id
+  }
 
   const handleSendSocketMessage = () => {
     const trimmed = messageInput.trim()
@@ -485,8 +490,8 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
       <div className="flex-1 flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <p className="text-gray-500 text-lg mb-4">Please log in to join the chat</p>
-          <button 
-            onClick={() => window.location.href = '/auth'} 
+          <button
+            onClick={() => window.location.href = '/auth'}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             Log In
@@ -503,8 +508,8 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
         <div className="text-center">
           <p className="text-gray-500 text-lg mb-4">You need to join this community to view messages</p>
           <p className="text-gray-400 text-sm mb-4">Go back to the community list and click "Join" to participate</p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className="px-4 py-2 bg-[#20B2AA] text-white rounded-lg hover:bg-[#189a92]"
           >
             Back to Communities
@@ -617,7 +622,7 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
                     className={`px-4 py-2 rounded-lg max-w-xs md:max-w-md lg:max-w-lg ${message.isOwn
                       ? "bg-[#2D9B8F] text-white rounded-br-none"
                       : "bg-gradient-to-r from-[#D4F5ED] to-white text-gray-900 rounded-bl-none border border-[#B2E8D8]"
-                    }`}
+                      }`}
                   >
                     <div className="text-sm break-words prose prose-sm max-w-none">
                       <ReactMarkdown
@@ -720,11 +725,10 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
 
                       {/* Message bubble */}
                       <div
-                        className={`px-4 py-2 rounded-lg ${
-                          isOwnMessage(message) 
-                            ? "bg-[#2D9B8F] text-white rounded-br-none" 
-                            : "bg-gray-100 text-gray-800 rounded-bl-none"
-                        }`}
+                        className={`px-4 py-2 rounded-lg ${isOwnMessage(message)
+                          ? "bg-[#2D9B8F] text-white rounded-br-none"
+                          : "bg-gray-100 text-gray-800 rounded-bl-none"
+                          }`}
                       >
                         {message.reply_to && message.reply_content && (
                           <div className="text-xs opacity-75 mb-1 border-l-2 border-current pl-2">
@@ -781,11 +785,11 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
                       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200"></div>
                     </div>
                     <span>
-                      {typingUsers.length === 1 
+                      {typingUsers.length === 1
                         ? `${typingUsers[0].name} is typing...`
                         : typingUsers.length === 2
-                        ? `${typingUsers[0].name} and ${typingUsers[1].name} are typing...`
-                        : `${typingUsers.slice(0, 2).map(u => u.name).join(', ')} and ${typingUsers.length - 2} others are typing...`
+                          ? `${typingUsers[0].name} and ${typingUsers[1].name} are typing...`
+                          : `${typingUsers.slice(0, 2).map(u => u.name).join(', ')} and ${typingUsers.length - 2} others are typing...`
                       }
                     </span>
                   </div>

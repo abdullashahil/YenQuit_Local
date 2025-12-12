@@ -93,6 +93,8 @@ temp/
 next-env.d.ts
 .vercel/
 
+package-lock.json
+package.json
 client/tsconfig.tsbuildinfo
 # ==============================================================================
 # SECTION 2: CONTENT & DOCUMENTATION (TOGGLE FOR AI CONTEXT)
