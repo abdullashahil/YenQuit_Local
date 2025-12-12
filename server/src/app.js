@@ -2,6 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import path from 'path';
+import { createServer } from 'http';
 import authRoutes from './routes/auth.js';
 import onboardingRoutes from './routes/onboarding.js';
 import fiveaRoutes from './routes/fivea.js';
@@ -19,12 +20,20 @@ import personalRoadblocksRoutes from './routes/personalRoadblocks.js';
 import fiveAAdminRoutes from './routes/fiveAAdmin.js';
 import yenquitChatRoutes from './routes/yenquitChat.js';
 import learningProgressRoutes from './routes/learningProgress.js';
+import communityRoutes from './routes/communityRoutes.js';
+import chatRoutes from './routes/chatRoutes.js';
 import { startChatCleanupJob } from './jobs/chatCleanupJob.js';
+import socketService from './services/socketService.js';
 
 
 dotenv.config();
 
 const app = express();
+const server = createServer(app);
+
+// Initialize Socket.IO
+socketService.initialize(server);
+
 app.use(express.json());
 
 app.use(cors({
@@ -56,6 +65,8 @@ app.use('/api/content', contentRoutes);
 app.use('/api/assist', assistRoutes);
 app.use('/api/yenquit-chat', yenquitChatRoutes);
 app.use('/api/learning-progress', learningProgressRoutes);
+app.use('/api/communities', communityRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Start chat cleanup job
 startChatCleanupJob();
@@ -74,3 +85,4 @@ app.use((err, req, res, next) => {
 });
 
 export default app;
+export { server };
