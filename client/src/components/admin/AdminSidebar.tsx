@@ -9,7 +9,8 @@ import {
   LogOut,
   Menu,
   Shield,
-  Users
+  Users,
+  MessageSquare
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
 import { useState } from "react";
@@ -54,8 +55,9 @@ export function AdminSidebar({ activeTab, setActiveTab, onExitAdmin, onLogout }:
 
   const navItems = [
     { id: "admin-dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/admin", badge: null },
-    // { id: "  user-management", label: "User Management", icon: Users, href: "/admin/users", badge: null },
+    { id: "user-management", label: "User Management", icon: Users, href: "/admin/users", badge: null },
     { id: "content-management", label: "Content Management", icon: FileText, href: "/admin/content", badge: null },
+    { id: "communities", label: "Communities", icon: MessageSquare, href: "/admin/communities", badge: null },
     { id: "system-settings", label: "System Settings", icon: Settings, href: "/admin/settings", badge: null },
   ];
 

@@ -29,6 +29,9 @@ export function AdminLayout({ children, activeTab }: AdminLayoutProps) {
       case "content-management":
         router.push("/admin/content")
         break
+      case "communities":
+        router.push("/admin/communities")
+        break
       case "system-settings":
         router.push("/admin/settings")
         break
@@ -45,6 +48,7 @@ export function AdminLayout({ children, activeTab }: AdminLayoutProps) {
     const path = router.pathname
     if (path.includes("/users")) return "user-management"
     if (path.includes("/content")) return "content-management"
+    if (path.includes("/communities")) return "communities"
     if (path.includes("/settings")) return "system-settings"
     return "user-management"
   })()
