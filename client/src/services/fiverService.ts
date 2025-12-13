@@ -27,7 +27,7 @@ class FiverService {
   // Get all relevance options
   async getRelevanceOptions(): Promise<RelevanceOption[]> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/fiver/relevance-options`);
+      const response = await axios.get(`${API_BASE_URL}/fiver/relevance-options`);
       return response.data.data;
     } catch (error) {
       console.error('Error fetching relevance options:', error);
@@ -38,7 +38,7 @@ class FiverService {
   // Save user relevance selections
   async saveUserRelevanceSelections(selections: UserRelevanceSelection): Promise<void> {
     try {
-      await axios.post(`${API_BASE_URL}/api/fiver/relevance-selections`, selections);
+      await axios.post(`${API_BASE_URL}/fiver/relevance-selections`, selections);
     } catch (error) {
       console.error('Error saving relevance selections:', error);
       throw error;
@@ -48,7 +48,7 @@ class FiverService {
   // Get user relevance selections
   async getUserRelevanceSelections(userId: string): Promise<RelevanceOption[]> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/fiver/relevance-selections/${userId}`);
+      const response = await axios.get(`${API_BASE_URL}/fiver/relevance-selections/${userId}`);
       return response.data.data;
     } catch (error) {
       console.error('Error fetching user relevance selections:', error);
@@ -59,7 +59,7 @@ class FiverService {
   // Get user 5R progress
   async getUser5RProgress(userId: string): Promise<User5RProgress | null> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/fiver/progress/${userId}`);
+      const response = await axios.get(`${API_BASE_URL}/fiver/progress/${userId}`);
       return response.data.data;
     } catch (error) {
       console.error('Error fetching user 5R progress:', error);

@@ -3,8 +3,9 @@ import pool from '../db/index.js';
 class UserModel {
   // Find user by email
   static async findByEmail(email) {
-    const query = 'SELECT id, email, role, status, created_at, updated_at FROM users WHERE email = $1';
-    
+    // Now querying only users table
+    const query = 'SELECT * FROM users WHERE email = $1';
+
     try {
       const result = await pool.query(query, [email]);
       return result.rows[0];
@@ -17,36 +18,36 @@ class UserModel {
   // Get all users with pagination, search, and filters
   static async findAll(page = 1, limit = 10, search = '', role = '', status = '') {
     const offset = (page - 1) * limit;
-    
+
     let whereConditions = [];
     let params = [];
     let paramIndex = 1;
-    
+
     // Build WHERE conditions
     if (search) {
       whereConditions.push(`(
         u.email ILIKE $${paramIndex} OR 
-        p.full_name ILIKE $${paramIndex} OR 
-        p.phone ILIKE $${paramIndex}
+        u.full_name ILIKE $${paramIndex} OR 
+        u.phone ILIKE $${paramIndex}
       )`);
       params.push(`%${search}%`);
       paramIndex++;
     }
-    
+
     if (role && role !== 'all') {
       whereConditions.push(`u.role = $${paramIndex}`);
       params.push(role);
       paramIndex++;
     }
-    
+
     if (status && status !== 'all') {
       whereConditions.push(`u.status = $${paramIndex}`);
       params.push(status);
       paramIndex++;
     }
-    
+
     const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
-    
+
     // Main query
     const query = `
       SELECT 
@@ -56,39 +57,37 @@ class UserModel {
         u.status,
         u.created_at,
         u.updated_at,
-        p.full_name,
-        p.avatar_url,
-        p.bio,
-        p.phone,
-        p.age
+        u.full_name,
+        u.avatar_url,
+        u.bio,
+        u.phone,
+        u.age
       FROM users u
-      LEFT JOIN profiles p ON u.id = p.user_id
       ${whereClause}
       ORDER BY u.created_at DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
-    
+
     params.push(limit, offset);
-    
+
     // Count query
     const countQuery = `
       SELECT COUNT(*) as total
       FROM users u
-      LEFT JOIN profiles p ON u.id = p.user_id
       ${whereClause}
     `;
-    
+
     const countParams = params.slice(0, -2); // Remove limit and offset
-    
+
     try {
       const [usersResult, countResult] = await Promise.all([
         pool.query(query, params),
         pool.query(countQuery, countParams)
       ]);
-      
+
       const total = parseInt(countResult.rows[0].total);
       const totalPages = Math.ceil(total / limit);
-      
+
       return {
         data: usersResult.rows,
         pagination: {
@@ -105,27 +104,15 @@ class UserModel {
       throw error;
     }
   }
-  
+
   // Get user by ID with profile
   static async findById(id) {
     const query = `
-      SELECT 
-        u.id,
-        u.email,
-        u.role,
-        u.status,
-        u.created_at,
-        u.updated_at,
-        p.full_name,
-        p.avatar_url,
-        p.bio,
-        p.phone,
-        p.age
+      SELECT *
       FROM users u
-      LEFT JOIN profiles p ON u.id = p.user_id
       WHERE u.id = $1
     `;
-    
+
     try {
       const result = await pool.query(query, [id]);
       return result.rows[0];
@@ -134,7 +121,7 @@ class UserModel {
       throw error;
     }
   }
-  
+
   // Create new user with profile
   static async create(userData) {
     const {
@@ -151,41 +138,30 @@ class UserModel {
       addiction_level,
       join_date
     } = userData;
-    
+
     const client = await pool.connect();
-    
+
     try {
       await client.query('BEGIN');
-      
-      // Hash password (simple implementation - in production use bcrypt)
-      const password_hash = password; // TODO: Implement proper password hashing
-      
+
+      const password_hash = password; // TODO: Implement proper password hashing if not already done in controller
+
       // Insert user
       const userQuery = `
-        INSERT INTO users (email, password_hash, role, status)
-        VALUES ($1, $2, $3, $4)
-        RETURNING id, email, role, status, created_at, updated_at
-      `;
-      const userResult = await client.query(userQuery, [email, password_hash, role, status]);
-      const user = userResult.rows[0];
-      
-      // Insert profile
-      const profileQuery = `
-        INSERT INTO profiles (user_id, name, avatar_url, bio, phone, age, fagerstrom_score, addiction_level, join_date)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        INSERT INTO users (
+            email, password_hash, role, status, full_name, avatar_url, bio, phone, age, fagerstrom_score, addiction_level, join_date
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *
       `;
-      const profileResult = await client.query(profileQuery, [
-        user.id, name, avatar_url, bio, phone, age, fagerstrom_score, addiction_level, join_date
+      const userResult = await client.query(userQuery, [
+        email, password_hash, role, status, name, avatar_url, bio, phone, age, fagerstrom_score, addiction_level, join_date
       ]);
-      
+      const user = userResult.rows[0];
+
       await client.query('COMMIT');
-      
-      // Return combined user + profile data
-      return {
-        ...user,
-        ...profileResult.rows[0]
-      };
+
+      return user;
     } catch (error) {
       await client.query('ROLLBACK');
       console.error('Error creating user:', error);
@@ -194,173 +170,69 @@ class UserModel {
       client.release();
     }
   }
-  
-  // Update user and profile
+
+  // Update user and profile (Unified)
   static async update(id, userData) {
-    const {
-      email,
-      role,
-      status,
-      name,
-      avatar_url,
-      bio,
-      phone,
-      age,
-      fagerstrom_score,
-      addiction_level,
-      join_date
-    } = userData;
-    
     const client = await pool.connect();
-    
+
     try {
-      await client.query('BEGIN');
-      
-      // Update user if user fields provided
-      if (email || role !== undefined || status !== undefined) {
-        const userFields = [];
-        const userValues = [];
-        let userIndex = 1;
-        
-        if (email) {
-          userFields.push(`email = $${userIndex}`);
-          userValues.push(email);
-          userIndex++;
-        }
-        
-        if (role !== undefined) {
-          userFields.push(`role = $${userIndex}`);
-          userValues.push(role);
-          userIndex++;
-        }
-        
-        if (status !== undefined) {
-          userFields.push(`status = $${userIndex}`);
-          userValues.push(status);
-          userIndex++;
-        }
-        
-        if (userFields.length > 0) {
-          userFields.push('updated_at = NOW()');
-          userValues.push(id);
-          
-          const userQuery = `
-            UPDATE users 
-            SET ${userFields.join(', ')}
-            WHERE id = $${userIndex}
-            RETURNING id, email, role, status, created_at, updated_at
-          `;
-          await client.query(userQuery, userValues);
+      const fields = [];
+      const values = [];
+      let idx = 1;
+
+      const mappings = {
+        email: 'email',
+        role: 'role',
+        status: 'status',
+        full_name: 'full_name',
+        name: 'full_name', // alias
+        avatar_url: 'avatar_url',
+        bio: 'bio',
+        phone: 'phone',
+        age: 'age',
+        fagerstrom_score: 'fagerstrom_score',
+        addiction_level: 'addiction_level',
+        join_date: 'join_date',
+        gender: 'gender',
+        tobacco_type: 'tobacco_type'
+      };
+
+      for (const [key, val] of Object.entries(userData)) {
+        if (mappings[key] && val !== undefined) {
+          fields.push(`${mappings[key]} = $${idx++}`);
+          values.push(val);
         }
       }
-      
-      // Update profile if profile fields provided
-      if (name || avatar_url || bio !== undefined || phone || age !== undefined || 
-          fagerstrom_score !== undefined || addiction_level !== undefined || join_date !== undefined) {
-        const profileFields = [];
-        const profileValues = [];
-        let profileIndex = 1;
-        
-        if (name !== undefined) {
-          profileFields.push(`name = $${profileIndex}`);
-          profileValues.push(name);
-          profileIndex++;
-        }
-        
-        if (avatar_url !== undefined) {
-          profileFields.push(`avatar_url = $${profileIndex}`);
-          profileValues.push(avatar_url);
-          profileIndex++;
-        }
-        
-        if (bio !== undefined) {
-          profileFields.push(`bio = $${profileIndex}`);
-          profileValues.push(bio);
-          profileIndex++;
-        }
-        
-        if (phone !== undefined) {
-          profileFields.push(`phone = $${profileIndex}`);
-          profileValues.push(phone);
-          profileIndex++;
-        }
-        
-        if (age !== undefined) {
-          profileFields.push(`age = $${profileIndex}`);
-          profileValues.push(age);
-          profileIndex++;
-        }
-        
-        if (fagerstrom_score !== undefined) {
-          profileFields.push(`fagerstrom_score = $${profileIndex}`);
-          profileValues.push(fagerstrom_score);
-          profileIndex++;
-        }
-        
-        if (addiction_level !== undefined) {
-          profileFields.push(`addiction_level = $${profileIndex}`);
-          profileValues.push(addiction_level);
-          profileIndex++;
-        }
-        
-        if (join_date !== undefined) {
-          profileFields.push(`join_date = $${profileIndex}`);
-          profileValues.push(join_date);
-          profileIndex++;
-        }
-        
-        if (profileFields.length > 0) {
-          profileFields.push('updated_at = NOW()');
-          profileValues.push(id);
-          
-          const profileQuery = `
-            UPDATE profiles 
-            SET ${profileFields.join(', ')}
-            WHERE user_id = $${profileIndex}::uuid
-            RETURNING *
-          `;
-          await client.query(profileQuery, profileValues);
-        }
-      }
-      
-      await client.query('COMMIT');
-      
-      // Return updated user data
-      return await this.findById(id);
+
+      if (fields.length === 0) return await this.findById(id);
+
+      fields.push(`updated_at = NOW()`);
+      values.push(id);
+
+      const userQuery = `
+        UPDATE users 
+        SET ${fields.join(', ')}
+        WHERE id = $${idx}
+        RETURNING *
+      `;
+
+      const res = await client.query(userQuery, values);
+      return res.rows[0];
+
     } catch (error) {
-      await client.query('ROLLBACK');
       console.error('Error updating user:', error);
       throw error;
     } finally {
       client.release();
     }
   }
-  
+
   // Delete user (hard delete)
   static async delete(id) {
-    const client = await pool.connect();
-    
-    try {
-      await client.query('BEGIN');
-      
-      // Delete profile first (due to foreign key constraint)
-      await client.query('DELETE FROM profiles WHERE user_id = $1::uuid', [id]);
-      
-      // Delete user
-      const result = await client.query('DELETE FROM users WHERE id = $1 RETURNING *', [id]);
-      
-      await client.query('COMMIT');
-      
-      return result.rows[0];
-    } catch (error) {
-      await client.query('ROLLBACK');
-      console.error('Error deleting user:', error);
-      throw error;
-    } finally {
-      client.release();
-    }
+    const res = await pool.query('DELETE FROM users WHERE id = $1 RETURNING *', [id]);
+    return res.rows[0];
   }
-  
+
   // Get user statistics
   static async getStats() {
     const queries = [
@@ -377,10 +249,10 @@ class UserModel {
         WHERE created_at >= NOW() - INTERVAL '30 days'
       `)
     ];
-    
+
     try {
       const [totalResult, roleResult, statusResult, recentResult] = await Promise.all(queries);
-      
+
       return {
         total: parseInt(totalResult.rows[0].total),
         byRole: roleResult.rows,
@@ -393,161 +265,23 @@ class UserModel {
     }
   }
 
-  // Update user profile
+  // Update user profile (Legacy wrapper for update)
   static async updateProfile(userId, profileData) {
-    const {
-      full_name,
-      first_name,
-      last_name,
-      phone,
-      age,
-      gender,
-      tobacco_type,
-      avatar_url,
-      bio,
-      fagerstrom_score,
-      addiction_level,
-      join_date
-    } = profileData;
-
-    // Check if profile exists
-    const checkQuery = 'SELECT id FROM profiles WHERE user_id = $1::uuid';
-    const checkResult = await pool.query(checkQuery, [userId]);
-    
-    if (checkResult.rows.length === 0) {
-      // Create profile if it doesn't exist
-      const createQuery = `
-        INSERT INTO profiles (
-          user_id, full_name, first_name, last_name, phone, age, gender,
-          tobacco_type, avatar_url, bio, fagerstrom_score, addiction_level, join_date
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-        RETURNING *
-      `;
-      
-      const createParams = [
-        userId, full_name, first_name, last_name, phone, age, gender,
-        tobacco_type, avatar_url, bio, fagerstrom_score, addiction_level, join_date
-      ].filter(param => param !== undefined);
-      
-      const result = await pool.query(createQuery, createParams);
-      return result.rows[0];
-    } else {
-      // Update existing profile
-      const updateFields = [];
-      const updateParams = [userId];
-      let paramIndex = 2;
-      
-      if (full_name !== undefined) {
-        updateFields.push(`full_name = $${paramIndex}`);
-        updateParams.push(full_name);
-        paramIndex++;
-      }
-      if (first_name !== undefined) {
-        updateFields.push(`first_name = $${paramIndex}`);
-        updateParams.push(first_name);
-        paramIndex++;
-      }
-      if (last_name !== undefined) {
-        updateFields.push(`last_name = $${paramIndex}`);
-        updateParams.push(last_name);
-        paramIndex++;
-      }
-      if (phone !== undefined) {
-        updateFields.push(`phone = $${paramIndex}`);
-        updateParams.push(phone);
-        paramIndex++;
-      }
-      if (age !== undefined) {
-        updateFields.push(`age = $${paramIndex}`);
-        updateParams.push(age);
-        paramIndex++;
-      }
-      if (gender !== undefined) {
-        updateFields.push(`gender = $${paramIndex}`);
-        updateParams.push(gender);
-        paramIndex++;
-      }
-      if (tobacco_type !== undefined) {
-        updateFields.push(`tobacco_type = $${paramIndex}`);
-        updateParams.push(tobacco_type);
-        paramIndex++;
-      }
-      if (avatar_url !== undefined) {
-        updateFields.push(`avatar_url = $${paramIndex}`);
-        updateParams.push(avatar_url);
-        paramIndex++;
-      }
-      if (bio !== undefined) {
-        updateFields.push(`bio = $${paramIndex}`);
-        updateParams.push(bio);
-        paramIndex++;
-      }
-      if (fagerstrom_score !== undefined) {
-        updateFields.push(`fagerstrom_score = $${paramIndex}`);
-        updateParams.push(fagerstrom_score);
-        paramIndex++;
-      }
-      if (addiction_level !== undefined) {
-        updateFields.push(`addiction_level = $${paramIndex}`);
-        updateParams.push(addiction_level);
-        paramIndex++;
-      }
-      if (join_date !== undefined) {
-        updateFields.push(`join_date = $${paramIndex}`);
-        updateParams.push(join_date);
-        paramIndex++;
-      }
-      
-      if (updateFields.length === 0) return null;
-      
-      updateFields.push('updated_at = NOW()');
-      
-      const updateQuery = `
-        UPDATE profiles 
-        SET ${updateFields.join(', ')}
-        WHERE user_id = $1::uuid
-        RETURNING *
-      `;
-      
-      const result = await pool.query(updateQuery, updateParams);
-      return result.rows[0];
-    }
+    return this.update(userId, profileData);
   }
 
-  // Get profile by user ID (for fiveaController compatibility)
+  // Get profile by user ID (Legacy wrapper for findById)
   static async getProfileByUserId(userId) {
-    const query = 'SELECT * FROM profiles WHERE user_id = $1::uuid';
-    
-    try {
-      const result = await pool.query(query, [userId]);
-      return result.rows[0];
-    } catch (error) {
-      console.error('Error getting profile by user ID:', error);
-      throw error;
-    }
+    return this.findById(userId);
   }
 
   // Find user by ID with password (for password change)
   static async findByIdWithPassword(id) {
     const query = `
-      SELECT 
-        u.id,
-        u.email,
-        u.password_hash,
-        u.role,
-        u.status,
-        u.created_at,
-        u.updated_at,
-        p.full_name,
-        p.avatar_url,
-        p.bio,
-        p.phone,
-        p.age
+      SELECT *
       FROM users u
-      LEFT JOIN profiles p ON u.id = p.user_id
       WHERE u.id = $1
     `;
-    
     try {
       const result = await pool.query(query, [id]);
       return result.rows[0];
@@ -565,7 +299,6 @@ class UserModel {
       WHERE id = $1 
       RETURNING id, email, role, status, updated_at
     `;
-    
     try {
       const result = await pool.query(query, [userId, hashedPassword]);
       return result.rows[0];
@@ -575,26 +308,14 @@ class UserModel {
     }
   }
 
-  // Role Management Methods
-  
   // Get all admins
   static async getAllAdmins() {
     const query = `
-      SELECT 
-        u.id,
-        u.email,
-        u.role,
-        u.status,
-        u.created_at,
-        u.updated_at,
-        p.full_name,
-        p.avatar_url
+      SELECT *
       FROM users u
-      LEFT JOIN profiles p ON u.id = p.user_id
       WHERE u.role = 'admin'
       ORDER BY u.created_at DESC
     `;
-    
     try {
       const result = await pool.query(query);
       return result.rows;
@@ -612,7 +333,6 @@ class UserModel {
       WHERE id = $1 AND role = 'user'
       RETURNING id, email, role, status, updated_at
     `;
-    
     try {
       const result = await pool.query(query, [userId]);
       return result.rows[0];
@@ -630,7 +350,6 @@ class UserModel {
       WHERE id = $1 AND role = 'admin'
       RETURNING id, email, role, status, updated_at
     `;
-    
     try {
       const result = await pool.query(query, [userId]);
       return result.rows[0];
@@ -643,99 +362,17 @@ class UserModel {
   // Get users for promotion (non-admin users)
   static async getNonAdminUsers() {
     const query = `
-      SELECT 
-        u.id,
-        u.email,
-        u.role,
-        u.status,
-        u.created_at,
-        u.updated_at,
-        p.full_name,
-        p.avatar_url
+      SELECT *
       FROM users u
-      LEFT JOIN profiles p ON u.id = p.user_id
       WHERE u.role = 'user'
       ORDER BY u.created_at DESC
     `;
-    
     try {
       const result = await pool.query(query);
       return result.rows;
     } catch (error) {
       console.error('Error fetching non-admin users:', error);
       throw error;
-    }
-  }
-
-  // Update user basic info (for admin profile)
-  static async update(userId, updateData) {
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-      
-      // Update users table
-      const userFields = [];
-      const userValues = [];
-      let paramIndex = 1;
-
-      if (updateData.email !== undefined) {
-        userFields.push(`email = $${paramIndex}`);
-        userValues.push(updateData.email);
-        paramIndex++;
-      }
-      
-      if (updateData.role !== undefined) {
-        userFields.push(`role = $${paramIndex}`);
-        userValues.push(updateData.role);
-        paramIndex++;
-      }
-      
-      if (updateData.status !== undefined) {
-        userFields.push(`status = $${paramIndex}`);
-        userValues.push(updateData.status);
-        paramIndex++;
-      }
-      
-      if (userFields.length > 0) {
-        userFields.push('updated_at = NOW()');
-        userValues.push(userId);
-        
-        const userQuery = `
-          UPDATE users 
-          SET ${userFields.join(', ')}
-          WHERE id = $${paramIndex}
-          RETURNING id, email, role, status, created_at, updated_at
-        `;
-        
-        await client.query(userQuery, userValues);
-      }
-      
-      // Update profiles table if full_name is provided
-      if (updateData.full_name !== undefined) {
-        const profileQuery = `
-          INSERT INTO profiles (user_id, full_name, updated_at)
-          VALUES ($1, $2, NOW())
-          ON CONFLICT (user_id) 
-          DO UPDATE SET 
-            full_name = $2,
-            updated_at = NOW()
-          RETURNING user_id, full_name
-        `;
-        
-        await client.query(profileQuery, [userId, updateData.full_name]);
-      }
-      
-      await client.query('COMMIT');
-      
-      // Return updated user data
-      const result = await this.findById(userId);
-      return result;
-    } catch (error) {
-      await client.query('ROLLBACK');
-      console.error('Error updating user:', error);
-      throw error;
-    } finally {
-      client.release();
     }
   }
 }

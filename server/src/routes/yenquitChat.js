@@ -186,6 +186,8 @@ router.post('/', async (req, res) => {
   try {
     const { message, history = [], userState = {}, summary, userId, skipStorage = false } = req.body;
 
+    console.log(`[YenAI] Received chat request for user: ${userId}`);
+
     // Validate request
     if (!message || typeof message !== 'string') {
       return res.status(400).json({
@@ -239,7 +241,7 @@ router.post('/', async (req, res) => {
     const response = await axios.post(
       'https://openrouter.ai/api/v1/chat/completions',
       {
-        model: 'meta-llama/llama-3.1-8b-instruct',
+        model: 'meta-llama/llama-3.2-3b-instruct:free',
         messages,
         max_tokens: 1000,
         temperature: 0.7,
@@ -306,21 +308,57 @@ router.post('/', async (req, res) => {
 
   } catch (error) {
     console.error('YenQuit Chat API Error:', error);
-    
-    // Handle different error types
+
+    const status = error.response ? Number(error.response.status) : null;
+    console.log('OpenRouter API Error Status:', status);
+
+    // FALLBACK: If AI service fails (401, 402, 429, 5xx), return a mock response to keep the app usable
+    // This allows the app to function in "Offline/Demo Mode" if the API key is invalid or credits are exhausted
+    if (status && [400, 401, 402, 403, 429, 500, 502, 503, 504].includes(status)) {
+      console.log('Falling back to Offline/Demo Mode due to API error:', status);
+
+      const mockReply = "I apologize, but I'm currently having trouble connecting to my AI brain (Service Error " + status + "). \n\nHowever, I'm still here to support you! \n\nINTENT: faq\nSUMMARY: System is in offline mode.";
+
+      // Clean up the mock reply similar to the real one
+      const lines = mockReply.split('\n');
+      let detectedIntent = 'faq';
+      let updatedSummary = null;
+      const contentLines = [];
+
+      for (const line of lines) {
+        if (line.startsWith('INTENT:')) {
+          detectedIntent = line.replace('INTENT:', '').trim();
+        } else if (line.startsWith('SUMMARY:')) {
+          updatedSummary = line.replace('SUMMARY:', '').trim() || null;
+        } else {
+          contentLines.push(line);
+        }
+      }
+
+      return res.json({
+        reply: contentLines.join('\n').trim(),
+        intent: detectedIntent,
+        summary: updatedSummary,
+        timestamp: new Date().toISOString(),
+        isFallback: true
+      });
+    }
+
+    // Handle other error types
     if (error.response) {
-      // OpenRouter API error
+      // OpenRouter API error (that wasn't handled by fallback)
       return res.status(error.response.status).json({
         error: 'AI service error',
         details: error.response.data?.error?.message || 'Unknown AI service error'
       });
     } else if (error.request) {
-      // Network error
+      // Network error (no response received)
+      console.error('No response received from AI service');
       return res.status(503).json({
-        error: 'AI service unavailable'
+        error: 'AI service unavailable - Network Error'
       });
     } else {
-      // Other error
+      // Other error in setup
       return res.status(500).json({
         error: 'Internal server error',
         details: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -333,7 +371,7 @@ router.post('/', async (req, res) => {
 router.get('/history/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    
+
     if (!userId) {
       return res.status(400).json({
         error: 'User ID is required'
@@ -341,7 +379,7 @@ router.get('/history/:userId', async (req, res) => {
     }
 
     const history = await fetchChatHistory(userId);
-    
+
     res.json({
       success: true,
       history,

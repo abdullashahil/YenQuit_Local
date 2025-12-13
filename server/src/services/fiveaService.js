@@ -1,64 +1,99 @@
 import { query, getClient } from '../db/index.js';
 
+// Helper to map DB row to Service object format
+const mapFiveAQuestion = (row) => ({
+  id: row.id,
+  step: row.metadata?.step,
+  question_text: row.question_text,
+  options: row.options,
+  is_active: row.is_active,
+  created_at: row.created_at,
+  updated_at: row.updated_at,
+  tobacco_category: row.metadata?.tobacco_category || 'smoked'
+});
+
+const mapAdvice = (row) => ({
+  id: row.id,
+  severity_level: row.metadata?.severity_level,
+  video_url: row.metadata?.video_url,
+  why_quitting_quote: row.metadata?.why_quitting_quote || row.description,
+  ai_message_template: row.metadata?.ai_message_template
+});
+
 export async function getQuestionsByStep(step, tobaccoCategory) {
   const category = tobaccoCategory || 'smoked';
 
-  // For 'assess' step, show questions to all users regardless of tobacco category
-  const whereClause = step === 'assess'
-    ? `WHERE step = $1 AND is_active = TRUE`
-    : `WHERE step = $1 AND is_active = TRUE AND tobacco_category = $2`;
+  const whereParts = ["category = 'fivea'", "is_active = TRUE", "metadata->>'step' = $1"];
+  const params = [step];
+  let idx = 2;
 
-  const params = step === 'assess' ? [step] : [step, category];
+  // 'assess' step is common for all
+  if (step !== 'assess') {
+    whereParts.push(`metadata->>'tobacco_category' = $${idx}`);
+    params.push(category);
+  }
 
-  const result = await query(
-    `SELECT id, step, question_text, options
-     FROM fivea_questions
-     ${whereClause}
+  const res = await query(
+    `SELECT id, question_text, options, is_active, created_at, updated_at, metadata
+     FROM assessment_questions
+     WHERE ${whereParts.join(' AND ')}
      ORDER BY id`,
     params
   );
 
-  return result.rows;
+  return res.rows.map(mapFiveAQuestion);
 }
 
 export async function getAllQuestions() {
   const res = await query(
-    'SELECT id, step, question_text, options, is_active, created_at, updated_at FROM fivea_questions ORDER BY step, id ASC'
+    "SELECT id, question_text, options, is_active, created_at, updated_at, metadata FROM assessment_questions WHERE category = 'fivea' ORDER BY metadata->>'step', id ASC"
   );
-  return res.rows;
+  return res.rows.map(mapFiveAQuestion);
 }
 
 export async function createQuestion({ step, question_text, options }) {
   const res = await query(
-    'INSERT INTO fivea_questions (step, question_text, options) VALUES ($1, $2, $3) RETURNING id, step, question_text, options, is_active, created_at, updated_at',
-    [step, question_text, options]
+    `INSERT INTO assessment_questions (category, question_text, options, metadata) 
+     VALUES ('fivea', $1, $2, $3) 
+     RETURNING id, question_text, options, is_active, created_at, updated_at, metadata`,
+    [question_text, JSON.stringify(options), JSON.stringify({ step, tobacco_category: 'smoked' })]
   );
-  return res.rows[0];
+  return mapFiveAQuestion(res.rows[0]);
 }
 
 export async function updateQuestion(id, { step, question_text, options, is_active }) {
   const fields = [];
   const values = [];
   let idx = 1;
-  if (step !== undefined) { fields.push(`step = $${idx++}`); values.push(step); }
+
+  const currentRes = await query("SELECT metadata FROM assessment_questions WHERE id = $1", [id]);
+  const currentMeta = currentRes.rows[0]?.metadata || {};
+
+  if (step !== undefined) {
+    currentMeta.step = step;
+    fields.push(`metadata = $${idx++}`); values.push(JSON.stringify(currentMeta));
+  }
+
   if (question_text !== undefined) { fields.push(`question_text = $${idx++}`); values.push(question_text); }
-  if (options !== undefined) { fields.push(`options = $${idx++}`); values.push(options); }
+  if (options !== undefined) { fields.push(`options = $${idx++}`); values.push(JSON.stringify(options)); }
   if (is_active !== undefined) { fields.push(`is_active = $${idx++}`); values.push(is_active); }
+
   fields.push(`updated_at = NOW()`);
   values.push(id);
-  const sql = `UPDATE fivea_questions SET ${fields.join(', ')} WHERE id = $${idx} RETURNING id, step, question_text, options, is_active, created_at, updated_at`;
+
+  const sql = `UPDATE assessment_questions SET ${fields.join(', ')} WHERE id = $${idx} AND category = 'fivea' RETURNING id, question_text, options, is_active, created_at, updated_at, metadata`;
   const res = await query(sql, values);
-  return res.rows[0];
+  return res.rows[0] ? mapFiveAQuestion(res.rows[0]) : null;
 }
 
 export async function deleteQuestion(id) {
-  const res = await query('DELETE FROM fivea_questions WHERE id = $1 RETURNING id', [id]);
+  const res = await query("DELETE FROM assessment_questions WHERE id = $1 AND category = 'fivea' RETURNING id", [id]);
   return res.rows[0];
 }
 
 export async function softDeleteQuestion(id) {
   const res = await query(
-    'UPDATE fivea_questions SET is_active = FALSE, updated_at = NOW() WHERE id = $1 RETURNING id, is_active, updated_at',
+    "UPDATE assessment_questions SET is_active = FALSE, updated_at = NOW() WHERE id = $1 AND category = 'fivea' RETURNING id, is_active, updated_at",
     [id]
   );
   return res.rows[0];
@@ -66,14 +101,14 @@ export async function softDeleteQuestion(id) {
 
 export async function getQuestionById(id) {
   const res = await query(
-    'SELECT id, step, question_text, options, is_active, created_at, updated_at FROM fivea_questions WHERE id = $1',
+    "SELECT id, question_text, options, is_active, created_at, updated_at, metadata FROM assessment_questions WHERE id = $1 AND category = 'fivea'",
     [id]
   );
-  return res.rows[0];
+  return res.rows[0] ? mapFiveAQuestion(res.rows[0]) : null;
 }
 
+// User Answers
 export async function saveUserAnswers(userId, answers) {
-  // Ensure userId is a valid UUID string
   if (!userId || typeof userId !== 'string') {
     throw new Error('Invalid userId: must be a UUID string');
   }
@@ -83,10 +118,18 @@ export async function saveUserAnswers(userId, answers) {
     await client.query('BEGIN');
     for (const { question_id, answer } of answers) {
       await client.query(
-        `INSERT INTO fivea_user_answers (user_id, question_id, answer_text) VALUES ($1::uuid, $2, $3)
-         ON CONFLICT (user_id, question_id) DO UPDATE SET answer_text = EXCLUDED.answer_text, updated_at = NOW()
-         RETURNING id, user_id, question_id, answer_text, created_at, updated_at`,
-        [userId, question_id, answer]
+        `INSERT INTO user_assessment_responses (user_id, question_id, response_data, created_at, updated_at)
+         VALUES ($1::uuid, $2, $3, NOW(), NOW())
+         ON CONFLICT (user_id, question_id, assessment_context) 
+         DO UPDATE SET response_data = EXCLUDED.response_data, updated_at = NOW()`,
+        // Note: assessment_context defaults to 'default'. 
+        // For general 5A, we probably want 'default' or a specific tag. 
+        // Assuming 'default' matches the constraint in fix-se-constraint.js for unique key if not specified.
+        // Wait, the constraint is (user_id, question_id, assessment_context).
+        // If we don't supply it, it uses default.
+        // In ask step, we might re-answer questions.
+        // Let's rely on default 'default' context for standard assessment answers.
+        [userId, question_id, JSON.stringify(answer)]
       );
     }
     await client.query('COMMIT');
@@ -99,16 +142,15 @@ export async function saveUserAnswers(userId, answers) {
 }
 
 export async function getUserAnswers(userId, step) {
-  // Ensure userId is a valid UUID string
   if (!userId || typeof userId !== 'string') {
     throw new Error('Invalid userId: must be a UUID string');
   }
 
   const res = await query(
-    `SELECT a.id, a.question_id, a.answer_text, a.created_at, a.updated_at, q.step, q.question_text
-       FROM fivea_user_answers a
-       JOIN fivea_questions q ON a.question_id = q.id
-       WHERE a.user_id = $1::uuid AND q.step = $2
+    `SELECT uar.id, uar.question_id, uar.response_data as answer_text, uar.created_at, uar.updated_at, q.metadata->>'step' as step, q.question_text
+       FROM user_assessment_responses uar
+       JOIN assessment_questions q ON uar.question_id = q.id
+       WHERE uar.user_id = $1::uuid AND q.metadata->>'step' = $2
        ORDER BY q.id ASC`,
     [userId, step]
   );
@@ -116,17 +158,16 @@ export async function getUserAnswers(userId, step) {
 }
 
 export async function getAllUserAnswersForUser(userId) {
-  // Ensure userId is a valid UUID string
   if (!userId || typeof userId !== 'string') {
     throw new Error('Invalid userId: must be a UUID string');
   }
 
   const res = await query(
-    `SELECT a.id, a.question_id, a.answer_text, a.created_at, a.updated_at, q.step, q.question_text
-       FROM fivea_user_answers a
-       JOIN fivea_questions q ON a.question_id = q.id
-       WHERE a.user_id = $1::uuid
-       ORDER BY q.step, q.id ASC`,
+    `SELECT uar.id, uar.question_id, uar.response_data as answer_text, uar.created_at, uar.updated_at, q.metadata->>'step' as step, q.question_text
+       FROM user_assessment_responses uar
+       JOIN assessment_questions q ON uar.question_id = q.id
+       WHERE uar.user_id = $1::uuid AND q.category = 'fivea'
+       ORDER BY q.metadata->>'step', q.id ASC`,
     [userId]
   );
   return res.rows;
@@ -134,35 +175,42 @@ export async function getAllUserAnswersForUser(userId) {
 
 export async function getAllUserAnswers() {
   const res = await query(
-    `SELECT a.id, a.user_id, a.question_id, a.answer_text, a.created_at, a.updated_at, q.step, q.question_text
-       FROM fivea_user_answers a
-       JOIN fivea_questions q ON a.question_id = q.id
-       ORDER BY a.user_id, q.step, q.id`
+    `SELECT uar.id, uar.user_id, uar.question_id, uar.response_data as answer_text, uar.created_at, uar.updated_at, q.metadata ->> 'step' as step, q.question_text
+       FROM user_assessment_responses uar
+       JOIN assessment_questions q ON uar.question_id = q.id
+       WHERE q.category = 'fivea'
+       ORDER BY uar.user_id, q.metadata ->> 'step', q.id`
   );
   return res.rows;
 }
 
+// Updated Ask Logic (Severity Calculation)
 export async function saveAskAnswers(userId, answers) {
   const client = await getClient();
   try {
     await client.query('BEGIN');
-    // Save each answer
     for (const [questionId, answerText] of Object.entries(answers)) {
       await client.query(
-        `INSERT INTO fivea_user_answers (user_id, question_id, answer_text) VALUES ($1, $2, $3)
-         ON CONFLICT (user_id, question_id) DO UPDATE SET answer_text = EXCLUDED.answer_text, updated_at = NOW()
-         RETURNING id, user_id, question_id, answer_text, created_at, updated_at`,
-        [userId, Number(questionId), answerText]
+        `INSERT INTO user_assessment_responses(user_id, question_id, response_data, created_at, updated_at) 
+         VALUES($1, $2, $3, NOW(), NOW())
+         ON CONFLICT(user_id, question_id, assessment_context) 
+         DO UPDATE SET response_data = EXCLUDED.response_data, updated_at = NOW()`,
+        [userId, Number(questionId), JSON.stringify(answerText)]
       );
     }
-    // Calculate severity
+
+    // Save Severity Assessment to consolidated history
     const severity = calculateSeverity(answers);
-    // Store severity
+
+    // Insert into fivea_history with stage='assess'
+    // This replaces fivea_severity_assessment
     await client.query(
-      `INSERT INTO fivea_severity_assessment (user_id, severity_level, score) VALUES ($1::uuid, $2, $3)
-       ON CONFLICT (user_id) DO UPDATE SET severity_level = EXCLUDED.severity_level, score = EXCLUDED.score, created_at = NOW()`,
-      [userId, severity.level, severity.score]
+      `INSERT INTO fivea_history(user_id, stage, history_data, created_at)
+       VALUES($1, 'assess', $2, NOW())
+       RETURNING id`,
+      [userId, JSON.stringify({ severity_level: severity.level, score: severity.score })]
     );
+
     await client.query('COMMIT');
     return severity;
   } catch (err) {
@@ -187,69 +235,96 @@ function calculateSeverity(answers) {
   return { level, score };
 }
 
+// Updated to use fivea_history
 export async function getSeverityForUser(userId) {
-  // Ensure userId is a valid UUID string
   if (!userId || typeof userId !== 'string') {
     throw new Error('Invalid userId: must be a UUID string');
   }
-
-  const res = await query('SELECT severity_level, score, created_at FROM fivea_severity_assessment WHERE user_id = $1::uuid', [userId]);
+  // Get latest assess history
+  const res = await query(
+    `SELECT history_data ->> 'severity_level' as severity_level,
+    (history_data ->> 'score'):: int as score,
+    created_at 
+       FROM fivea_history 
+       WHERE user_id = $1:: uuid AND stage = 'assess' 
+       ORDER BY created_at DESC 
+       LIMIT 1`,
+    [userId]
+  );
   return res.rows[0];
 }
 
 export async function getAdviseContent(severityLevel) {
   const res = await query(
-    'SELECT id, severity_level, video_url, why_quitting_quote, ai_message_template FROM advise_content_library WHERE severity_level = $1 LIMIT 1',
+    `SELECT id, title, description, metadata 
+     FROM app_resources 
+     WHERE type = 'advice' AND metadata ->> 'severity_level' = $1 
+     LIMIT 1`,
     [severityLevel]
   );
-  return res.rows[0];
+  return res.rows[0] ? mapAdvice(res.rows[0]) : null;
 }
 
 export async function createAdminQuestion({ step, question_text, options, tobacco_category }) {
-  const result = await db.query(
-    `INSERT INTO fivea_questions (step, question_text, options, tobacco_category)
-     VALUES ($1, $2, $3, $4)
-     RETURNING *`,
-    [step, question_text, options || [], tobacco_category || 'smoked']
+  const category = tobacco_category || 'smoked';
+  const res = await query(
+    `INSERT INTO assessment_questions(category, question_text, options, metadata)
+     VALUES('fivea', $1, $2, $3)
+     RETURNING id, question_text, options, is_active, created_at, updated_at, metadata`,
+    [question_text, JSON.stringify(options || []), JSON.stringify({ step, tobacco_category: category })]
   );
-  return result.rows[0];
+  return mapFiveAQuestion(res.rows[0]);
 }
 
 export async function updateAdminQuestion(id, payload) {
-  const { step, question_text, options, is_active } = payload;
+  const { step, question_text, options, is_active, tobacco_category } = payload;
+  const currentRes = await query("SELECT metadata FROM assessment_questions WHERE id = $1", [id]);
+  const currentMeta = currentRes.rows[0]?.metadata || {};
   const fields = [];
   const values = [];
   let idx = 1;
-  if (step !== undefined) { fields.push(`step = $${idx++}`); values.push(step); }
-  if (question_text !== undefined) { fields.push(`question_text = $${idx++}`); values.push(question_text); }
-  if (options !== undefined) {
-    if (!Array.isArray(options)) throw new Error('options must be an array');
-    fields.push(`options = $${idx++}`); values.push(options);
+
+  if (step !== undefined) currentMeta.step = step;
+  if (tobacco_category !== undefined) currentMeta.tobacco_category = tobacco_category;
+
+  if (step !== undefined || tobacco_category !== undefined) {
+    fields.push(`metadata = $${idx++} `);
+    values.push(JSON.stringify(currentMeta));
   }
-  if (is_active !== undefined) { fields.push(`is_active = $${idx++}`); values.push(is_active); }
+  if (question_text !== undefined) { fields.push(`question_text = $${idx++} `); values.push(question_text); }
+  if (options !== undefined) { fields.push(`options = $${idx++} `); values.push(JSON.stringify(options)); }
+  if (is_active !== undefined) { fields.push(`is_active = $${idx++} `); values.push(is_active); }
+
   fields.push(`updated_at = NOW()`);
   values.push(id);
-  const sql = `UPDATE fivea_questions SET ${fields.join(', ')} WHERE id = $${idx} RETURNING id, step, question_text, options, is_active, created_at, updated_at`;
+
+  const sql = `UPDATE assessment_questions SET ${fields.join(', ')} WHERE id = $${idx} AND category = 'fivea' RETURNING id, question_text, options, is_active, created_at, updated_at, metadata`;
   const res = await query(sql, values);
-  return res.rows[0];
+  return res.rows[0] ? mapFiveAQuestion(res.rows[0]) : null;
 }
 
+// Updated to use fivea_history for Advise
 export async function saveAdviseHistory(userId, { severity_level, selected_video, selected_quote, ai_message }) {
   const res = await query(
-    `INSERT INTO fivea_advise_history (user_id, severity_level, selected_video, selected_quote, ai_message)
-     VALUES ($1, $2, $3, $4, $5)
-     ON CONFLICT (user_id) DO UPDATE SET severity_level = EXCLUDED.severity_level, selected_video = EXCLUDED.selected_video, selected_quote = EXCLUDED.selected_quote, ai_message = EXCLUDED.ai_message, created_at = NOW()
-     RETURNING user_id, severity_level, selected_video, selected_quote, ai_message, created_at`,
-    [userId, severity_level, selected_video, selected_quote, ai_message]
+    `INSERT INTO fivea_history(user_id, stage, history_data, created_at)
+VALUES($1, 'advise', $2, NOW())
+     RETURNING user_id, history_data ->> 'severity_level' as severity_level, history_data ->> 'selected_video' as selected_video, history_data ->> 'selected_quote' as selected_quote, history_data ->> 'ai_message' as ai_message, created_at`,
+    [userId, JSON.stringify({ severity_level, selected_video, selected_quote, ai_message })]
   );
   return res.rows[0];
 }
 
+// Updated to use fivea_history
 export async function getAdviseHistory(userId) {
   const res = await query(
-    `SELECT user_id, severity_level, selected_video, selected_quote, ai_message, created_at
-     FROM fivea_advise_history
-     WHERE user_id = $1
+    `SELECT user_id,
+  history_data ->> 'severity_level' as severity_level,
+  history_data ->> 'selected_video' as selected_video,
+  history_data ->> 'selected_quote' as selected_quote,
+  history_data ->> 'ai_message' as ai_message,
+  created_at
+     FROM fivea_history
+     WHERE user_id = $1 AND stage = 'advise'
      ORDER BY created_at DESC
      LIMIT 1`,
     [userId]
@@ -258,9 +333,5 @@ export async function getAdviseHistory(userId) {
 }
 
 export async function softDeleteAdminQuestion(id) {
-  const res = await query(
-    'UPDATE fivea_questions SET is_active = FALSE, updated_at = NOW() WHERE id = $1 RETURNING id, is_active, updated_at',
-    [id]
-  );
-  return res.rows[0];
+  return softDeleteQuestion(id);
 }

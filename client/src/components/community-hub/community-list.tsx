@@ -49,7 +49,7 @@ export default function CommunityList({ selectedCommunity, onSelectCommunity }: 
       if (!token) {
         throw new Error("No authentication token found")
       }
-      const res = await axios.get(`${API_BASE_URL}/api/communities`, {
+      const res = await axios.get(`${API_BASE_URL}/communities`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (res.data?.success && Array.isArray(res.data.data)) {

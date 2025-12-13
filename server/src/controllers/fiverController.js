@@ -4,13 +4,13 @@ import pool from '../db/index.js';
 export const getRelevanceOptions = async (req, res) => {
   try {
     const query = `
-      SELECT id, option_key, label, description, icon_name 
-      FROM relevance_options 
-      WHERE is_active = true 
+      SELECT id, metadata->>'option_key' as option_key, title as label, description, icon_name 
+      FROM app_resources 
+      WHERE type = 'relevance_option' AND is_active = true 
       ORDER BY id
     `;
     const result = await pool.query(query);
-    
+
     res.json({
       success: true,
       data: result.rows
@@ -28,7 +28,7 @@ export const getRelevanceOptions = async (req, res) => {
 export const saveUserRelevanceSelections = async (req, res) => {
   try {
     const { userId, selectedOptions } = req.body;
-    
+
     if (!userId || !selectedOptions || !Array.isArray(selectedOptions)) {
       return res.status(400).json({
         success: false,
@@ -38,16 +38,16 @@ export const saveUserRelevanceSelections = async (req, res) => {
 
     // Start transaction
     const client = await pool.connect();
-    
+
     try {
       await client.query('BEGIN');
-      
+
       // Delete existing selections for this user
       await client.query(
         'DELETE FROM user_relevance_selections WHERE user_id = $1::uuid',
         [userId]
       );
-      
+
       // Insert new selections
       for (const optionId of selectedOptions) {
         await client.query(
@@ -55,7 +55,7 @@ export const saveUserRelevanceSelections = async (req, res) => {
           [userId, optionId]
         );
       }
-      
+
       // Update or create 5R progress
       await client.query(`
         INSERT INTO user_5r_progress (user_id, current_step, updated_at)
@@ -65,9 +65,9 @@ export const saveUserRelevanceSelections = async (req, res) => {
           current_step = 'relevance',
           updated_at = CURRENT_TIMESTAMP
       `, [userId]);
-      
+
       await client.query('COMMIT');
-      
+
       res.json({
         success: true,
         message: 'Relevance selections saved successfully'
@@ -91,17 +91,17 @@ export const saveUserRelevanceSelections = async (req, res) => {
 export const getUserRelevanceSelections = async (req, res) => {
   try {
     const { userId } = req.params;
-    
+
     const query = `
-      SELECT ro.id, ro.option_key, ro.label, ro.description, ro.icon_name
-      FROM relevance_options ro
+      SELECT ro.id, ro.metadata->>'option_key' as option_key, ro.title as label, ro.description, ro.icon_name
+      FROM app_resources ro
       INNER JOIN user_relevance_selections urs ON ro.id = urs.relevance_option_id
-      WHERE urs.user_id = $1::uuid AND ro.is_active = true
+      WHERE urs.user_id = $1::uuid AND ro.type = 'relevance_option' AND ro.is_active = true
       ORDER BY ro.id
     `;
-    
+
     const result = await pool.query(query, [userId]);
-    
+
     res.json({
       success: true,
       data: result.rows
@@ -119,22 +119,22 @@ export const getUserRelevanceSelections = async (req, res) => {
 export const getUser5RProgress = async (req, res) => {
   try {
     const { userId } = req.params;
-    
+
     const query = `
       SELECT current_step, is_completed, started_at, completed_at, updated_at
       FROM user_5r_progress
       WHERE user_id = $1::uuid
     `;
-    
+
     const result = await pool.query(query, [userId]);
-    
+
     if (result.rows.length === 0) {
       return res.json({
         success: true,
         data: null
       });
     }
-    
+
     res.json({
       success: true,
       data: result.rows[0]
