@@ -566,6 +566,10 @@ const getAdminUserProgress = async (req, res, next) => {
     const quitDate = progressData.quitDate ? new Date(progressData.quitDate) : null;
     const isQuitDatePassed = quitDate && quitDate <= today;
 
+    // Check for questionnaire completion status
+    const hasCompletedPre = await hasUserCompletedPreSelfEfficacy(userId);
+    const hasCompletedPost = await hasUserCompletedPostSelfEfficacy(userId);
+
     // Add status information to the response
     progressData.needsQuestionnaire = !hasCompletedPre;
     progressData.hasCompletedPreSelfEfficacy = hasCompletedPre;
