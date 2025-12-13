@@ -4,13 +4,13 @@ class ChatMessageModel {
   // Create a new message
   static async create(messageData) {
     const { community_id, user_id, content, message_type = 'text', file_url = null, reply_to = null } = messageData;
-    
+
     const sql = `
       INSERT INTO chat_messages (community_id, user_id, content, message_type, file_url, reply_to)
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
     `;
-    
+
     try {
       const result = await query(sql, [community_id, user_id, content, message_type, file_url, reply_to]);
       return result.rows[0];
@@ -23,29 +23,27 @@ class ChatMessageModel {
   // Get messages for a community with pagination
   static async getMessages(communityId, page = 1, limit = 50) {
     const offset = (page - 1) * limit;
-    
+
     const sql = `
       SELECT 
         cm.*,
         u.email,
         u.role,
-        p.full_name,
-        p.avatar_url,
+        u.full_name,
+        u.avatar_url,
         reply_message.content as reply_content,
         reply_user.email as reply_author_email,
-        reply_profile.full_name as reply_author_name,
-        reply_profile.avatar_url as reply_author_avatar
+        reply_user.full_name as reply_author_name,
+        reply_user.avatar_url as reply_author_avatar
       FROM chat_messages cm
       JOIN users u ON cm.user_id = u.id
-      LEFT JOIN profiles p ON u.id = p.user_id
       LEFT JOIN chat_messages reply_message ON cm.reply_to = reply_message.id
       LEFT JOIN users reply_user ON reply_message.user_id = reply_user.id
-      LEFT JOIN profiles reply_profile ON reply_user.id = reply_profile.user_id
       WHERE cm.community_id = $1
       ORDER BY cm.created_at ASC
       LIMIT $2 OFFSET $3
     `;
-    
+
     try {
       const result = await query(sql, [communityId, limit, offset]);
       return result.rows;
@@ -62,23 +60,21 @@ class ChatMessageModel {
         cm.*,
         u.email,
         u.role,
-        p.full_name,
-        p.avatar_url,
+        u.full_name,
+        u.avatar_url,
         reply_message.content as reply_content,
         reply_user.email as reply_author_email,
-        reply_profile.full_name as reply_author_name,
-        reply_profile.avatar_url as reply_author_avatar
+        reply_user.full_name as reply_author_name,
+        reply_user.avatar_url as reply_author_avatar
       FROM chat_messages cm
       JOIN users u ON cm.user_id = u.id
-      LEFT JOIN profiles p ON u.id = p.user_id
       LEFT JOIN chat_messages reply_message ON cm.reply_to = reply_message.id
       LEFT JOIN users reply_user ON reply_message.user_id = reply_user.id
-      LEFT JOIN profiles reply_profile ON reply_user.id = reply_profile.user_id
       WHERE cm.community_id = $1
       ORDER BY cm.created_at DESC
       LIMIT $2
     `;
-    
+
     try {
       const result = await query(sql, [communityId, limit]);
       return result.rows.reverse(); // Return in chronological order
@@ -98,7 +94,7 @@ class ChatMessageModel {
       WHERE id = $2 AND user_id = $3
       RETURNING *
     `;
-    
+
     try {
       const result = await query(sql, [newContent, messageId, userId]);
       return result.rows[0];
@@ -115,7 +111,7 @@ class ChatMessageModel {
       WHERE id = $1 AND user_id = $2
       RETURNING *
     `;
-    
+
     try {
       const result = await query(sql, [messageId, userId]);
       return result.rows[0];
@@ -133,7 +129,7 @@ class ChatMessageModel {
       ON CONFLICT (message_id, user_id, emoji) DO NOTHING
       RETURNING *
     `;
-    
+
     try {
       const result = await query(sql, [messageId, userId, emoji]);
       return result.rows[0];
@@ -150,7 +146,7 @@ class ChatMessageModel {
       WHERE message_id = $1 AND user_id = $2 AND emoji = $3
       RETURNING *
     `;
-    
+
     try {
       const result = await query(sql, [messageId, userId, emoji]);
       return result.rows[0];
@@ -167,15 +163,14 @@ class ChatMessageModel {
         mr.*,
         u.email,
         u.role,
-        p.full_name,
-        p.avatar_url
+        u.full_name,
+        u.avatar_url
       FROM message_reactions mr
       JOIN users u ON mr.user_id = u.id
-      LEFT JOIN profiles p ON u.id = p.user_id
       WHERE mr.message_id = $1
       ORDER BY mr.created_at ASC
     `;
-    
+
     try {
       const result = await query(sql, [messageId]);
       return result.rows;
@@ -196,7 +191,7 @@ class ChatMessageModel {
         last_seen = EXCLUDED.last_seen
       RETURNING *
     `;
-    
+
     try {
       const result = await query(sql, [communityId, userId, socketId]);
       return result.rows[0];
@@ -213,7 +208,7 @@ class ChatMessageModel {
       WHERE community_id = $1 AND user_id = $2
       RETURNING *
     `;
-    
+
     try {
       const result = await query(sql, [communityId, userId]);
       return result.rows[0];
@@ -230,15 +225,14 @@ class ChatMessageModel {
         cou.*,
         u.email,
         u.role,
-        p.full_name,
-        p.avatar_url
+        u.full_name,
+        u.avatar_url
       FROM community_online_users cou
       JOIN users u ON cou.user_id = u.id
-      LEFT JOIN profiles p ON u.id = p.user_id
       WHERE cou.community_id = $1
       ORDER BY cou.last_seen DESC
     `;
-    
+
     try {
       const result = await query(sql, [communityId]);
       return result.rows;
@@ -255,7 +249,7 @@ class ChatMessageModel {
       WHERE last_seen < CURRENT_TIMESTAMP - INTERVAL '5 minutes'
       RETURNING *
     `;
-    
+
     try {
       const result = await query(sql);
       return result.rows;
@@ -272,14 +266,13 @@ class ChatMessageModel {
         cm.*,
         u.email,
         u.role,
-        p.full_name,
-        p.avatar_url
+        u.full_name,
+        u.avatar_url
       FROM chat_messages cm
       JOIN users u ON cm.user_id = u.id
-      LEFT JOIN profiles p ON u.id = p.user_id
       WHERE cm.id = $1
     `;
-    
+
     try {
       const result = await query(sql, [messageId]);
       return result.rows[0];

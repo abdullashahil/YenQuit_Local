@@ -34,7 +34,7 @@ const TEST_USER_ID = "d5799f0c-f707-415e-b9ea-68816351912c" // keep for testing
 interface Community {
   id: string
   name: string
-  description?: string
+description?: string
   member_count: number
   online_count: number
   user_role?: string
@@ -265,7 +265,7 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
 
       setIsLoading(true)
       try {
-        const res = await axios.get(`${API_BASE}/api/chat/${c.id}/messages/latest?limit=50`, {
+        const res = await axios.get(`${API_BASE}/chat/${c.id}/messages/latest?limit=50`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         if (res.data?.success) {

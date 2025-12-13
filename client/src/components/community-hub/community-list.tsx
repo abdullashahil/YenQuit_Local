@@ -179,7 +179,7 @@ export default function CommunityList({ selectedCommunity, onSelectCommunity }: 
         return
       }
       
-      const response = await axios.post(`${API_BASE_URL}/api/communities/${communityId}/join`, {}, {
+      const response = await axios.post(`${API_BASE_URL}/communities/${communityId}/join`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       })
       
@@ -409,7 +409,7 @@ function CreateCommunityModal({ onClose, onSuccess }: { onClose: () => void; onS
       console.log("Creating community with token:", token.substring(0, 20) + "...")
       
       // Use fetch to completely bypass any axios interceptors
-      const res = await fetch(`${API_BASE_URL}/api/communities`, {
+      const res = await fetch(`${API_BASE_URL}/communities`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
