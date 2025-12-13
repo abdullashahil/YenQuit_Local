@@ -4,9 +4,9 @@ class QuitTrackerService {
   // Get user's progress data
 
 
-  // Get user's quit date from profile
+  // Get user's quit date from users table (previously profiles)
   static async getUserQuitDate(userId) {
-    const sql = 'SELECT quit_date FROM profiles WHERE user_id = $1';
+    const sql = 'SELECT quit_date FROM users WHERE id = $1';
     const result = await query(sql, [userId]);
     return result.rows[0]?.quit_date || null;
   }
@@ -44,6 +44,9 @@ class QuitTrackerService {
         `;
         assistPlanResult = await client.query(insertSql, [userId, quitDate]);
       }
+
+      // Also update users table
+      await client.query('UPDATE users SET quit_date = $1, updated_at = NOW() WHERE id = $2', [quitDate, userId]);
 
       await client.query('COMMIT');
       return assistPlanResult.rows[0].quit_date;
@@ -168,8 +171,8 @@ class QuitTrackerService {
     try {
       const { startDate, endDate, goalDays = 30 } = options;
 
-      // Get user's quit date and join date from profile
-      const profileRes = await query('SELECT quit_date, join_date FROM profiles WHERE user_id = $1', [userId]);
+      // Get user's quit date and join date from user table
+      const profileRes = await query('SELECT quit_date, join_date FROM users WHERE id = $1', [userId]);
       let quitDate = profileRes.rows[0]?.quit_date || null;
       let joinDate = profileRes.rows[0]?.join_date || null;
 
