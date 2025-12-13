@@ -206,7 +206,7 @@ export async function saveAskAnswers(userId, answers) {
     // This replaces fivea_severity_assessment
     await client.query(
       `INSERT INTO fivea_history(user_id, stage, history_data, created_at)
-       VALUES($1, 'assess', $2, NOW())
+       VALUES($1, 'ask_severity', $2, NOW())
        RETURNING id`,
       [userId, JSON.stringify({ severity_level: severity.level, score: severity.score })]
     );
@@ -246,7 +246,7 @@ export async function getSeverityForUser(userId) {
     (history_data ->> 'score'):: int as score,
     created_at 
        FROM fivea_history 
-       WHERE user_id = $1:: uuid AND stage = 'assess' 
+       WHERE user_id = $1:: uuid AND stage = 'ask_severity' 
        ORDER BY created_at DESC 
        LIMIT 1`,
     [userId]

@@ -153,10 +153,13 @@ export async function saveFagerstromAnswers(userId, answers) {
       score += calculateAnswerScore(question_id, answer_text);
     }
 
-    // 2. Save Session Record (History of attempts)
+    // 2. Save Session Record (History of attempts) -> NOW USING fivea_history
+    // We store stage='fagerstrom' and history_data={ score: score }
     const sessionResult = await client.query(
-      `INSERT INTO fagerstrom_sessions (user_id, score) VALUES ($1, $2) RETURNING id`,
-      [userId, score]
+      `INSERT INTO fivea_history (user_id, stage, history_data, created_at) 
+       VALUES ($1, 'fagerstrom', $2, NOW()) 
+       RETURNING id`,
+      [userId, JSON.stringify({ score })]
     );
     const sessionId = sessionResult.rows[0].id;
 
@@ -167,7 +170,7 @@ export async function saveFagerstromAnswers(userId, answers) {
       await client.query(
         `INSERT INTO user_assessment_responses (user_id, question_id, response_data, created_at, updated_at)
          VALUES ($1, $2, $3, NOW(), NOW())
-         ON CONFLICT (user_id, question_id) 
+         ON CONFLICT (user_id, question_id, assessment_context) 
          DO UPDATE SET response_data = EXCLUDED.response_data, updated_at = NOW()`,
         [userId, question_id, JSON.stringify(answer_text)]
       );
@@ -224,9 +227,9 @@ function calculateAnswerScore(questionId, answerText) {
 
 export async function getFagerstromSessionHistory(userId) {
   const res = await query(
-    `SELECT id, score, created_at, updated_at
-     FROM fagerstrom_sessions
-     WHERE user_id = $1
+    `SELECT id, (history_data->>'score')::int as score, created_at, updated_at
+     FROM fivea_history
+     WHERE user_id = $1 AND stage = 'fagerstrom'
      ORDER BY created_at DESC`,
     [userId]
   );
@@ -235,9 +238,9 @@ export async function getFagerstromSessionHistory(userId) {
 
 export async function getLatestFagerstromSession(userId) {
   const res = await query(
-    `SELECT id, score, created_at, updated_at
-     FROM fagerstrom_sessions
-     WHERE user_id = $1
+    `SELECT id, (history_data->>'score')::int as score, created_at, updated_at
+     FROM fivea_history
+     WHERE user_id = $1 AND stage = 'fagerstrom'
      ORDER BY created_at DESC
      LIMIT 1`,
     [userId]

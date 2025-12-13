@@ -116,6 +116,8 @@ bruno-export/
 
 server/migrations
 server/uploads
+server/package-lock.json
+
 
 # ==============================================================================
 # SECTION 3: OTHER / MISC
