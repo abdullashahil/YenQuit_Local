@@ -46,7 +46,7 @@ export default function AdminCommunityManagement({ onEditCommunity }: Props) {
       if (!token) {
         throw new Error("No authentication token found")
       }
-      const res = await axios.get(`${API_BASE_URL}/api/communities`, {
+      const res = await axios.get(`${API_BASE_URL}/communities`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (res.data?.success && Array.isArray(res.data.data)) {
@@ -80,7 +80,7 @@ export default function AdminCommunityManagement({ onEditCommunity }: Props) {
         throw new Error("No authentication token found")
       }
 
-      const res = await fetch(`${API_BASE_URL}/api/communities/${communityId}`, {
+      const res = await fetch(`${API_BASE_URL}/communities/${communityId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -352,7 +352,7 @@ function CreateCommunityModal({ onClose, onSuccess }: { onClose: () => void; onS
         throw new Error("No authentication token found. Please log in again.")
       }
       
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/communities`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/communities`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

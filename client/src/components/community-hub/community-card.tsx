@@ -58,7 +58,7 @@ export function CommunityCard({ community, isSelected = false, onClick, onSelect
       }
       
       const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
-      const response = await axios.post(`${API_BASE}/api/communities/${community.id}/join`, {}, {
+      const response = await axios.post(`${API_BASE}/communities/${community.id}/join`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       })
       

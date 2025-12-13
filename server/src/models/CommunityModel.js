@@ -4,13 +4,13 @@ class CommunityModel {
   // Create a new community
   static async create(communityData) {
     const { name, description, avatar_url, created_by, is_private = false } = communityData;
-    
+
     const sql = `
       INSERT INTO communities (name, description, avatar_url, created_by, is_private)
       VALUES ($1, $2, $3, $4, $5)
       RETURNING *
     `;
-    
+
     try {
       const result = await query(sql, [name, description, avatar_url, created_by, is_private]);
       return result.rows[0];
@@ -34,7 +34,7 @@ class CommunityModel {
       WHERE c.is_private = false OR cm.user_id IS NOT NULL
       ORDER BY c.updated_at DESC
     `;
-    
+
     try {
       const result = await query(sql, [userId]);
       return result.rows;
@@ -56,7 +56,7 @@ class CommunityModel {
       LEFT JOIN community_members cm ON c.id = cm.community_id AND cm.user_id = $2
       WHERE c.id = $1
     `;
-    
+
     try {
       const result = await query(sql, [communityId, userId]);
       return result.rows[0];
@@ -74,7 +74,7 @@ class CommunityModel {
       ON CONFLICT (community_id, user_id) DO NOTHING
       RETURNING *
     `;
-    
+
     try {
       const result = await query(sql, [communityId, userId, role]);
       return result.rows[0];
@@ -91,7 +91,7 @@ class CommunityModel {
       WHERE community_id = $1 AND user_id = $2
       RETURNING *
     `;
-    
+
     try {
       const result = await query(sql, [communityId, userId]);
       return result.rows[0];
@@ -109,15 +109,14 @@ class CommunityModel {
         u.email,
         u.role,
         u.created_at,
-        p.full_name,
-        p.avatar_url
+        u.full_name,
+        u.avatar_url
       FROM community_members cm
       JOIN users u ON cm.user_id = u.id
-      LEFT JOIN profiles p ON u.id = p.user_id
       WHERE cm.community_id = $1
       ORDER BY cm.joined_at ASC
     `;
-    
+
     try {
       const result = await query(sql, [communityId]);
       return result.rows;
@@ -130,7 +129,7 @@ class CommunityModel {
   // Update community
   static async update(communityId, updateData) {
     const { name, description, avatar_url } = updateData;
-    
+
     const sql = `
       UPDATE communities
       SET name = COALESCE($1, name),
@@ -140,7 +139,7 @@ class CommunityModel {
       WHERE id = $4
       RETURNING *
     `;
-    
+
     try {
       const result = await query(sql, [name, description, avatar_url, communityId]);
       return result.rows[0];
@@ -153,7 +152,7 @@ class CommunityModel {
   // Delete community
   static async delete(communityId) {
     const sql = `DELETE FROM communities WHERE id = $1 RETURNING *`;
-    
+
     try {
       const result = await query(sql, [communityId]);
       return result.rows[0];
@@ -169,7 +168,7 @@ class CommunityModel {
       SELECT role FROM community_members
       WHERE community_id = $1 AND user_id = $2
     `;
-    
+
     try {
       const result = await query(sql, [communityId, userId]);
       return result.rows[0];
