@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../../ui/button';
 import { OnboardingProgressBar } from '../flow-shared/OnboardingProgressBar';
 import { HesitationLink } from '../flow-shared/HesitationLink';
+import { BackToHomeButton } from '../../shared/BackToHomeButton';
 import { Play } from 'lucide-react';
 import { FiveA_AdviseProps } from '../../../types/fiveAFlow';
+import { userService } from '../../../services/userService';
 
 interface ExtendedFiveAAdviseProps extends FiveA_AdviseProps {
   video?: string;
@@ -13,6 +15,23 @@ interface ExtendedFiveAAdviseProps extends FiveA_AdviseProps {
 }
 
 export function FiveA_Advise({ onNext, userData = {}, video, quote, ai_message, loading = false }: ExtendedFiveAAdviseProps) {
+  const [userOnboardingStep, setUserOnboardingStep] = useState<number | null>(null);
+
+  // Fetch user profile to get onboarding_step
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const response = await userService.getProfile();
+        setUserOnboardingStep(response.data.onboarding_step || 0);
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+        setUserOnboardingStep(0);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
+
   return (
     <div className="min-h-screen p-4 md:p-6 lg:p-8" style={{ backgroundColor: '#FFFFFF' }}>
       <div className="max-w-4xl mx-auto">
@@ -20,6 +39,12 @@ export function FiveA_Advise({ onNext, userData = {}, video, quote, ai_message, 
           steps={['ASK', 'ADVISE', 'ASSESS', 'ASSIST', 'ARRANGE']}
           currentStep={1}
         />
+
+        {userOnboardingStep !== null && userOnboardingStep >= 3 && (
+          <div className="absolute top-10 left-10">
+            <BackToHomeButton />
+          </div>
+        )}
 
         <div
           className="rounded-2xl md:rounded-3xl p-6 md:p-8 lg:p-10"

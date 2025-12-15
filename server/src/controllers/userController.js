@@ -28,7 +28,7 @@ export async function getProfile(req, res, next) {
     const user = await UserModel.findById(req.user.userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    // Return only profile-safe fields
+    // Return only profile-safe fields including onboarding progress
     const profile = {
       id: user.id,
       email: user.email,
@@ -40,7 +40,9 @@ export async function getProfile(req, res, next) {
       bio: user.bio,
       avatar_url: user.avatar_url,
       created_at: user.created_at,
-      join_date: user.join_date
+      join_date: user.join_date,
+      onboarding_step: user.onboarding_step,
+      onboarding_completed: user.onboarding_completed
     };
 
     res.json({ success: true, data: profile });

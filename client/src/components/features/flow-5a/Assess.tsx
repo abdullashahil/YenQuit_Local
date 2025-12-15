@@ -5,8 +5,10 @@ import { RadioGroup, RadioGroupItem } from '../../ui/radio-group';
 import { Slider } from '../../ui/slider';
 import { OnboardingProgressBar } from '../flow-shared/OnboardingProgressBar';
 import { HesitationLink } from '../flow-shared/HesitationLink';
+import { BackToHomeButton } from '../../shared/BackToHomeButton';
 import { FiveA_AssessProps } from '../../../types/fiveAFlow';
 import { getFagerstromQuestions, FagerstromQuestion } from '../../../services/fagerstromService';
+import { userService } from '../../../services/userService';
 
 interface AssessQuestion {
   id: number;
@@ -72,6 +74,22 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [userOnboardingStep, setUserOnboardingStep] = useState<number | null>(null);
+
+  // Fetch user profile to get onboarding_step
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const response = await userService.getProfile();
+        setUserOnboardingStep(response.data.onboarding_step || 0);
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+        setUserOnboardingStep(0);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -86,7 +104,7 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
         setFagerstromQuestions(fagerstromData.questions);
         setAssessQuestions(assessData);
 
-        const hasSubmitted = Object.keys(savedAssessAnswers).length > 0;
+        const hasSubmitted = Object.keys(savedAssessAnswers).length > 0 || Object.keys(savedFagerstromAnswers).length > 0;
         setSubmitted(hasSubmitted);
 
         const initialAssess: Record<string, number | string> = {};
@@ -107,16 +125,7 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
         });
         setAssessAnswers(initialAssess);
 
-        const mappedFagerstromAnswers: Record<string, string> = {};
-        fagerstromData.questions.forEach(question => {
-          const savedAnswerKey = Object.keys(savedFagerstromAnswers).find(key =>
-            key === `q${question.id}`
-          );
-          if (savedAnswerKey) {
-            mappedFagerstromAnswers[`q${question.id}`] = savedFagerstromAnswers[savedAnswerKey];
-          }
-        });
-        setFagerstromAnswers(mappedFagerstromAnswers);
+        setFagerstromAnswers(savedFagerstromAnswers);
       } catch (e: any) {
         setError(e.message || 'Failed to load questions');
       } finally {
@@ -218,6 +227,12 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
           currentStep={2}
         />
 
+        {userOnboardingStep !== null && userOnboardingStep >= 3 && (
+          <div className="absolute top-10 left-10">
+            <BackToHomeButton />
+          </div>
+        )}
+
         <div
           className="rounded-2xl md:rounded-3xl p-6 md:p-8 lg:p-10"
           style={{
@@ -265,47 +280,57 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
 
                 {/* Slider if options is null/empty */}
                 {(q.options === null || q.options.length === 0) ? (
-                  <div>
-                    <div
-                      className="relative mb-4"
-                      style={{
-                        padding: '4px 0',
-                        backgroundColor: '#F8FBFB',
-                        borderRadius: '12px',
-                        border: '1px solid #E0E0E0'
-                      }}
-                    >
-                      <Slider
-                        value={[assessAnswers[`assess_${q.id}`] as number || 5]}
-                        onValueChange={(val) => handleAssessAnswer(q.id.toString(), val[0])}
-                        min={1}
-                        max={10}
-                        step={1}
-                        disabled={submitted}
-                        className="w-full"
-                        style={{
-                          '--slider-track-height': '6px',
-                          '--slider-track-bg': '#E8F4F3',
-                          '--slider-range-bg': '#20B2AA',
-                          '--slider-thumb-size': '20px',
-                          '--slider-thumb-bg': '#20B2AA',
-                          '--slider-thumb-border': '#1C3B5E',
-                          '--slider-thumb-box-shadow': '0 2px 4px rgba(0,0,0,0.1)',
-                        } as React.CSSProperties}
-                      />
+                  <div
+                    className="relative mb-6 p-6 rounded-2xl shadow-md"
+                    style={{
+                      backgroundColor: '#FFFFFF',
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)'
+                    }}
+                  >
+                    <div className="mb-4">
+                      <p className="text-sm font-medium text-gray-700 mb-2">Rate your confidence:</p>
+                      <div className="relative flex justify-between mb-2">
+                        {[...Array(10)].map((_, i) => (
+                          <div key={i} className="flex flex-col items-center">
+                            <span
+                              className="block h-3 w-0.5 mb-1"
+                              style={{
+                                backgroundColor: i < (assessAnswers[`assess_${q.id}`] as number || 5) ? '#20B2AA' : '#D1D5DB'
+                              }}
+                            ></span>
+                            <span
+                              className="text-xs font-medium"
+                              style={{
+                                color: i < (assessAnswers[`assess_${q.id}`] as number || 5) ? '#20B2AA' : '#6B7280'
+                              }}
+                            >
+                              {i + 1}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <div
-                      className="flex justify-between text-sm"
-                      style={{ color: '#666666' }}
-                    >
-                      <span>1</span>
-                      <span
-                        className="font-bold px-3 py-1 rounded-full text-white"
-                        style={{ backgroundColor: '#20B2AA' }}
-                      >
-                        {assessAnswers[`assess_${q.id}`] || 5}
-                      </span>
-                      <span>10</span>
+                    <Slider
+                      value={[assessAnswers[`assess_${q.id}`] as number || 5]}
+                      onValueChange={(val) => handleAssessAnswer(q.id.toString(), val[0])}
+                      min={1}
+                      max={10}
+                      step={1}
+                      disabled={submitted}
+                      className="w-full [&_[data-slot=slider-track]]:bg-gray-200 [&_[data-slot=slider-range]]:bg-teal-500 [&_[data-slot=slider-thumb]]:bg-white [&_[data-slot=slider-thumb]]:border-3 [&_[data-slot=slider-thumb]]:border-teal-500"
+                      style={{
+                        '--slider-track-height': '8px',
+                        '--slider-range-bg': '#20B2AA',
+                        '--slider-thumb-size': '24px',
+                        '--slider-thumb-bg': '#FFFFFF',
+                        '--slider-thumb-border': '3px solid #20B2AA',
+                        '--slider-thumb-box-shadow': '0 2px 8px rgba(32, 178, 170, 0.3)',
+                      } as React.CSSProperties}
+                    />
+                    <div className="flex justify-between mt-4 text-xs text-gray-600">
+                      <span>Not confident</span>
+                      <span>Moderately</span>
+                      <span>Very confident</span>
                     </div>
                   </div>
                 ) : (

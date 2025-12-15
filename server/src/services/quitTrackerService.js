@@ -4,7 +4,7 @@ class QuitTrackerService {
   // Get user's progress data
 
 
-  // Get user's quit date from users table (previously profiles)
+  // Get user's quit date from users table
   static async getUserQuitDate(userId) {
     const sql = 'SELECT quit_date FROM users WHERE id = $1';
     const result = await query(sql, [userId]);
