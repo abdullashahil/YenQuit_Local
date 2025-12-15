@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../../ui/button';
 import { OnboardingProgressBar } from '../flow-shared/OnboardingProgressBar';
+import { BackToHomeButton } from '../../shared/BackToHomeButton';
 import { AlertTriangle, Heart, Skull, Baby, Users, TrendingDown, Activity, AlertCircle } from 'lucide-react';
 import { getRisksContent, HealthRisk, WarningBanner } from '../../../services/risksService';
+import { userService } from '../../../services/userService';
 
 interface FiveR_RisksProps {
   onNext: (data: any) => void;
@@ -17,8 +19,7 @@ const iconMap = {
   Baby,
   Users,
   AlertTriangle,
-  AlertCircle,
-  Activity: Activity 
+  AlertCircle
 };
 
 export function FiveR_Risks({ onNext }: FiveR_RisksProps) {
@@ -26,6 +27,22 @@ export function FiveR_Risks({ onNext }: FiveR_RisksProps) {
   const [warningBanners, setWarningBanners] = useState<WarningBanner[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userOnboardingStep, setUserOnboardingStep] = useState<number | null>(null);
+
+  // Fetch user profile to get onboarding_step
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const response = await userService.getProfile();
+        setUserOnboardingStep(response.data.onboarding_step || 0);
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+        setUserOnboardingStep(0);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -76,6 +93,12 @@ export function FiveR_Risks({ onNext }: FiveR_RisksProps) {
           steps={['RELEVANCE', 'RISKS', 'REWARDS', 'ROADBLOCKS', 'REPETITION']}
           currentStep={1}
         />
+
+        {userOnboardingStep !== null && userOnboardingStep >= 3 && (
+          <div className="absolute top-10 left-10">
+            <BackToHomeButton />
+          </div>
+        )}
 
         <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg p-6 md:p-8 lg:p-10 border border-gray-100">
           <h1 className="text-[#1C3B5E] mb-2">Step 2: RISKS</h1>
@@ -168,18 +191,20 @@ export function FiveR_Risks({ onNext }: FiveR_RisksProps) {
 
           {/* Navigation Buttons */}
           <div className="flex justify-between gap-4">
-            <Button
-              onClick={() => window.location.href = '/5a/ask'}
-              className="flex-1 px-6 py-6 rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 text-white"
-            >
-              I'm Ready to Quit
-            </Button>
+            {userOnboardingStep !== null && userOnboardingStep < 4 && (
+              <Button
+                onClick={() => window.location.href = '/5a/ask'}
+                className="flex-1 px-6 py-6 rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 text-white"
+              >
+                I'm Ready to Quit
+              </Button>
+            )}
             <Button
               onClick={handleNext}
               variant="outline"
-              className="flex-1 px-6 py-6 rounded-2xl border-[#20B2AA] text-[#20B2AA] hover:bg-[#20B2AA]/10"
+              className={userOnboardingStep !== null && userOnboardingStep < 4 ? "flex-1 px-6 py-6 rounded-2xl border-[#20B2AA] text-[#20B2AA] hover:bg-[#20B2AA]/10" : "px-6 py-6 rounded-2xl border-[#20B2AA] text-[#20B2AA] hover:bg-[#20B2AA]/10"}
             >
-              Continue to Rewards
+              Next: See Your Rewards
             </Button>
           </div>
         </div>

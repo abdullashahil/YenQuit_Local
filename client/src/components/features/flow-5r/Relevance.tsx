@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { Button } from '../../ui/button';
 import { OnboardingProgressBar } from '../flow-shared/OnboardingProgressBar';
+import { BackToHomeButton } from '../../shared/BackToHomeButton';
 import { Heart, Users, DollarSign, Sparkles, UserCircle, Check } from 'lucide-react';
 import { fiverService, RelevanceOption } from '../../../services/fiverService';
+import { userService } from '../../../services/userService';
 
 interface FiveR_RelevanceProps {
   onNext: (data: any) => void;
@@ -17,6 +19,22 @@ export function FiveR_Relevance({ onNext, userId }: FiveR_RelevanceProps) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const [userOnboardingStep, setUserOnboardingStep] = useState<number | null>(null);
+
+  // Fetch user profile to get onboarding_step
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const response = await userService.getProfile();
+        setUserOnboardingStep(response.data.onboarding_step || 0);
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+        setUserOnboardingStep(0);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
 
   // Check if user is logged in
   useEffect(() => {
@@ -112,6 +130,12 @@ export function FiveR_Relevance({ onNext, userId }: FiveR_RelevanceProps) {
           currentStep={0}
         />
 
+        {userOnboardingStep !== null && userOnboardingStep >= 3 && (
+          <div className="absolute top-10 left-10">
+            <BackToHomeButton />
+          </div>
+        )}
+
         <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg p-6 md:p-8 lg:p-10 border border-gray-100">
           <h1 className="text-2xl md:text-3xl lg:text-4xl text-[#1C3B5E] mb-2">Step 1: RELEVANCE</h1>
           <p className="text-sm md:text-base text-[#333333] mb-6 md:mb-8">
@@ -158,17 +182,19 @@ export function FiveR_Relevance({ onNext, userId }: FiveR_RelevanceProps) {
 
 
           <div className="mt-8 flex justify-between gap-4">
-            <Button
-              onClick={() => window.location.href = '/5a/ask'}
-              className="flex-1 px-6 py-6 rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 text-white"
-            >
-              I'm Ready to Quit
-            </Button>
+            {userOnboardingStep !== null && userOnboardingStep < 4 && (
+              <Button
+                onClick={() => window.location.href = '/5a/ask'}
+                className="flex-1 px-6 py-6 rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 text-white"
+              >
+                I'm Ready to Quit
+              </Button>
+            )}
             <Button
               onClick={handleNext}
               disabled={selected.length === 0 || saving}
               variant="outline"
-              className="flex-1 px-6 py-6 rounded-2xl border-[#20B2AA] text-[#20B2AA] hover:bg-[#20B2AA]/10 disabled:opacity-50"
+              className={userOnboardingStep !== null && userOnboardingStep < 4 ? "flex-1 px-6 py-6 rounded-2xl border-[#20B2AA] text-[#20B2AA] hover:bg-[#20B2AA]/10 disabled:opacity-50" : "px-6 py-6 rounded-2xl border-[#20B2AA] text-[#20B2AA] hover:bg-[#20B2AA]/10 disabled:opacity-50"}
             >
               {saving ? 'Saving...' : 'Next: See Your Risks'}
             </Button>

@@ -71,14 +71,21 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
       const step = typeof data?.currentStep === 'number' ? data.currentStep : 0;
       
       // If onboarding is required, redirect to appropriate step
+      // Note: Only first 4 steps are required (0-3), step 4 (arrange) is optional
       if (requires) {
         const stepRoutes: { [key: number]: string } = {
           0: '/5a/ask',
           1: '/5a/advise', 
           2: '/5a/assess',
-          3: '/5a/assist',
-          4: '/5a/arrange'
+          3: '/5a/assist'
         };
+        
+        // If user has completed first 4 steps (step >= 3), consider onboarding complete
+        if (step >= 3) {
+          router.push('/app');
+          return;
+        }
+        
         const targetRoute = stepRoutes[step] || stepRoutes[0];
         router.push(targetRoute);
         return;

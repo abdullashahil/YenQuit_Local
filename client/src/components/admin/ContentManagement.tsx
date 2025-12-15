@@ -61,8 +61,6 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
   const contentTabs = [
     { id: "content", label: "Content", icon: FileText },
     { id: "5a-management", label: "5A Management", icon: MessageCircle },
-    { id: "notification-templates", label: "Notification Templates", icon: Bell },
-    { id: "assist-history", label: "Assist History", icon: History },
     { id: "configuration", label: "System Configuration", icon: Settings },
   ];
 

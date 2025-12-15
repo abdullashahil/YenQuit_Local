@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '../../ui/button';
 import { OnboardingProgressBar } from '../flow-shared/OnboardingProgressBar';
+import { BackToHomeButton } from '../../shared/BackToHomeButton';
 import { 
   CheckCircle2, 
   Calendar, 
@@ -12,6 +13,7 @@ import {
   Award, 
   Shield 
 } from 'lucide-react';
+import { userService } from '../../../services/userService';
 
 interface FiveR_RepetitionProps {
   onComplete: () => void;
@@ -19,6 +21,23 @@ interface FiveR_RepetitionProps {
 }
 
 export function FiveR_Repetition({ onComplete, onBack }: FiveR_RepetitionProps) {
+  const [userOnboardingStep, setUserOnboardingStep] = useState<number | null>(null);
+
+  // Fetch user profile to get onboarding_step
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const response = await userService.getProfile();
+        setUserOnboardingStep(response.data.onboarding_step || 0);
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+        setUserOnboardingStep(0);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
+
   const features = [
     {
       icon: Calendar,
@@ -54,6 +73,12 @@ export function FiveR_Repetition({ onComplete, onBack }: FiveR_RepetitionProps) 
           steps={['RELEVANCE', 'RISKS', 'REWARDS', 'ROADBLOCKS', 'REPETITION']}
           currentStep={4}
         />
+
+        {userOnboardingStep !== null && userOnboardingStep >= 3 && (
+          <div className="absolute top-10 left-10">
+            <BackToHomeButton />
+          </div>
+        )}
 
         <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg p-6 md:p-8 lg:p-10 border border-gray-100">
           {/* Completion Message - Moved to top */}
@@ -196,14 +221,27 @@ export function FiveR_Repetition({ onComplete, onBack }: FiveR_RepetitionProps) 
           </div>
 
           {/* Single Centered Button */}
-          <div className="mt-12 flex justify-center">
-            <Button
-              onClick={() => window.location.href = '/5a/ask'}
-              className="px-12 py-6 text-lg rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 text-white"
-            >
-              I'm Ready to Quit
-            </Button>
-          </div>
+          {userOnboardingStep !== null && userOnboardingStep < 4 && (
+            <div className="mt-12 flex justify-center">
+              <Button
+                onClick={() => window.location.href = '/5a/ask'}
+                className="px-12 py-6 text-lg rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 text-white"
+              >
+                I'm Ready to Quit
+              </Button>
+            </div>
+          )}
+          
+          {userOnboardingStep !== null && userOnboardingStep >= 4 && (
+            <div className="mt-12 flex justify-center">
+              <Button
+                onClick={() => window.location.href = '/app'}
+                className="px-12 py-6 text-lg rounded-2xl bg-[#1C3B5E] hover:bg-[#1C3B5E]/90 text-white"
+              >
+                Go to Dashboard
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>

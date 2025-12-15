@@ -198,7 +198,7 @@ export async function createOrUpdateUserAssistPlan(userId, { quitDate, triggers,
       );
     }
 
-    // Also update the quit_date in the USERS table (was profiles)
+    // Also update the quit_date in the users table
     if (quitDate) {
       await client.query(
         'UPDATE users SET quit_date = $1, updated_at = NOW() WHERE id = $2',

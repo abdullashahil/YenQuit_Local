@@ -67,10 +67,7 @@ export async function savePreSelfEfficacyResponses(userId, responses) {
       `, [userId, questionId, JSON.stringify(value)]);
     }
 
-    // Update profiles join_date (using users table now) when completing pre-self-efficacy
-    // Assuming 'join_date' is on users/profiles. Using users table based on consolidation.
-    // If join_date is still on profiles table, we update that via users view if applicable, or direct.
-    // We merged profiles -> users.
+    // Update user's join_date when completing pre-self-efficacy
     await client.query(`
       UPDATE users 
       SET join_date = NOW(), updated_at = NOW() 

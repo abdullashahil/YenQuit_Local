@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../../ui/button';
 import { OnboardingProgressBar } from '../flow-shared/OnboardingProgressBar';
+import { BackToHomeButton } from '../../shared/BackToHomeButton';
 import { Heart, DollarSign, Sparkles, Users, Activity, Smile, CheckCircle2, Clock, Sun, Calendar, TrendingUp, Award, Shield, Star } from 'lucide-react';
 import { getRewardsContent, Reward } from '../../../services/rewardsService';
+import { userService } from '../../../services/userService';
 
 interface FiveR_RewardsProps {
   onNext: (data: any) => void;
@@ -30,6 +32,22 @@ export function FiveR_Rewards({ onNext }: FiveR_RewardsProps) {
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userOnboardingStep, setUserOnboardingStep] = useState<number | null>(null);
+
+  // Fetch user profile to get onboarding_step
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const response = await userService.getProfile();
+        setUserOnboardingStep(response.data.onboarding_step || 0);
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+        setUserOnboardingStep(0);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -79,6 +97,12 @@ export function FiveR_Rewards({ onNext }: FiveR_RewardsProps) {
           steps={['RELEVANCE', 'RISKS', 'REWARDS', 'ROADBLOCKS', 'REPETITION']}
           currentStep={2}
         />
+
+        {userOnboardingStep !== null && userOnboardingStep >= 3 && (
+          <div className="absolute top-10 left-10">
+            <BackToHomeButton />
+          </div>
+        )}
 
         <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg p-6 md:p-8 lg:p-10 border border-gray-100">
           <h1 className="text-[#1C3B5E] mb-2">Step 3: REWARDS</h1>
@@ -147,18 +171,20 @@ export function FiveR_Rewards({ onNext }: FiveR_RewardsProps) {
 
           {/* Navigation Buttons */}
           <div className="flex justify-between gap-4">
-            <Button
-              onClick={() => window.location.href = '/5a/ask'}
-              className="flex-1 px-6 py-6 rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 text-white"
-            >
-              I'm Ready to Quit
-            </Button>
+            {userOnboardingStep !== null && userOnboardingStep < 4 && (
+              <Button
+                onClick={() => window.location.href = '/5a/ask'}
+                className="flex-1 px-6 py-6 rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 text-white"
+              >
+                I'm Ready to Quit
+              </Button>
+            )}
             <Button
               onClick={handleNext}
               variant="outline"
-              className="flex-1 px-6 py-6 rounded-2xl border-[#20B2AA] text-[#20B2AA] hover:bg-[#20B2AA]/10"
+              className={userOnboardingStep !== null && userOnboardingStep < 4 ? "flex-1 px-6 py-6 rounded-2xl border-[#20B2AA] text-[#20B2AA] hover:bg-[#20B2AA]/10" : "px-6 py-6 rounded-2xl border-[#20B2AA] text-[#20B2AA] hover:bg-[#20B2AA]/10"}
             >
-              Continue to Roadblocks
+              Next: See Your Roadblocks
             </Button>
           </div>
         </div>

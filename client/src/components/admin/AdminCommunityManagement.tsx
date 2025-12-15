@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { Plus, Search, Edit, Trash2, Users, MessageCircle, Eye } from "lucide-react"
 import axios from "axios"
+import { AdminSidebar } from "./AdminSidebar"
 
 interface Community {
   id: string
@@ -24,12 +25,22 @@ interface Community {
 }
 
 interface Props {
-  onEditCommunity?: (community: Community) => void
+  activeTab?: string;
+  setActiveTab?: (tab: string) => void;
+  onExitAdmin?: () => void;
+  onLogout?: () => void;
+  onEditCommunity?: (community: Community) => void;
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 
-export default function AdminCommunityManagement({ onEditCommunity }: Props) {
+export default function AdminCommunityManagement({ 
+  activeTab = "communities", 
+  setActiveTab = () => {}, 
+  onExitAdmin = () => {}, 
+  onLogout = () => {},
+  onEditCommunity 
+}: Props) {
   const [communitiesRaw, setCommunitiesRaw] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
@@ -168,7 +179,20 @@ export default function AdminCommunityManagement({ onEditCommunity }: Props) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50/30 to-white">
+      {/* Admin Sidebar */}
+      <AdminSidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        onExitAdmin={onExitAdmin}
+        onLogout={onLogout}
+      />
+
+      {/* Main Content Area */}
+      <div className="lg:ml-10">
+        <div className="p-4 md:p-6 lg:p-8">
+          <div className="max-w-full mx-auto">
+            <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -327,6 +351,10 @@ export default function AdminCommunityManagement({ onEditCommunity }: Props) {
           }}
         />
       )}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

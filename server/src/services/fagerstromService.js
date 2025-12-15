@@ -134,10 +134,13 @@ export async function getFagerstromUserAnswers(userId) {
     ORDER BY uar.question_id ASC
   `;
   const res = await query(queryText, [userId]);
-  // normalize response_data (remove quotes if it's a string)
+  // normalize response_data (handle both string and JSON formats)
   return res.rows.map(r => ({
     ...r,
-    answer_text: typeof r.answer_text === 'string' ? JSON.parse(r.answer_text) : r.answer_text
+    answer_text: typeof r.answer_text === 'string' ? 
+      (r.answer_text.startsWith('"') || r.answer_text.startsWith('[') || r.answer_text.startsWith('{') ? 
+        JSON.parse(r.answer_text) : r.answer_text) : 
+      r.answer_text
   }));
 }
 

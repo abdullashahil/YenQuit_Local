@@ -1,10 +1,29 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../../ui/button';
 import { OnboardingProgressBar } from '../flow-shared/OnboardingProgressBar';
+import { BackToHomeButton } from '../../shared/BackToHomeButton';
 import { Phone, MessageSquare, AlertTriangle } from 'lucide-react';
 import { FiveA_ArrangeProps } from '../../../types/fiveAFlow';
+import { userService } from '../../../services/userService';
 
 export function FiveA_Arrange({ onComplete, quitDate }: FiveA_ArrangeProps) {
+  const [userOnboardingStep, setUserOnboardingStep] = useState<number | null>(null);
+
+  // Fetch user profile to get onboarding_step
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const response = await userService.getProfile();
+        setUserOnboardingStep(response.data.onboarding_step || 0);
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+        setUserOnboardingStep(0);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
+
   const handleCall = (number: string) => {
     window.location.href = `tel:${number}`;
   };
@@ -16,6 +35,12 @@ export function FiveA_Arrange({ onComplete, quitDate }: FiveA_ArrangeProps) {
           steps={['ASK', 'ADVISE', 'ASSESS', 'ASSIST', 'ARRANGE']}
           currentStep={4}
         />
+
+        {userOnboardingStep !== null && userOnboardingStep >= 3 && (
+          <div className="absolute top-10 left-10">
+            <BackToHomeButton />
+          </div>
+        )}
 
         <div className="bg-white rounded-3xl shadow-lg p-8 border border-gray-100">
           <h1 className="text-[#1C3B5E] text-2xl font-bold mb-2">Step 5: CONNECT</h1>
