@@ -16,7 +16,7 @@ export function SavingsCalculator({ isOpen, onClose }: SavingsCalculatorProps) {
   const [days, setDays] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [userSmokingCount, setUserSmokingCount] = useState(0);
-  const [pricePerCigarette, setPricePerCigarette] = useState(17);
+  const [pricePerCigarette, setPricePerCigarette] = useState(20);
   const [totalLogs, setTotalLogs] = useState(0);
   const [totalCigarettesSmoked, setTotalCigarettesSmoked] = useState(0);
   const [calculatedSavings, setCalculatedSavings] = useState(0);
@@ -31,26 +31,32 @@ export function SavingsCalculator({ isOpen, onClose }: SavingsCalculatorProps) {
         const answersResponse = await userService.getUserAnswers();
         if (answersResponse.success && answersResponse.data) {
           let smokingCount = 0;
-          let cigarettePrice = 17; // Default fallback
+          let cigarettePrice = 20; // Default fallback
 
-          // Get smoking count from question_id 10
-          const smokingAnswer = answersResponse.data.find((answer: any) => answer.question_id === 10);
+          // Get smoking count from question_id 26 (smoked) or 34 (smokeless)
+          const smokingAnswer = answersResponse.data.find((answer: any) => answer.question_id === 26 || answer.question_id === 34);
           if (smokingAnswer && smokingAnswer.answer_text) {
             const smokingText = smokingAnswer.answer_text;
 
             if (smokingText.includes('Less than 5')) {
-              smokingCount = 5;
+              smokingCount = 4;
             } else if (smokingText.includes('5-10')) {
-              smokingCount = 10;
+              smokingCount = 8;
             } else if (smokingText.includes('11-20')) {
-              smokingCount = 20;
+              smokingCount = 15;
             } else if (smokingText.includes('More than 20')) {
-              smokingCount = 25; // Reasonable max for "More than 20"
+              smokingCount = 25;
+            } else if (smokingText.includes('10 or less')) { // Fagerstrom fallback
+              smokingCount = 8;
+            } else if (smokingText.includes('21-30')) { // Fagerstrom fallback
+              smokingCount = 25;
+            } else if (smokingText.includes('31 or more')) { // Fagerstrom fallback
+              smokingCount = 35;
             }
           }
 
-          // Get price per cigarette from question_id 11
-          const priceAnswer = answersResponse.data.find((answer: any) => answer.question_id === 11);
+          // Get price per cigarette from question_id 27 (smoked) or 33 (smokeless)
+          const priceAnswer = answersResponse.data.find((answer: any) => answer.question_id === 27 || answer.question_id === 33);
           if (priceAnswer && priceAnswer.answer_text) {
             const priceText = priceAnswer.answer_text;
 

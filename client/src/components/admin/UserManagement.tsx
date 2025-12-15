@@ -54,24 +54,24 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
   // Calculate longest streak from logs (same as in ProfileHub)
   const calculateLongestStreak = (logs: any[]) => {
     if (!logs || logs.length === 0) return 0;
-    
+
     // Sort logs by date (oldest first)
-    const sortedLogs = [...logs].sort((a, b) => 
+    const sortedLogs = [...logs].sort((a, b) =>
       new Date(a.log_date).getTime() - new Date(b.log_date).getTime()
     );
-    
+
     let currentStreak = 0;
     let maxStreak = 0;
     let previousDate: Date | null = null;
-    
+
     for (const log of sortedLogs) {
       const logDate = new Date(log.log_date);
       logDate.setHours(0, 0, 0, 0); // Normalize to start of day
-      
+
       if (!log.smoked) {
         if (previousDate) {
           const daysDiff = Math.floor((logDate.getTime() - previousDate.getTime()) / (24 * 60 * 60 * 1000));
-          
+
           if (daysDiff === 1) {
             // Consecutive day
             currentStreak++;
@@ -84,7 +84,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
           // First smoke-free day
           currentStreak = 1;
         }
-        
+
         maxStreak = Math.max(maxStreak, currentStreak);
         previousDate = logDate;
       } else {
@@ -93,21 +93,21 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
         previousDate = null;
       }
     }
-    
+
     return maxStreak;
   };
 
   // Calculate engagement percentage
   const calculateEngagementPercentage = (logs: any[], joinDate: string | null) => {
     if (!logs || logs.length === 0 || !joinDate) return 0;
-    
+
     const daysLoggedIn = logs.length;
     const startDate = new Date(joinDate);
     const today = new Date();
     const totalDaysSinceJoin = Math.floor((today.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
-    
+
     if (totalDaysSinceJoin <= 0) return 0;
-    
+
     return Math.round((daysLoggedIn / totalDaysSinceJoin) * 100);
   };
 
@@ -129,7 +129,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
         }));
         return;
       }
-      
+
       // Use the new admin endpoint to get specific user progress data
       try {
         console.log('🔍 Client - Fetching progress for user:', userId);
@@ -138,7 +138,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
         const logs = progressData.logs || [];
         console.log('🔍 Client - Logs for user', userId, ':', logs);
         console.log('🔍 Client - Number of logs:', logs.length);
-        
+
         // Calculate engagement: (number of logs / number of days since join) * 100
         const startDate = new Date(joinDate);
         const today = new Date();
@@ -146,13 +146,13 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
         const numberOfLogs = logs.length;
         let engagementPercentage = totalDaysSinceJoin > 0 ? Math.round((numberOfLogs / totalDaysSinceJoin) * 100) : (numberOfLogs > 0 ? 100 : 0);
         engagementPercentage = Math.min(engagementPercentage, 100);
-        
+
         console.log('🔍 Client - Engagement calculation for user', userId, ':');
         console.log('🔍 Client - Join date:', joinDate);
         console.log('🔍 Client - Total days since join:', totalDaysSinceJoin);
         console.log('🔍 Client - Number of logs:', numberOfLogs);
         console.log('🔍 Client - Engagement percentage:', engagementPercentage);
-        
+
         const progressDataForUser = {
           progressPercentage: engagementPercentage,
           daysSmokeFree: progressData.daysSmokeFree || logs.filter(log => !log.smoked).length,
@@ -161,7 +161,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
           streak: calculateLongestStreak(logs),
           logs: logs
         };
-        
+
         setUserProgress(prev => ({
           ...prev,
           [userId]: progressDataForUser
@@ -170,17 +170,17 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
       } catch (error) {
         console.log('Could not fetch admin progress data, calculating engagement based on join date only');
       }
-      
+
       // Fallback: Calculate engagement based on join date to current date (estimated)
       const startDate = new Date(joinDate);
       const today = new Date();
       const totalDaysSinceJoin = Math.floor((today.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
-      
+
       // For demonstration, simulate some logged days (remove this in production when you have real data)
       const estimatedLoggedDays = Math.max(0, Math.floor(totalDaysSinceJoin * (0.3 + Math.random() * 0.4))); // 30-70% engagement
-      
+
       const engagementPercentage = totalDaysSinceJoin > 0 ? Math.round((estimatedLoggedDays / totalDaysSinceJoin) * 100) : 0;
-      
+
       // Generate sample logs for demonstration (remove this in production)
       const sampleLogs = Array.from({ length: estimatedLoggedDays }, (_, i) => ({
         log_date: new Date(Date.now() - (i * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
@@ -190,9 +190,9 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
         mood: Math.floor(Math.random() * 10) + 1,
         notes: 'Sample log entry'
       }));
-      
+
       const longestStreak = calculateLongestStreak(sampleLogs);
-      
+
       const progressData = {
         progressPercentage: engagementPercentage,
         daysSmokeFree: sampleLogs.filter(log => !log.smoked).length,
@@ -201,7 +201,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
         streak: longestStreak,
         logs: sampleLogs
       };
-      
+
       setUserProgress(prev => ({
         ...prev,
         [userId]: progressData
@@ -228,7 +228,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const result = await userService.getUsers({
         page,
         limit: 10,
@@ -236,11 +236,11 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
         role,
         status
       });
-      
+
       if (result.success) {
         setUsers(result.data);
         setPagination(result.pagination);
-        
+
         // Fetch progress data for each user
         result.data.forEach((user: any) => {
           console.log("🔍 User data:", user);
@@ -259,7 +259,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
   const fetchStats = async () => {
     try {
       const result = await userService.getUserStats();
-      
+
       if (result.success) {
         setStats(result.data);
       }
@@ -285,7 +285,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
   // Handle user operations
   const handleDelete = async (userId: string) => {
     if (!confirm('Are you sure you want to delete this user?')) return;
-    
+
     try {
       await userService.deleteUser(userId);
       // Refresh the user list
@@ -310,26 +310,29 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
   // Format date helper
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
     });
   };
 
   // Transform API data to match expected format
   const transformedUsers = users.map((user) => {
     const progress = userProgress[user.id] || {};
+    const logs = progress.logs || [];
+    // Sort logs descending to find the latest one
+    const sortedLogs = [...logs].sort((a: any, b: any) => new Date(b.log_date).getTime() - new Date(a.log_date).getTime());
+    const lastLogDate = sortedLogs.length > 0 ? formatDate(sortedLogs[0].log_date) : "No logs";
+
     return {
       ...user,
+      fullName: user.full_name || 'N/A',
       name: user.name || user.email || 'Unknown',
       phone: user.phone || '-',
       age: user.age || '-',
-      fagerstrom: user.fagerstrom_score || '-',
-      addictionLevel: user.addiction_level || 'Unknown',
-      status: user.status || 'Unknown',
-      joinDate: formatDate(user.join_date),
-      lastLogin: formatDate(user.last_login),
+      created: formatDate(user.created_at),
+      lastProgressLog: lastLogDate,
       progress: progress.progressPercentage || 0,
       sessionsCompleted: progress.sessionsCompleted || 0,
       streak: progress.streak || 0,
@@ -338,17 +341,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
     };
   });
 
-  const getAddictionColor = (level: string) => {
-    if (level === "High") return "#D9534F";
-    if (level === "Moderate") return "#FFA726";
-    return "#8BC34A";
-  };
 
-  const getStatusColor = (status: string) => {
-    if (status === "Quit") return "#8BC34A";
-    if (status === "Relapsed") return "#D9534F";
-    return "#20B2AA";
-  };
 
   const toggleRowSelection = (id: number) => {
     setSelectedRows(prev =>
@@ -441,7 +434,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                           <p className="text-sm text-gray-600">{stat.label}</p>
                           <p className="text-2xl font-bold text-[#1C3B5E]">{stat.value}</p>
                         </div>
-                        <div 
+                        <div
                           className="w-12 h-12 rounded-full flex items-center justify-center"
                           style={{ backgroundColor: `${stat.color}20` }}
                         >
@@ -540,7 +533,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                     </>
                   )}
                 </div>
-                
+
                 {selectedRows.length > 0 && (
                   <div className="flex items-center gap-3">
                     <span className="text-sm text-gray-600">
@@ -581,6 +574,9 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                           className="rounded border-gray-300 text-[#20B2AA] focus:ring-[#20B2AA] w-4 h-4"
                         />
                       </TableHead>
+                      <TableHead className="py-4 font-semibold text-[#1C3B5E] min-w-[150px]">
+                        Full Name
+                      </TableHead>
                       <TableHead className="py-4 font-semibold text-[#1C3B5E] min-w-[180px]">
                         User
                       </TableHead>
@@ -591,13 +587,10 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                         Engagement
                       </TableHead>
                       <TableHead className="font-semibold text-[#1C3B5E] text-center min-w-[120px]">
-                        Fagerström
-                      </TableHead>
-                      <TableHead className="font-semibold text-[#1C3B5E] text-center min-w-[120px]">
-                        Status
+                        Created
                       </TableHead>
                       <TableHead className="font-semibold text-[#1C3B5E] text-center min-w-[140px]">
-                        Last Login
+                        Last Progress Log
                       </TableHead>
                       <TableHead className="font-semibold text-[#1C3B5E] text-center min-w-[160px]">
                         Actions
@@ -619,7 +612,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                         <TableCell colSpan={7} className="text-center py-12">
                           <div className="flex flex-col items-center gap-4">
                             <p className="text-red-600 font-semibold">Error: {error}</p>
-                            <Button 
+                            <Button
                               onClick={() => fetchUsers(1, searchQuery, roleFilter, statusFilter)}
                               variant="outline"
                               className="rounded-xl"
@@ -640,115 +633,95 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                       </TableRow>
                     ) : (
                       transformedUsers.map((user, index) => (
-                      <TableRow
-                        key={user.id}
-                        className={`border-b border-gray-50 transition-all duration-200 group ${
-                          selectedRows.includes(user.id) 
-                            ? 'bg-blue-50/50' 
+                        <TableRow
+                          key={user.id}
+                          className={`border-b border-gray-50 transition-all duration-200 group ${selectedRows.includes(user.id)
+                            ? 'bg-blue-50/50'
                             : 'hover:bg-gradient-to-r hover:from-blue-50/30 hover:to-cyan-50/30'
-                        }`}
-                      >
-                        <TableCell className="py-4 pl-6">
-                          <input
-                            type="checkbox"
-                            checked={selectedRows.includes(user.id)}
-                            onChange={() => toggleRowSelection(user.id)}
-                            className="rounded border-gray-300 text-[#20B2AA] focus:ring-[#20B2AA] w-4 h-4"
-                          />
-                        </TableCell>
-                        <TableCell className="py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#20B2AA] to-[#1C9B94] flex items-center justify-center text-white font-semibold text-sm shadow-md">
-                              {user.name.split(' ').map(n => n[0]).join('')}
+                            }`}
+                        >
+                          <TableCell className="py-4 pl-6">
+                            <input
+                              type="checkbox"
+                              checked={selectedRows.includes(user.id)}
+                              onChange={() => toggleRowSelection(user.id)}
+                              className="rounded border-gray-300 text-[#20B2AA] focus:ring-[#20B2AA] w-4 h-4"
+                            />
+                          </TableCell>
+                          <TableCell className="py-4">
+                            <p className="font-semibold text-[#1C3B5E]">
+                              {user.fullName}
+                            </p>
+                          </TableCell>
+                          <TableCell className="py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#20B2AA] to-[#1C9B94] flex items-center justify-center text-white font-semibold text-sm shadow-md">
+                                {user.name.split(' ').map(n => n[0]).join('')}
+                              </div>
+                              <div>
+                                <p className="font-semibold text-[#1C3B5E] group-hover:text-[#1C9B94] transition-colors duration-200">
+                                  {user.name}
+                                </p>
+                                <p className="text-xs text-gray-500">Age: {user.age}</p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-semibold text-[#1C3B5E] group-hover:text-[#1C9B94] transition-colors duration-200">
-                                {user.name}
-                              </p>
-                              <p className="text-xs text-gray-500">Age: {user.age}</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            {/* <p className="text-sm text-gray-600 flex items-center gap-2">
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              {/* <p className="text-sm text-gray-600 flex items-center gap-2">
                               <Mail className="w-3 h-3" />
                               {user.email}
                             </p> */}
-                            <p className=" text-black flex items-center gap-2">
-                              <Phone className="w-3 h-3" />
-                              {user.phone}
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-3">
-                              <Progress 
-                                value={user.progress} 
-                                className="w-16 h-2"
-                              />
-                              <span className="text-sm font-medium text-[#1C3B5E] min-w-[40px]">
-                                {user.progress}%
-                              </span>
+                              <p className=" text-black flex items-center gap-2">
+                                <Phone className="w-3 h-3" />
+                                {user.phone}
+                              </p>
                             </div>
-                            <p className="text-xs text-gray-500">
-                              {user.sessionsCompleted} logged • {user.streak} day streak
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div
-                            className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border border-transparent shadow-sm"
-                            style={{
-                              backgroundColor: `${getAddictionColor(user.addictionLevel)}15`,
-                              color: getAddictionColor(user.addictionLevel),
-                              borderColor: `${getAddictionColor(user.addictionLevel)}30`
-                            }}
-                          >
-                            {user.fagerstrom}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div
-                            className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border border-transparent shadow-sm"
-                            style={{
-                              backgroundColor: `${getStatusColor(user.status)}15`,
-                              color: getStatusColor(user.status),
-                              borderColor: `${getStatusColor(user.status)}30`
-                            }}
-                          >
-                            {user.status}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div className="space-y-1">
-                            <p className="text-sm font-medium text-[#1C3B5E]">{user.lastLogin}</p>
-                            {/* <p className="text-xs text-gray-500">Joined {user.joinDate}</p> */}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center justify-center gap-1">
-                            <button
-                              onClick={() => handleView(user)}
-                              className="p-2 rounded-xl transition-all duration-200 hover:shadow-md hover:scale-105 group"
-                              style={{ backgroundColor: "#20B2AA15" }}
-                              title="View User Details"
-                            >
-                              <Eye className="w-4 h-4 group-hover:scale-110 transition-transform" style={{ color: "#20B2AA" }} />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(user.id)}
-                              className="p-2 rounded-xl transition-all duration-200 hover:shadow-md hover:scale-105 group"
-                              style={{ backgroundColor: "#D9534F10" }}
-                              title="Delete User"
-                            >
-                              <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform" style={{ color: "#D9534F" }} />
-                            </button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )))}
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-3">
+                                <Progress
+                                  value={user.progress}
+                                  className="w-16 h-2"
+                                />
+                                <span className="text-sm font-medium text-[#1C3B5E] min-w-[40px]">
+                                  {user.progress}%
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-500">
+                                {user.sessionsCompleted} logged • {user.streak} day streak
+                              </p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <p className="text-sm font-medium text-[#1C3B5E]">{user.created}</p>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <p className="text-sm font-medium text-[#1C3B5E]">{user.lastProgressLog}</p>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                onClick={() => handleView(user)}
+                                className="p-2 rounded-xl transition-all duration-200 hover:shadow-md hover:scale-105 group"
+                                style={{ backgroundColor: "#20B2AA15" }}
+                                title="View User Details"
+                              >
+                                <Eye className="w-4 h-4 group-hover:scale-110 transition-transform" style={{ color: "#20B2AA" }} />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(user.id)}
+                                className="p-2 rounded-xl transition-all duration-200 hover:shadow-md hover:scale-105 group"
+                                style={{ backgroundColor: "#D9534F10" }}
+                                title="Delete User"
+                              >
+                                <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform" style={{ color: "#D9534F" }} />
+                              </button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )))}
                   </TableBody>
                 </Table>
               </div>
@@ -762,16 +735,16 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                     <span className="font-semibold text-[#1C3B5E]">{pagination.total}</span> users
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="rounded-xl border-gray-200 hover:border-[#20B2AA] hover:text-[#20B2AA] transition-all duration-200"
                       onClick={() => handlePageChange(pagination.page - 1)}
                       disabled={!pagination.hasPrev}
                     >
                       Previous
                     </Button>
-                    
+
                     {/* Page numbers */}
                     {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
                       let pageNum;
@@ -784,27 +757,26 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                       } else {
                         pageNum = pagination.page - 2 + i;
                       }
-                      
+
                       return (
-                        <Button 
+                        <Button
                           key={pageNum}
-                          size="sm" 
+                          size="sm"
                           variant={pageNum === pagination.page ? "default" : "outline"}
-                          className={`rounded-xl transition-all duration-200 ${
-                            pageNum === pagination.page 
-                              ? "bg-[#20B2AA] text-white shadow-md" 
-                              : "border-gray-200 hover:border-[#20B2AA] hover:text-[#20B2AA]"
-                          }`}
+                          className={`rounded-xl transition-all duration-200 ${pageNum === pagination.page
+                            ? "bg-[#20B2AA] text-white shadow-md"
+                            : "border-gray-200 hover:border-[#20B2AA] hover:text-[#20B2AA]"
+                            }`}
                           onClick={() => handlePageChange(pageNum)}
                         >
                           {pageNum}
                         </Button>
                       );
                     })}
-                    
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="rounded-xl border-gray-200 hover:border-[#20B2AA] hover:text-[#20B2AA] transition-all duration-200"
                       onClick={() => handlePageChange(pagination.page + 1)}
                       disabled={!pagination.hasNext}
@@ -815,7 +787,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
                 </div>
               )}
               {/* User Detail Modal */}
-              <UserDetailModal 
+              <UserDetailModal
                 open={isDetailModalOpen}
                 onOpenChange={setIsDetailModalOpen}
                 user={selectedUser}
