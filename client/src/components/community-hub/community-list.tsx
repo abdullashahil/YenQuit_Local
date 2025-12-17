@@ -171,7 +171,7 @@ export default function CommunityList({ selectedCommunity, onSelectCommunity }: 
   }
 
   // handle join community
-  const handleJoinCommunity = async (communityId: string) => {
+  const handleJoinCommunity = async (communityId: number) => {
     try {
       const token = localStorage.getItem("accessToken")
       if (!token) {

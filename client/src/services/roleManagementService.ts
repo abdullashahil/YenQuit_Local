@@ -29,7 +29,7 @@ export const roleManagementService = {
   },
 
   // Promote user to admin
-  async promoteUser(userId: string) {
+  async promoteUser(userId: number) {
     try {
       const response = await axios.patch(`${API_BASE_URL}/users/user/${userId}/promote`, 
         {},

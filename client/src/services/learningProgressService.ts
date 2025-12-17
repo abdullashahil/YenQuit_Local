@@ -9,7 +9,7 @@ export interface LearningProgressCountResponse {
 }
 
 export interface LearningProgressItem {
-  id: string;
+  id: number;
   title: string;
   content: string;
   category: string;
@@ -63,7 +63,7 @@ class LearningProgressService {
   }
 
   // Add content to user's learning progress
-  async addToProgress(contentId: string): Promise<{ message: string; contentIds: string[] }> {
+  async addToProgress(contentId: number): Promise<{ message: string; contentIds: string[] }> {
     try {
       const response = await axios.post(
         `${API_BASE_URL}/learning-progress`,

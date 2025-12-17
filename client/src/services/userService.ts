@@ -62,7 +62,7 @@ export const userService = {
   },
 
   // Get user by ID
-  async getUserById(id: string) {
+  async getUserById(id: number) {
     try {
       const response = await axios.get(
         `${API_BASE_URL}/users/admin/users/${id}`,
@@ -103,7 +103,7 @@ export const userService = {
   },
 
   // Update user
-  async updateUser(id: string, userData: {
+  async updateUser(id: number, userData: {
     email?: string;
     role?: string;
     status?: string;
@@ -130,7 +130,7 @@ export const userService = {
   },
 
   // Update user avatar
-  async updateAvatar(id: string, file: File) {
+  async updateAvatar(id: number, file: File) {
     try {
       const formData = new FormData();
       formData.append('avatar', file);
@@ -153,7 +153,7 @@ export const userService = {
   },
 
   // Delete user
-  async deleteUser(id: string) {
+  async deleteUser(id: number) {
     try {
       const response = await axios.delete(
         `${API_BASE_URL}/users/admin/users/${id}`,
@@ -288,7 +288,7 @@ export const userService = {
   },
 
   // Get user progress data for admin
-  getUserProgress: async (userId: string) => {
+  getUserProgress: async (userId: number) => {
     try {
       const headers = getAuthHeaders();
       const response = await axios.get(

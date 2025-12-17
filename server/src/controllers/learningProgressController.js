@@ -5,12 +5,12 @@ export const getUserLearningProgress = async (req, res) => {
   try {
     console.log('GET Controller - req.user:', req.user);
     console.log('GET Controller - req.user.userId:', req.user?.userId);
-    
+
     if (!req.user || !req.user.userId) {
       console.log('GET Controller - No user found in request');
       return res.status(401).json({ message: 'User not authenticated' });
     }
-    
+
     const userId = req.user.userId; // Changed from req.user.id to req.user.userId
     console.log('GET Controller - userId:', userId);
 
@@ -34,8 +34,20 @@ export const getUserLearningProgress = async (req, res) => {
     }
 
     // Get last 3 content IDs (most recent)
-    const lastThreeIds = contentIds.slice(-3).reverse();
-    console.log('GET Controller - lastThreeIds:', lastThreeIds);
+    // Filter out any non-integer IDs (legacy UUIDs) to avoid SQL errors
+    const lastThreeIds = contentIds
+      .slice(-3)
+      .reverse()
+      .filter(id => {
+        const num = Number(id);
+        return Number.isInteger(num) && num > 0;
+      });
+
+    console.log('GET Controller - lastThreeIds (filtered):', lastThreeIds);
+
+    if (lastThreeIds.length === 0) {
+      return res.json({ items: [] });
+    }
 
     // Fetch content details from contents table
     const contentResult = await query(
@@ -49,8 +61,8 @@ export const getUserLearningProgress = async (req, res) => {
         NULL as author, 
         NULL as duration
        FROM contents 
-       WHERE id = ANY($1::uuid[]) 
-       ORDER BY array_position($1::uuid[], id)`,
+       WHERE id = ANY($1::integer[]) 
+       ORDER BY array_position($1::integer[], id)`,
       [lastThreeIds]
     );
 
@@ -66,12 +78,12 @@ export const getLearningProgressCount = async (req, res) => {
   try {
     console.log('GET Count Controller - req.user:', req.user);
     console.log('GET Count Controller - req.user.userId:', req.user?.userId);
-    
+
     if (!req.user || !req.user.userId) {
       console.log('GET Count Controller - No user found in request');
       return res.status(401).json({ message: 'User not authenticated' });
     }
-    
+
     const userId = req.user.userId;
     console.log('GET Count Controller - userId:', userId);
 
@@ -82,8 +94,8 @@ export const getLearningProgressCount = async (req, res) => {
     );
 
     if (progressResult.rows.length === 0 || !progressResult.rows[0].content_ids) {
-      return res.json({ 
-        count: 0, 
+      return res.json({
+        count: 0,
         hasCompletedMilestone: false,
         milestoneThreshold: 15
       });
@@ -95,8 +107,8 @@ export const getLearningProgressCount = async (req, res) => {
 
     console.log('GET Count Controller - content count:', count, 'milestone achieved:', hasCompletedMilestone);
 
-    res.json({ 
-      count, 
+    res.json({
+      count,
       hasCompletedMilestone,
       milestoneThreshold: 15
     });
@@ -111,12 +123,12 @@ export const addContentToProgress = async (req, res) => {
   try {
     console.log('Controller - req.user:', req.user);
     console.log('Controller - req.user.userId:', req.user?.userId);
-    
+
     if (!req.user || !req.user.userId) {
       console.log('Controller - No user found in request');
       return res.status(401).json({ message: 'User not authenticated' });
     }
-    
+
     const userId = req.user.userId; // Changed from req.user.id to req.user.userId
     const { contentId } = req.body;
 
@@ -144,19 +156,19 @@ export const addContentToProgress = async (req, res) => {
     } else {
       // Update existing entry
       const currentContentIds = existingProgress.rows[0].content_ids || [];
-      
+
       // Remove the content ID if it already exists (to avoid duplicates)
       const filteredIds = currentContentIds.filter(id => id !== contentId);
       // Add the content ID to the end (most recent)
       updatedContentIds = [...filteredIds, contentId];
-      
+
       await query(
         'UPDATE user_learning_progress SET content_ids = $1 WHERE user_id = $2',
         [JSON.stringify(updatedContentIds), userId]
       );
     }
 
-    res.json({ 
+    res.json({
       message: 'Content added to progress successfully',
       contentIds: updatedContentIds
     });

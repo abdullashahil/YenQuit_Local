@@ -3,14 +3,14 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
 
 interface UnreadCounts {
-  [communityId: string]: number
+  [communityId: number]: number
 }
 
 interface NotificationContextType {
   unreadCounts: UnreadCounts
-  incrementUnreadCount: (communityId: string, increment?: number) => void
-  markAsRead: (communityId: string) => void
-  setUnreadCount: (communityId: string, count: number) => void
+  incrementUnreadCount: (communityId: number, increment?: number) => void
+  markAsRead: (communityId: number) => void
+  setUnreadCount: (communityId: number, count: number) => void
   getTotalUnreadCount: () => number
 }
 
@@ -19,21 +19,21 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const [unreadCounts, setUnreadCounts] = useState<UnreadCounts>({})
 
-  const incrementUnreadCount = useCallback((communityId: string, increment: number = 1) => {
+  const incrementUnreadCount = useCallback((communityId: number, increment: number = 1) => {
     setUnreadCounts(prev => ({
       ...prev,
       [communityId]: (prev[communityId] || 0) + increment
     }))
   }, [])
 
-  const markAsRead = useCallback((communityId: string) => {
+  const markAsRead = useCallback((communityId: number) => {
     setUnreadCounts(prev => ({
       ...prev,
       [communityId]: 0
     }))
   }, [])
 
-  const setUnreadCount = useCallback((communityId: string, count: number) => {
+  const setUnreadCount = useCallback((communityId: number, count: number) => {
     setUnreadCounts(prev => ({
       ...prev,
       [communityId]: Math.max(0, count)

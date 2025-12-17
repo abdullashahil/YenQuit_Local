@@ -80,7 +80,7 @@ export default function AdminCommunityManagement({
   }, [])
 
   // Delete community
-  const handleDeleteCommunity = async (communityId: string) => {
+  const handleDeleteCommunity = async (communityId: number) => {
     if (!confirm("Are you sure you want to delete this community? This action cannot be undone.")) {
       return
     }

@@ -112,7 +112,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
   };
 
   // Fetch user progress data
-  const fetchUserProgress = async (userId: string, joinDate: string | null) => {
+  const fetchUserProgress = async (userId: number, joinDate: string | null) => {
     console.log("🔍 fetchUserProgress called for userId:", userId, "joinDate:", joinDate);
     try {
       if (!joinDate) {
@@ -283,7 +283,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
   };
 
   // Handle user operations
-  const handleDelete = async (userId: string) => {
+  const handleDelete = async (userId: number) => {
     if (!confirm('Are you sure you want to delete this user?')) return;
 
     try {
