@@ -1,9 +1,9 @@
 import { io, Socket } from 'socket.io-client';
 
 interface Message {
-  id: string;
-  community_id: string;
-  user_id: string;
+  id: number;
+  community_id: number;
+  user_id: number;
   content: string;
   message_type: 'text' | 'image' | 'file' | 'system';
   file_url?: string;
@@ -22,9 +22,9 @@ interface Message {
 }
 
 interface OnlineUser {
-  id: string;
-  user_id: string;
-  community_id: string;
+  id: number;
+  user_id: number;
+  community_id: number;
   socket_id: string;
   last_seen: string;
   email: string;
@@ -34,9 +34,9 @@ interface OnlineUser {
 }
 
 interface Reaction {
-  id: string;
-  message_id: string;
-  user_id: string;
+  id: number;
+  message_id: number;
+  user_id: number;
   emoji: string;
   created_at: string;
   email: string;
@@ -47,11 +47,11 @@ interface Reaction {
 
 class SocketService {
   private socket: Socket | null = null;
-  private userId: string | null = null;
+  private userId: number | null = null;
   private currentCommunity: string | null = null;
 
   // Connect to Socket.IO server
-  connect(userId: string, token: string) {
+  connect(userId: number, token: string) {
     // If already connected with same user, don't reconnect
     if (this.socket && this.userId === userId) {
       console.log('DEBUG: Socket already connected for user:', userId)
@@ -96,7 +96,7 @@ class SocketService {
   }
 
   // Join a community room
-  joinCommunity(communityId: string) {
+  joinCommunity(communityId: number) {
     if (this.socket && this.userId) {
       this.currentCommunity = communityId;
       this.socket.emit('join_community', { communityId });
@@ -104,7 +104,7 @@ class SocketService {
   }
 
   // Leave a community room
-  leaveCommunity(communityId: string) {
+  leaveCommunity(communityId: number) {
     if (this.socket && this.userId) {
       this.socket.emit('leave_community', { communityId });
       if (this.currentCommunity === communityId) {
@@ -114,7 +114,7 @@ class SocketService {
   }
 
   // Send a message
-  sendMessage(communityId: string, content: string, messageType: 'text' | 'image' | 'file' = 'text', fileUrl?: string, replyTo?: string) {
+  sendMessage(communityId: number, content: string, messageType: 'text' | 'image' | 'file' = 'text', fileUrl?: string, replyTo?: number) {
     if (this.socket && this.userId) {
       this.socket.emit('send_message', {
         communityId,
@@ -127,42 +127,42 @@ class SocketService {
   }
 
   // Edit a message
-  editMessage(messageId: string, content: string) {
+  editMessage(messageId: number, content: string) {
     if (this.socket && this.userId) {
       this.socket.emit('edit_message', { messageId, content });
     }
   }
 
   // Delete a message
-  deleteMessage(messageId: string) {
+  deleteMessage(messageId: number) {
     if (this.socket && this.userId) {
       this.socket.emit('delete_message', { messageId });
     }
   }
 
   // Add reaction to message
-  addReaction(messageId: string, emoji: string) {
+  addReaction(messageId: number, emoji: string) {
     if (this.socket && this.userId) {
       this.socket.emit('add_reaction', { messageId, emoji });
     }
   }
 
   // Remove reaction from message
-  removeReaction(messageId: string, emoji: string) {
+  removeReaction(messageId: number, emoji: string) {
     if (this.socket && this.userId) {
       this.socket.emit('remove_reaction', { messageId, emoji });
     }
   }
 
   // Start typing indicator
-  startTyping(communityId: string) {
+  startTyping(communityId: number) {
     if (this.socket && this.userId) {
       this.socket.emit('typing_start', { communityId });
     }
   }
 
   // Stop typing indicator
-  stopTyping(communityId: string) {
+  stopTyping(communityId: number) {
     if (this.socket && this.userId) {
       this.socket.emit('typing_stop', { communityId });
     }
@@ -212,23 +212,23 @@ class SocketService {
     this.socket?.on('message_edited', callback);
   }
 
-  onMessageDeleted(callback: (data: { messageId: string }) => void) {
+  onMessageDeleted(callback: (data: { messageId: number }) => void) {
     this.socket?.on('message_deleted', callback);
   }
 
-  onReactionAdded(callback: (data: { messageId: string; reactions: Reaction[] }) => void) {
+  onReactionAdded(callback: (data: { messageId: number; reactions: Reaction[] }) => void) {
     this.socket?.on('reaction_added', callback);
   }
 
-  onReactionRemoved(callback: (data: { messageId: string; reactions: Reaction[] }) => void) {
+  onReactionRemoved(callback: (data: { messageId: number; reactions: Reaction[] }) => void) {
     this.socket?.on('reaction_removed', callback);
   }
 
-  onUserJoined(callback: (data: { userId: string; communityId: string }) => void) {
+  onUserJoined(callback: (data: { userId: number; communityId: number }) => void) {
     this.socket?.on('user_joined', callback);
   }
 
-  onUserLeft(callback: (data: { userId: string; communityId: string }) => void) {
+  onUserLeft(callback: (data: { userId: number; communityId: number }) => void) {
     this.socket?.on('user_left', callback);
   }
 
@@ -236,11 +236,11 @@ class SocketService {
     this.socket?.on('online_users_updated', callback);
   }
 
-  onUserTyping(callback: (data: { userId: string; communityId: string }) => void) {
+  onUserTyping(callback: (data: { userId: number; communityId: number }) => void) {
     this.socket?.on('user_typing', callback);
   }
 
-  onUserStopTyping(callback: (data: { userId: string; communityId: string }) => void) {
+  onUserStopTyping(callback: (data: { userId: number; communityId: number }) => void) {
     this.socket?.on('user_stop_typing', callback);
   }
 
@@ -253,23 +253,23 @@ class SocketService {
     this.socket?.off('message_edited', callback);
   }
 
-  offMessageDeleted(callback?: (data: { messageId: string }) => void) {
+  offMessageDeleted(callback?: (data: { messageId: number }) => void) {
     this.socket?.off('message_deleted', callback);
   }
 
-  offReactionAdded(callback?: (data: { messageId: string; reactions: Reaction[] }) => void) {
+  offReactionAdded(callback?: (data: { messageId: number; reactions: Reaction[] }) => void) {
     this.socket?.off('reaction_added', callback);
   }
 
-  offReactionRemoved(callback?: (data: { messageId: string; reactions: Reaction[] }) => void) {
+  offReactionRemoved(callback?: (data: { messageId: number; reactions: Reaction[] }) => void) {
     this.socket?.off('reaction_removed', callback);
   }
 
-  offUserJoined(callback?: (data: { userId: string; communityId: string }) => void) {
+  offUserJoined(callback?: (data: { userId: number; communityId: number }) => void) {
     this.socket?.off('user_joined', callback);
   }
 
-  offUserLeft(callback?: (data: { userId: string; communityId: string }) => void) {
+  offUserLeft(callback?: (data: { userId: number; communityId: number }) => void) {
     this.socket?.off('user_left', callback);
   }
 
@@ -277,11 +277,11 @@ class SocketService {
     this.socket?.off('online_users_updated', callback);
   }
 
-  offUserTyping(callback?: (data: { userId: string; communityId: string }) => void) {
+  offUserTyping(callback?: (data: { userId: number; communityId: number }) => void) {
     this.socket?.off('user_typing', callback);
   }
 
-  offUserStopTyping(callback?: (data: { userId: string; communityId: string }) => void) {
+  offUserStopTyping(callback?: (data: { userId: number; communityId: number }) => void) {
     this.socket?.off('user_stop_typing', callback);
   }
 }

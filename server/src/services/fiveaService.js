@@ -109,8 +109,8 @@ export async function getQuestionById(id) {
 
 // User Answers
 export async function saveUserAnswers(userId, answers) {
-  if (!userId || typeof userId !== 'string') {
-    throw new Error('Invalid userId: must be a UUID string');
+  if (!userId) {
+    throw new Error('Invalid userId');
   }
 
   const client = await getClient();
@@ -118,8 +118,8 @@ export async function saveUserAnswers(userId, answers) {
     await client.query('BEGIN');
     for (const { question_id, answer } of answers) {
       await client.query(
-        `INSERT INTO user_assessment_responses (user_id, question_id, response_data, created_at, updated_at)
-         VALUES ($1::uuid, $2, $3, NOW(), NOW())
+        `INSERT INTO user_assessment_responses (user_id, question_id, response_data, assessment_context, created_at, updated_at)
+         VALUES ($1, $2, $3, 'default', NOW(), NOW())
          ON CONFLICT (user_id, question_id, assessment_context) 
          DO UPDATE SET response_data = EXCLUDED.response_data, updated_at = NOW()`,
         // Note: assessment_context defaults to 'default'. 
@@ -142,15 +142,15 @@ export async function saveUserAnswers(userId, answers) {
 }
 
 export async function getUserAnswers(userId, step) {
-  if (!userId || typeof userId !== 'string') {
-    throw new Error('Invalid userId: must be a UUID string');
+  if (!userId) {
+    throw new Error('Invalid userId');
   }
 
   const res = await query(
     `SELECT uar.id, uar.question_id, uar.response_data as answer_text, uar.created_at, uar.updated_at, q.metadata->>'step' as step, q.question_text
        FROM user_assessment_responses uar
        JOIN assessment_questions q ON uar.question_id = q.id
-       WHERE uar.user_id = $1::uuid AND q.metadata->>'step' = $2
+       WHERE uar.user_id = $1 AND q.metadata->>'step' = $2
        ORDER BY q.id ASC`,
     [userId, step]
   );
@@ -158,15 +158,15 @@ export async function getUserAnswers(userId, step) {
 }
 
 export async function getAllUserAnswersForUser(userId) {
-  if (!userId || typeof userId !== 'string') {
-    throw new Error('Invalid userId: must be a UUID string');
+  if (!userId) {
+    throw new Error('Invalid userId');
   }
 
   const res = await query(
     `SELECT uar.id, uar.question_id, uar.response_data as answer_text, uar.created_at, uar.updated_at, q.metadata->>'step' as step, q.question_text
        FROM user_assessment_responses uar
        JOIN assessment_questions q ON uar.question_id = q.id
-       WHERE uar.user_id = $1::uuid AND q.category = 'fivea'
+       WHERE uar.user_id = $1 AND q.category = 'fivea'
        ORDER BY q.metadata->>'step', q.id ASC`,
     [userId]
   );
@@ -191,8 +191,8 @@ export async function saveAskAnswers(userId, answers) {
     await client.query('BEGIN');
     for (const [questionId, answerText] of Object.entries(answers)) {
       await client.query(
-        `INSERT INTO user_assessment_responses(user_id, question_id, response_data, created_at, updated_at) 
-         VALUES($1, $2, $3, NOW(), NOW())
+        `INSERT INTO user_assessment_responses(user_id, question_id, response_data, assessment_context, created_at, updated_at) 
+         VALUES($1, $2, $3, 'default', NOW(), NOW())
          ON CONFLICT(user_id, question_id, assessment_context) 
          DO UPDATE SET response_data = EXCLUDED.response_data, updated_at = NOW()`,
         [userId, Number(questionId), JSON.stringify(answerText)]
@@ -237,8 +237,8 @@ function calculateSeverity(answers) {
 
 // Updated to use fivea_history
 export async function getSeverityForUser(userId) {
-  if (!userId || typeof userId !== 'string') {
-    throw new Error('Invalid userId: must be a UUID string');
+  if (!userId) {
+    throw new Error('Invalid userId');
   }
   // Get latest assess history
   const res = await query(
@@ -246,7 +246,7 @@ export async function getSeverityForUser(userId) {
     (history_data ->> 'score'):: int as score,
     created_at 
        FROM fivea_history 
-       WHERE user_id = $1:: uuid AND stage = 'ask_severity' 
+       WHERE user_id = $1 AND stage = 'ask_severity' 
        ORDER BY created_at DESC 
        LIMIT 1`,
     [userId]

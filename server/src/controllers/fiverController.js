@@ -44,14 +44,14 @@ export const saveUserRelevanceSelections = async (req, res) => {
 
       // Delete existing selections for this user
       await client.query(
-        'DELETE FROM user_relevance_selections WHERE user_id = $1::uuid',
+        'DELETE FROM user_relevance_selections WHERE user_id = $1',
         [userId]
       );
 
       // Insert new selections
       for (const optionId of selectedOptions) {
         await client.query(
-          'INSERT INTO user_relevance_selections (user_id, relevance_option_id) VALUES ($1::uuid, $2)',
+          'INSERT INTO user_relevance_selections (user_id, relevance_option_id) VALUES ($1, $2)',
           [userId, optionId]
         );
       }
@@ -59,7 +59,7 @@ export const saveUserRelevanceSelections = async (req, res) => {
       // Update or create 5R progress
       await client.query(`
         INSERT INTO user_5r_progress (user_id, current_step, updated_at)
-        VALUES ($1::uuid, 'relevance', CURRENT_TIMESTAMP)
+        VALUES ($1, 'relevance', CURRENT_TIMESTAMP)
         ON CONFLICT (user_id) 
         DO UPDATE SET 
           current_step = 'relevance',
@@ -96,7 +96,7 @@ export const getUserRelevanceSelections = async (req, res) => {
       SELECT ro.id, ro.metadata->>'option_key' as option_key, ro.title as label, ro.description, ro.icon_name
       FROM app_resources ro
       INNER JOIN user_relevance_selections urs ON ro.id = urs.relevance_option_id
-      WHERE urs.user_id = $1::uuid AND ro.type = 'relevance_option' AND ro.is_active = true
+      WHERE urs.user_id = $1 AND ro.type = 'relevance_option' AND ro.is_active = true
       ORDER BY ro.id
     `;
 
@@ -123,7 +123,7 @@ export const getUser5RProgress = async (req, res) => {
     const query = `
       SELECT current_step, is_completed, started_at, completed_at, updated_at
       FROM user_5r_progress
-      WHERE user_id = $1::uuid
+      WHERE user_id = $1
     `;
 
     const result = await pool.query(query, [userId]);

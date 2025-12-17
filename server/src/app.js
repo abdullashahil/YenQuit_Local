@@ -21,6 +21,7 @@ import fiveAAdminRoutes from './routes/fiveAAdmin.js';
 import yenquitChatRoutes from './routes/yenquitChat.js';
 import learningProgressRoutes from './routes/learningProgress.js';
 import communityRoutes from './routes/communityRoutes.js';
+import reportRoutes from './routes/reportRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import { startChatCleanupJob } from './jobs/chatCleanupJob.js';
 import socketService from './services/socketService.js';
@@ -66,6 +67,7 @@ app.use('/api/assist', assistRoutes);
 app.use('/api/yenquit-chat', yenquitChatRoutes);
 app.use('/api/learning-progress', learningProgressRoutes);
 app.use('/api/communities', communityRoutes);
+app.use('/api/reports', reportRoutes);
 app.use('/api/chat', chatRoutes);
 
 // Start chat cleanup job

@@ -39,7 +39,7 @@ export function FagerstromTest({
         loadData();
     }, []);
 
-    const handleFagerstromAnswer = (questionId: string, value: string) => {
+    const handleFagerstromAnswer = (questionId: number, value: string) => {
         setFagerstromAnswers(prev => ({ ...prev, [questionId]: value }));
     };
 

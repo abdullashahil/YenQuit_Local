@@ -42,8 +42,8 @@ description?: string
 
 interface ChatMessage {
   id: string
-  community_id: string
-  user_id: string
+  community_id: number
+  user_id: number
   content: string
   message_type: "text" | "image" | "file" | "system"
   file_url?: string
@@ -329,7 +329,7 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
           setMessages((prev) => prev.map((m) => (m.id === message.id ? message : m)))
         })
 
-        socketService.onMessageDeleted(({ messageId }: { messageId: string }) => {
+        socketService.onMessageDeleted(({ messageId }: { messageId: number }) => {
           setMessages((prev) => prev.filter((m) => m.id !== messageId))
         })
 
@@ -337,7 +337,7 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
           setOnlineUsers(users)
         })
 
-        socketService.onUserTyping(({ userId: typingUserId }: { userId: string }) => {
+        socketService.onUserTyping(({ userId: typingUserId }: { userId: number }) => {
           if (typingUserId !== userId) {
             // Look up user from online users or messages to get the name
             const typingUser = onlineUsers.find(u => u.user_id === typingUserId) ||
@@ -354,7 +354,7 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
           }
         })
 
-        socketService.onUserStopTyping(({ userId: typingUserId }: { userId: string }) => {
+        socketService.onUserStopTyping(({ userId: typingUserId }: { userId: number }) => {
           setTypingUsers((prev) => prev.filter((user) => user.id !== typingUserId))
         })
 
@@ -448,7 +448,7 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
     setReplyingTo(null)
   }
 
-  const handleDeleteMessage = (messageId: string) => {
+  const handleDeleteMessage = (messageId: number) => {
     socketService.deleteMessage(messageId)
   }
 

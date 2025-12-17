@@ -5,7 +5,7 @@ import { X, Calendar, ChevronLeft, ChevronRight, CheckCircle, XCircle } from "lu
 import quitTrackerService from "../../../services/quitTrackerService";
 
 interface LogEntry {
-  id: string;
+  id: number;
   log_date: string;
   smoked: boolean;
   cigarettes_count: number | null;
@@ -191,11 +191,11 @@ export function LogsModal({ open, onOpenChange }: LogsModalProps) {
                     <div className="text-right">
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-medium ${log.smoked
-                            ? "bg-red-100 text-red-800"
-                            : "bg-green-100 text-green-800"
+                          ? "bg-red-100 text-red-800"
+                          : "bg-green-100 text-green-800"
                           }`}
                       >
-                        {log.smoked ? "Smoked" : "Smoke-Free"}
+                        {log.smoked ? "Used Tobacco" : "Tobacco-Free"}
                       </span>
                     </div>
                   </div>
@@ -207,7 +207,7 @@ export function LogsModal({ open, onOpenChange }: LogsModalProps) {
                           {log.cigarettes_count}
                         </p>
                         <p className="text-xs" style={{ color: "#666666" }}>
-                          Cigarettes
+                          Units
                         </p>
                       </div>
                     )}

@@ -16,7 +16,7 @@ const getAuthHeaders = () => {
 };
 
 export interface AdminProfile {
-  id: string;
+  id: number;
   name: string;
   email: string;
   created_at: string;

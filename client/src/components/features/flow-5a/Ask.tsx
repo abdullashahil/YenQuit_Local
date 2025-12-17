@@ -81,12 +81,12 @@ export function FiveA_Ask({ onNext, questions = [], savedAnswers = [], submitted
     }
   }, [savedAnswers, questions]);
 
-  const handleAnswer = (questionId: string, value: string) => {
+  const handleAnswer = (questionId: number, value: string) => {
     if (submitted) return; // read-only if already submitted
     setAnswers(prev => ({ ...prev, [questionId]: value }));
   };
 
-  const handleOptionChange = (questionId: string, option: string) => {
+  const handleOptionChange = (questionId: number, option: string) => {
     if (submitted) return;
     
     setSelectedOptions(prev => ({ ...prev, [questionId]: option }));
@@ -100,7 +100,7 @@ export function FiveA_Ask({ onNext, questions = [], savedAnswers = [], submitted
     }
   };
 
-  const handleOtherTextChange = (questionId: string, value: string) => {
+  const handleOtherTextChange = (questionId: number, value: string) => {
     if (submitted) return;
     
     setOtherTexts(prev => ({ ...prev, [questionId]: value }));

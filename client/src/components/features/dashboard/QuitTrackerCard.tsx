@@ -236,7 +236,7 @@ export function QuitTrackerCard() {
             <h3 className="text-lg font-semibold mb-3" style={{ color: "#1C3B5E" }}>Your Progress</h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-sm" style={{ color: "#333333" }}>Days Smoke-Free</span>
+                <span className="text-sm" style={{ color: "#333333" }}>Days Tobacco-Free</span>
                 <span className="font-semibold" style={{ color: "#20B2AA" }}>{progress.daysSmokeFree}</span>
               </div>
               <div className="flex justify-between items-center">
@@ -291,7 +291,7 @@ export function QuitTrackerCard() {
             <h3 className="text-lg font-semibold mb-3" style={{ color: "#1C3B5E" }}>Your Progress Summary</h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-sm" style={{ color: "#333333" }}>Days Smoke-Free</span>
+                <span className="text-sm" style={{ color: "#333333" }}>Days Tobacco-Free</span>
                 <span className="font-semibold" style={{ color: "#20B2AA" }}>{progress.daysSmokeFree}</span>
               </div>
               <div className="flex justify-between items-center">
@@ -375,7 +375,7 @@ export function QuitTrackerCard() {
             <span className="text-4xl md:text-5xl lg:text-6xl" style={{ color: "#20B2AA" }}>{progress.daysSmokeFree}</span>
             <span className="text-xl md:text-2xl" style={{ color: "#333333" }}>days</span>
           </div>
-          <p className="mt-2 text-sm md:text-base" style={{ color: "#333333" }}>smoke-free and counting</p>
+          <p className="mt-2 text-sm md:text-base" style={{ color: "#333333" }}>tobacco-free and counting</p>
         </div>
 
         {/* Progress Bar */}

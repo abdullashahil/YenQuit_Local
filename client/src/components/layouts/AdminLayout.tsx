@@ -35,6 +35,9 @@ export function AdminLayout({ children, activeTab }: AdminLayoutProps) {
       case "system-settings":
         router.push("/admin/settings")
         break
+      case "reports":
+        router.push("/admin/report")
+        break
       case "admin-dashboard":
         router.push("/admin")
         break
@@ -50,16 +53,17 @@ export function AdminLayout({ children, activeTab }: AdminLayoutProps) {
     if (path.includes("/content")) return "content-management"
     if (path.includes("/communities")) return "communities"
     if (path.includes("/settings")) return "system-settings"
-    return "user-management"
+    if (path.includes("/report")) return "reports"
+    return "admin-dashboard"
   })()
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#F5F5F5" }}>
-      <AdminSidebar 
-        activeTab={currentTab} 
-        setActiveTab={setActiveTab} 
+      <AdminSidebar
+        activeTab={currentTab}
+        setActiveTab={setActiveTab}
         onExitAdmin={handleExitAdmin}
-        onLogout={handleLogout} 
+        onLogout={handleLogout}
       />
       {/* Responsive margin: no margin on mobile, ml-64 on desktop */}
       <div className="md:ml-64 pt-16 md:pt-0 px-4 md:px-8">

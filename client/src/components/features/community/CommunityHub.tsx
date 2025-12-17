@@ -25,7 +25,7 @@ export function CommunityHub() {
   const showChat = !isMobile || selectedCommunityId
   const canShowChatArea = showChat && selectedCommunity && (selectedCommunity.id === "yenai-chat" || selectedCommunity.user_role)
 
-  const handleSelectCommunity = (communityId: string, community?: Community) => {
+  const handleSelectCommunity = (communityId: number, community?: Community) => {
     console.log('DEBUG: handleSelectCommunity called', { communityId, community, user_role: community?.user_role })
     
     // Check if user is a member (except for YenAI)
