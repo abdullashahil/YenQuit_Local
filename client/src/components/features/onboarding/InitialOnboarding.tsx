@@ -454,7 +454,7 @@ export const InitialOnboarding: React.FC<InitialOnboardingProps> = ({ onComplete
             className="text-center mb-8"
             style={{ color: '#1C3B5E' }}
           >
-            Are you willing to Quit this habit?
+            Complete Your Profile
           </h2>
 
           <div className="flex flex-col md:flex-row gap-4 md:gap-6">
@@ -468,24 +468,8 @@ export const InitialOnboarding: React.FC<InitialOnboardingProps> = ({ onComplete
               }}
             >
               <div>
-                <div className="mb-1 font-semibold">Yes, I'm Ready</div>
-                <div style={{ opacity: 0.9, fontSize: '0.875rem' }}>Start 5 A's Framework</div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => handlePathwaySelection('5Rs')}
-              disabled={!isPathwayEnabled()}
-              className="flex-1 py-6 rounded-2xl transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{
-                backgroundColor: '#FFFFFF',
-                color: isPathwayEnabled() ? '#20B2AA' : '#999999',
-                border: `2px solid ${isPathwayEnabled() ? '#20B2AA' : '#CCCCCC'}`
-              }}
-            >
-              <div>
-                <div className="mb-1 font-semibold">No, I Need Motivation</div>
-                <div style={{ opacity: 0.8, fontSize: '0.875rem' }}>Start 5 R's Framework</div>
+                <div className="mb-1 font-semibold">Continue</div>
+                <div style={{ opacity: 0.9, fontSize: '0.875rem' }}>Submit and proceed to login</div>
               </div>
             </button>
           </div>

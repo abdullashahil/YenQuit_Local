@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import  CommunityList  from "@/components/community-hub/community-list"
-import  ChatArea  from "@/components/community-hub/chat-area"
+import CommunityList from "@/components/community-hub/community-list"
+import ChatArea from "@/components/community-hub/chat-area"
 import useIsMobile from "@/hooks/use-mobile"
 import { NotificationProvider } from "@/contexts/NotificationContext"
 
@@ -27,17 +27,17 @@ export function CommunityHub() {
 
   const handleSelectCommunity = (communityId: string, community?: Community) => {
     console.log('DEBUG: handleSelectCommunity called', { communityId, community, user_role: community?.user_role })
-    
+
     // Check if user is a member (except for YenAI)
     if (communityId !== "yenai-chat" && community && !community.user_role) {
       console.log('DEBUG: Blocking non-member from opening chat')
       // Don't allow non-members to open chat
       return
     }
-    
+
     console.log('DEBUG: Allowing community selection')
     setSelectedCommunityId(communityId)
-    
+
     // Handle YenAI special case
     if (communityId === "yenai-chat") {
       setSelectedCommunity({
@@ -53,6 +53,13 @@ export function CommunityHub() {
     }
   }
 
+  const handleCloseChatArea = () => {
+    setSelectedCommunityId(null)
+    setSelectedCommunity(null)
+    // Trigger a refresh of the community list to reflect any changes
+    window.location.reload()
+  }
+
   return (
     <NotificationProvider>
       <div className="flex h-screen bg-white overflow-hidden">
@@ -64,12 +71,12 @@ export function CommunityHub() {
         )}
 
         {/* Chat Area */}
-        {canShowChatArea && (
+        {showChat && (
           <div className={`${isMobile ? "w-full" : "w-2/3"} flex flex-col`}>
             <ChatArea
               community={selectedCommunity}
               onBack={isMobile ? () => setSelectedCommunityId(null) : undefined}
-              onClose={!isMobile ? () => setSelectedCommunityId(null) : undefined}
+              onClose={handleCloseChatArea}
             />
           </div>
         )}

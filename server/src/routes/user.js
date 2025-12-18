@@ -16,6 +16,12 @@ router.put('/profile', authenticateJWT, userController.updateProfile);
 router.post('/logout', authenticateJWT, userController.logout);
 router.post('/upload-avatar', authenticateJWT, uploadAvatar, userController.uploadAvatar);
 
+// User search for invites
+router.get('/search', authenticateJWT, async (req, res, next) => {
+    const { searchUsers } = await import('../controllers/searchUsersController.js');
+    return searchUsers(req, res, next);
+});
+
 // Admin user management routes (admin only)
 router.use('/admin', requireAdmin); // Apply admin middleware to all /admin routes
 

@@ -31,4 +31,7 @@ router.put('/:id', CommunityController.updateCommunity);
 // DELETE /api/communities/:id - Delete community
 router.delete('/:id', CommunityController.deleteCommunity);
 
+// POST /api/communities/:id/mark-read - Mark messages as read
+router.post('/:id/mark-read', CommunityController.markMessagesAsRead);
+
 export default router;

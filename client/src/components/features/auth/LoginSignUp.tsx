@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { Button } from '../../ui/button';
@@ -6,6 +6,7 @@ import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
 import { Eye, EyeOff } from 'lucide-react';
 import { InitialOnboarding, OnboardingData } from '../onboarding/InitialOnboarding';
+import { WillingToQuitModal } from '../onboarding/WillingToQuitModal';
 
 interface LoginSignUpProps {
   onLogin: (userType: 'admin' | 'standard') => void;
@@ -27,6 +28,151 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
   const [showToast, setShowToast] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [countdown, setCountdown] = useState(5);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showWillingToQuitModal, setShowWillingToQuitModal] = useState(false);
+
+  // Load Google Sign-In script
+  useEffect(() => {
+    const loadGoogleScript = () => {
+      if (typeof window !== 'undefined' && !window.google) {
+        const script = document.createElement('script');
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.async = true;
+        script.defer = true;
+        script.onload = initializeGoogleSignIn;
+        document.head.appendChild(script);
+      } else if (typeof window !== 'undefined' && window.google) {
+        initializeGoogleSignIn();
+      }
+    };
+
+    const initializeGoogleSignIn = () => {
+      if (typeof window !== 'undefined' && window.google) {
+        window.google.accounts.id.initialize({
+          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+          callback: handleGoogleSignIn,
+          auto_select: false,
+          cancel_on_tap_outside: true
+        });
+
+        // Render the Google Sign-In button
+        renderGoogleButton();
+      }
+    };
+
+    const renderGoogleButton = () => {
+      const buttonContainer = document.getElementById('google-signin-button');
+      if (buttonContainer) {
+        buttonContainer.innerHTML = '';
+        window.google.accounts.id.renderButton(buttonContainer, {
+          theme: 'outline',
+          size: 'large',
+          text: isLogin ? 'signin_with' : 'signup_with',
+          width: 400,
+          shape: 'rectangular'
+        });
+      }
+    };
+
+    loadGoogleScript();
+    
+    // Re-render button when switching between login/signup
+    if (window.google) {
+      renderGoogleButton();
+    }
+  }, [isLogin]);
+
+  const handleGoogleSignIn = async (response: any) => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken: response.credential })
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Google authentication failed');
+      
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('accessToken', data.accessToken);
+        localStorage.setItem('refreshToken', data.refreshToken);
+        localStorage.setItem('user', JSON.stringify(data.user));
+      }
+      
+      const userType: 'admin' | 'standard' = data?.user?.role === 'admin' ? 'admin' : 'standard';
+      
+      // Redirect admins to admin dashboard
+      if (userType === 'admin') {
+        router.push('/admin');
+        return;
+      }
+      
+      // Handle new user vs existing user
+      if (data.isNewUser) {
+        // For new Google users, start onboarding
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('signupEmail', data.user.email);
+          sessionStorage.setItem('signupFullName', data.user.profile?.full_name || '');
+          sessionStorage.setItem('googleSignup', 'true');
+        }
+        setStage('onboarding');
+        return;
+      }
+      
+      // Onboarding redirect guard for existing users
+      const requires = !!data?.requiresOnboarding;
+      const step = typeof data?.currentStep === 'number' ? data.currentStep : 0;
+      
+      if (requires) {
+        const stepRoutes: { [key: number]: string } = {
+          0: '/5a/ask',
+          1: '/5a/advise', 
+          2: '/5a/assess',
+          3: '/5a/assist'
+        };
+        
+        // If user hasn't started onboarding (step 0), show willing to quit modal
+        if (step === 0) {
+          setShowWillingToQuitModal(true);
+          return;
+        }
+        
+        if (step >= 3) {
+          router.push('/app');
+          return;
+        }
+        
+        const targetRoute = stepRoutes[step] || stepRoutes[0];
+        router.push(targetRoute);
+        return;
+      }
+      
+      // If onboarding is complete, redirect to dashboard
+      router.push('/app');
+      onLogin(userType);
+    } catch (err: any) {
+      alert(err?.message || 'Google authentication failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleWillingToQuitSelection = (pathway: '5As' | '5Rs') => {
+    setShowWillingToQuitModal(false);
+    
+    // Store the pathway selection in sessionStorage
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('selectedPathway', pathway);
+    }
+    
+    // Redirect to appropriate component
+    if (pathway === '5As') {
+      router.push('/5a/ask');
+    } else {
+      router.push('/5r/relevance');
+    }
+  };
 
   const startRedirectToLogin = (message: string) => {
     setToastMsg(message);
@@ -80,6 +226,12 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
           3: '/5a/assist'
         };
         
+        // If user hasn't started onboarding (step 0), show willing to quit modal
+        if (step === 0) {
+          setShowWillingToQuitModal(true);
+          return;
+        }
+        
         // If user has completed first 4 steps (step >= 3), consider onboarding complete
         if (step >= 3) {
           router.push('/app');
@@ -116,11 +268,18 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
 
   const handleEmbeddedOnboardingComplete = async (data: OnboardingData, pathway: '5As' | '5Rs') => {
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+    const isGoogleSignup = typeof window !== 'undefined' && sessionStorage.getItem('googleSignup') === 'true';
     const signupEmail = (typeof window !== 'undefined' && sessionStorage.getItem('signupEmail')) || data.email;
     const signupPassword = typeof window !== 'undefined' ? sessionStorage.getItem('signupPassword') : null;
     const signupFullName = (typeof window !== 'undefined' && sessionStorage.getItem('signupFullName')) || data.name;
 
-    if (!signupEmail || !signupPassword) {
+    if (!signupEmail) {
+      alert('Missing signup credentials. Please start from the Sign Up page again.');
+      return;
+    }
+
+    // For Google users, we don't need password as they're already authenticated
+    if (!isGoogleSignup && !signupPassword) {
       alert('Missing signup credentials. Please start from the Sign Up page again.');
       return;
     }
@@ -131,7 +290,7 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
       age: data.age ? parseInt(data.age as any, 10) : null,
       gender: data.gender || null,
       tobacco_type: data.tobaccoType || null,
-      metadata: {
+      profile_metadata: {
         isStudent: data.isStudent,
         yearOfStudy: data.yearOfStudy,
         streamOfStudy: data.streamOfStudy,
@@ -139,21 +298,45 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
         setting: data.setting,
         smokerType: data.smokerType,
         systemicHealthIssue: data.systemicHealthIssue,
-        providedEmail: data.email
+        providedEmail: data.email,
+        signup_method: isGoogleSignup ? 'google' : 'email',
+        onboarding_pathway: pathway
       }
     };
 
     try {
-      const res = await fetch(`${API_URL}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: signupEmail,
-          password: signupPassword,
-          role: 'user',
-          profile
-        })
-      });
+      let res;
+      
+      if (isGoogleSignup) {
+        // For Google users, update the existing user profile
+        const accessToken = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+        if (!accessToken) {
+          alert('Session expired. Please sign in with Google again.');
+          return;
+        }
+        
+        res = await fetch(`${API_URL}/users/profile`, {
+          method: 'PUT',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          },
+          body: JSON.stringify(profile)
+        });
+      } else {
+        // For regular email users, register as usual
+        res = await fetch(`${API_URL}/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: signupEmail,
+            password: signupPassword,
+            role: 'user',
+            profile
+          })
+        });
+      }
+      
       if (!res.ok) {
         const dataErr = await res.json().catch(() => ({}));
         if (res.status === 409) {
@@ -164,8 +347,15 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
       } else {
         if (typeof window !== 'undefined') {
           sessionStorage.removeItem('signupPassword');
+          sessionStorage.removeItem('googleSignup');
         }
-        startRedirectToLogin('You have successfully signed up. Please log in to continue.');
+        
+        if (isGoogleSignup) {
+          // For Google users, require them to sign in again like regular users
+          startRedirectToLogin('You have successfully signed up. Please log in to continue.');
+        } else {
+          startRedirectToLogin('You have successfully signed up. Please log in to continue.');
+        }
         return;
       }
     } catch (err: any) {
@@ -357,35 +547,14 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
             </div>
 
             {/* Google Auth Button */}
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full h-12 rounded-xl border-2 brand-border hover:bg-gray-50 transition-all"
-              onClick={() => {
-                // TODO: Implement Google OAuth
-                alert('Google authentication will be implemented');
-              }}
-            >
-              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                />
-              </svg>
-              Continue with Google
-            </Button>
+            <div className="space-y-3">
+              <p className="text-center text-sm brand-text opacity-70">
+                {isLogin ? 'Or sign in with Google' : 'Or sign up with Google'}
+              </p>
+              <div id="google-signin-button" className="w-full flex justify-center">
+                {/* Google Sign-In button will be rendered here automatically */}
+              </div>
+            </div>
 
             {/* Toggle Link */}
             <p className="text-center brand-muted">
@@ -418,6 +587,13 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
           </div>
         </div>
       )}
+      
+      {/* Willing to Quit Modal */}
+      <WillingToQuitModal
+        isOpen={showWillingToQuitModal}
+        onClose={() => setShowWillingToQuitModal(false)}
+        onSelect={handleWillingToQuitSelection}
+      />
     </div>
   );
 }

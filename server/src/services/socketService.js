@@ -2,6 +2,7 @@ import { Server } from 'socket.io';
 import { verifyAccessToken } from '../utils/token.js';
 import ChatMessageModel from '../models/ChatMessageModel.js';
 import CommunityModel from '../models/CommunityModel.js';
+import { query } from '../db/index.js';
 
 class SocketService {
   constructor() {
@@ -20,21 +21,20 @@ class SocketService {
     });
 
     this.io.on('connection', (socket) => {
-      console.log(`User connected: ${socket.id}`);
 
       // Handle user authentication and join communities
       socket.on('authenticate', async (data) => {
         try {
           const { userId, token } = data;
-          
+
           // Verify JWT token
           const payload = verifyAccessToken(token);
-          
+
           // Ensure the userId from token matches the provided userId
           if (payload.userId !== userId) {
             throw new Error('User ID mismatch');
           }
-          
+
           // Store user connection info
           if (!this.connectedUsers.has(userId)) {
             this.connectedUsers.set(userId, {
@@ -47,8 +47,7 @@ class SocketService {
 
           socket.userId = userId;
           socket.emit('authenticated', { success: true });
-          
-          console.log(`User ${userId} authenticated`);
+
         } catch (error) {
           console.error('Authentication error:', error);
           socket.emit('authentication_error', { error: 'Authentication failed' });
@@ -75,10 +74,7 @@ class SocketService {
 
           // Join socket room
           socket.join(`community_${communityId}`);
-          
-          // Track user in community
-          await ChatMessageModel.trackOnlineUser(communityId, userId, socket.id);
-          
+
           // Update user's communities
           const userConnection = this.connectedUsers.get(userId);
           if (userConnection) {
@@ -91,12 +87,11 @@ class SocketService {
             communityId
           });
 
-          // Send online users list
-          const onlineUsers = await ChatMessageModel.getOnlineUsers(communityId);
+          // Send online users list from Socket.IO rooms
+          const onlineUsers = await this.getOnlineUsersFromRoom(communityId);
           this.io.to(`community_${communityId}`).emit('online_users_updated', onlineUsers);
 
           socket.emit('joined_community', { communityId });
-          console.log(`User ${userId} joined community ${communityId}`);
         } catch (error) {
           console.error('Error joining community:', error);
           socket.emit('error', { message: 'Failed to join community' });
@@ -113,10 +108,7 @@ class SocketService {
 
           // Leave socket room
           socket.leave(`community_${communityId}`);
-          
-          // Remove user from online tracking
-          await ChatMessageModel.removeOnlineUser(communityId, userId);
-          
+
           // Update user's communities
           const userConnection = this.connectedUsers.get(userId);
           if (userConnection) {
@@ -129,8 +121,8 @@ class SocketService {
             communityId
           });
 
-          // Send updated online users list
-          const onlineUsers = await ChatMessageModel.getOnlineUsers(communityId);
+          // Send updated online users list from Socket.IO rooms
+          const onlineUsers = await this.getOnlineUsersFromRoom(communityId);
           this.io.to(`community_${communityId}`).emit('online_users_updated', onlineUsers);
 
           socket.emit('left_community', { communityId });
@@ -170,14 +162,16 @@ class SocketService {
           };
 
           const message = await ChatMessageModel.create(messageData);
-          
+
           // Get full message with user details
           const fullMessage = await ChatMessageModel.findById(message.id);
+
+          // Increment unread count for all members except sender
+          await CommunityModel.incrementUnreadCount(communityId, userId);
 
           // Broadcast to all members in community
           this.io.to(`community_${communityId}`).emit('new_message', fullMessage);
 
-          console.log(`Message sent in community ${communityId} by user ${userId}`);
         } catch (error) {
           console.error('Error sending message:', error);
           socket.emit('error', { message: 'Failed to send message' });
@@ -196,7 +190,7 @@ class SocketService {
           }
 
           const message = await ChatMessageModel.editMessage(messageId, userId, content.trim());
-          
+
           if (!message) {
             socket.emit('error', { message: 'Message not found or no permission' });
             return;
@@ -207,7 +201,7 @@ class SocketService {
 
           // Get community ID to broadcast to correct room
           const communityId = fullMessage.community_id;
-          
+
           // Broadcast to all members in community
           this.io.to(`community_${communityId}`).emit('message_edited', fullMessage);
 
@@ -237,7 +231,7 @@ class SocketService {
           }
 
           const deleted = await ChatMessageModel.deleteMessage(messageId, userId);
-          
+
           if (!deleted) {
             socket.emit('error', { message: 'No permission to delete this message' });
             return;
@@ -279,7 +273,7 @@ class SocketService {
           }
 
           const reaction = await ChatMessageModel.addReaction(messageId, userId, emoji);
-          
+
           // Get updated reactions list
           const reactions = await ChatMessageModel.getReactions(messageId);
 
@@ -315,7 +309,7 @@ class SocketService {
           }
 
           const removed = await ChatMessageModel.removeReaction(messageId, userId, emoji);
-          
+
           if (!removed) {
             socket.emit('error', { message: 'Reaction not found' });
             return;
@@ -366,26 +360,24 @@ class SocketService {
       socket.on('disconnect', async () => {
         try {
           const userId = socket.userId;
-          
+
           if (userId) {
             const userConnection = this.connectedUsers.get(userId);
-            
+
             if (userConnection) {
               // Remove user from all community online tracking
               for (const communityId of userConnection.communities) {
-                await ChatMessageModel.removeOnlineUser(communityId, userId);
-                
                 // Notify other members
                 socket.to(`community_${communityId}`).emit('user_left', {
                   userId,
                   communityId
                 });
 
-                // Send updated online users list
-                const onlineUsers = await ChatMessageModel.getOnlineUsers(communityId);
+                // Send updated online users list from Socket.IO rooms
+                const onlineUsers = await this.getOnlineUsersFromRoom(communityId);
                 this.io.to(`community_${communityId}`).emit('online_users_updated', onlineUsers);
               }
-              
+
               this.connectedUsers.delete(userId);
             }
           }
@@ -400,10 +392,56 @@ class SocketService {
     console.log('Socket.IO server initialized');
   }
 
+  // Get online users from Socket.IO room
+  async getOnlineUsersFromRoom(communityId) {
+    try {
+      if (!this.io) return [];
+
+      const room = this.io.sockets.adapter.rooms.get(`community_${communityId}`);
+      if (!room || room.size === 0) return [];
+
+      const onlineUsers = [];
+      const userIds = new Set(); // Prevent duplicates
+
+      for (const socketId of room) {
+        const socket = this.io.sockets.sockets.get(socketId);
+        if (socket?.userId && !userIds.has(socket.userId)) {
+          userIds.add(socket.userId);
+
+          // Fetch user details from database
+          const sql = `
+            SELECT id, email, role, full_name, avatar_url
+            FROM users
+            WHERE id = $1
+          `;
+          const result = await query(sql, [socket.userId]);
+
+          if (result.rows[0]) {
+            const user = result.rows[0];
+            onlineUsers.push({
+              id: user.id,
+              user_id: user.id,
+              email: user.email,
+              role: user.role,
+              full_name: user.full_name,
+              avatar_url: user.avatar_url,
+              socket_id: socketId
+            });
+          }
+        }
+      }
+
+      return onlineUsers;
+    } catch (error) {
+      console.error('Error getting online users from room:', error);
+      return [];
+    }
+  }
+
   // Get online users count for a community
   async getOnlineUserCount(communityId) {
     try {
-      const onlineUsers = await ChatMessageModel.getOnlineUsers(communityId);
+      const onlineUsers = await this.getOnlineUsersFromRoom(communityId);
       return onlineUsers.length;
     } catch (error) {
       console.error('Error getting online user count:', error);

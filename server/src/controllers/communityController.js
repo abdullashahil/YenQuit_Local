@@ -7,7 +7,7 @@ class CommunityController {
     try {
       const userId = req.user?.userId || null;
       const communities = await CommunityModel.findAll(userId);
-      
+
       res.json({
         success: true,
         data: communities
@@ -26,9 +26,9 @@ class CommunityController {
     try {
       const { id } = req.params;
       const userId = req.user?.userId || null;
-      
+
       const community = await CommunityModel.findById(id, userId);
-      
+
       if (!community) {
         return res.status(404).json({
           success: false,
@@ -43,7 +43,7 @@ class CommunityController {
           error: 'Access denied. This is a private community.'
         });
       }
-      
+
       res.json({
         success: true,
         data: community
@@ -62,7 +62,7 @@ class CommunityController {
     try {
       const userId = req.user?.userId;
       const userRole = req.user?.role;
-      
+
       if (!userId) {
         return res.status(401).json({
           success: false,
@@ -70,16 +70,11 @@ class CommunityController {
         });
       }
 
-      // Only admins can create communities
-      if (userRole !== 'admin' && userRole !== 'super_admin') {
-        return res.status(403).json({
-          success: false,
-          error: 'Access denied. Only admins can create communities.'
-        });
-      }
+      // Note: Any authenticated user can now create communities
+      // The creator will automatically become the admin of their community
 
       const { name, description, avatar_url, is_private } = req.body;
-      
+
       if (!name || name.trim().length === 0) {
         return res.status(400).json({
           success: false,
@@ -92,14 +87,15 @@ class CommunityController {
         description: description?.trim() || null,
         avatar_url: avatar_url || null,
         created_by: userId,
-        is_private: is_private || false
+        is_private: is_private || false,
+        created_by_admin: userRole === 'admin' || userRole === 'super_admin'
       };
 
       const community = await CommunityModel.create(communityData);
-      
+
       // Auto-add creator as admin
       await CommunityModel.joinCommunity(community.id, userId, 'admin');
-      
+
       res.status(201).json({
         success: true,
         data: community
@@ -125,7 +121,7 @@ class CommunityController {
       }
 
       const { id } = req.params;
-      
+
       // Check if community exists
       const community = await CommunityModel.findById(id);
       if (!community) {
@@ -144,7 +140,7 @@ class CommunityController {
       }
 
       const membership = await CommunityModel.joinCommunity(id, userId);
-      
+
       res.json({
         success: true,
         data: membership,
@@ -171,19 +167,16 @@ class CommunityController {
       }
 
       const { id } = req.params;
-      
+
       const membership = await CommunityModel.leaveCommunity(id, userId);
-      
+
       if (!membership) {
         return res.status(404).json({
           success: false,
           error: 'You are not a member of this community'
         });
       }
-      
-      // Remove from online tracking
-      await ChatMessageModel.removeOnlineUser(id, userId);
-      
+
       res.json({
         success: true,
         message: 'Successfully left community'
@@ -202,7 +195,7 @@ class CommunityController {
     try {
       const { id } = req.params;
       const userId = req.user?.userId || null;
-      
+
       // Check if user is member
       const membership = await CommunityModel.isMember(id, userId);
       if (!membership) {
@@ -213,7 +206,7 @@ class CommunityController {
       }
 
       const members = await CommunityModel.getMembers(id);
-      
+
       res.json({
         success: true,
         data: members
@@ -240,7 +233,7 @@ class CommunityController {
 
       const { id } = req.params;
       const { name, description, avatar_url } = req.body;
-      
+
       // Check if user is admin
       const membership = await CommunityModel.isMember(id, userId);
       if (!membership || membership.role !== 'admin') {
@@ -257,7 +250,7 @@ class CommunityController {
       };
 
       const community = await CommunityModel.update(id, updateData);
-      
+
       res.json({
         success: true,
         data: community
@@ -283,7 +276,7 @@ class CommunityController {
       }
 
       const { id } = req.params;
-      
+
       // Check if user is admin
       const membership = await CommunityModel.isMember(id, userId);
       if (!membership || membership.role !== 'admin') {
@@ -294,7 +287,7 @@ class CommunityController {
       }
 
       const community = await CommunityModel.delete(id);
-      
+
       res.json({
         success: true,
         message: 'Community deleted successfully'
@@ -304,6 +297,27 @@ class CommunityController {
       res.status(500).json({
         success: false,
         error: 'Failed to delete community'
+      });
+    }
+  }
+
+  // Mark messages as read (reset unread count)
+  static async markMessagesAsRead(req, res) {
+    try {
+      const { id } = req.params;
+      const userId = req.user.userId;
+
+      await CommunityModel.resetUnreadCount(id, userId);
+
+      res.json({
+        success: true,
+        message: 'Messages marked as read'
+      });
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to mark messages as read'
       });
     }
   }
