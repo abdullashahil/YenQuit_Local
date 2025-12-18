@@ -246,36 +246,32 @@ class QuitTrackerService {
       const logsResult = await query(logsSql, [userId, finalStartDate.toISOString().split('T')[0], finalEndDate.toISOString().split('T')[0]]);
       const logs = logsResult.rows;
 
-      // Calculate metrics
-      let daysSmokeFree = 0;
+      // Calculate total smoke-free days (ignoring plan start date)
+      const totalSmokeFreeRes = await query(
+        'SELECT COUNT(*) as count FROM daily_logs WHERE user_id = $1 AND smoked = false',
+        [userId]
+      );
+      const dbSmokeFreeCount = parseInt(totalSmokeFreeRes.rows[0].count);
+
+      let daysSmokeFree = dbSmokeFreeCount; // Use total DB count for everything
+      let periodSmokeFreeDays = dbSmokeFreeCount; // Alias for compatibility with existing progress logic
       let successRate = 0;
       let lastEntry = null;
 
-      // Calculate smoke-free days only between start date and current date
-      if (logs.length > 0) {
-        // Filter logs to only include dates from start date onwards for calculation
-        const calcStartDate = new Date(assistPlanData?.updated_at || today.getTime() - 90 * 24 * 60 * 60 * 1000);
-        calcStartDate.setHours(0, 0, 0, 0);
+      // We no longer filter smoke-free days by plan date range
+      // The user explicitly requested to just count all smoke-free days regardless of date range
 
-        // Only count logs from start date to today (inclusive)
-        const filteredLogs = logs.filter(log => {
-          const logDate = new Date(log.log_date);
-          logDate.setHours(0, 0, 0, 0);
-          return logDate >= calcStartDate && logDate <= today;
-        });
-
-        const smokeFreeLogs = filteredLogs.filter(log => !log.smoked);
-        daysSmokeFree = smokeFreeLogs.length;
-
-      } else if (quitDate) {
-        // Fallback to quit date calculation if no logs
+      if (quitDate && daysSmokeFree === 0) {
+        // Fallback to quit date calculation ONLY if no logs exist
         const quitDateObj = new Date(quitDate);
         const todayObj = new Date();
         todayObj.setHours(0, 0, 0, 0);
         quitDateObj.setHours(0, 0, 0, 0);
 
         if (!isNaN(quitDateObj.getTime()) && quitDateObj <= todayObj) {
-          daysSmokeFree = Math.floor((todayObj - quitDateObj) / (24 * 60 * 60 * 1000)) + 1;
+          const implicitDays = Math.floor((todayObj - quitDateObj) / (24 * 60 * 60 * 1000)) + 1;
+          daysSmokeFree = implicitDays;
+          periodSmokeFreeDays = implicitDays;
         }
       }
 
@@ -323,9 +319,9 @@ class QuitTrackerService {
 
             let smokingProgress = 0;
             if (logsInRange.length >= 3) {
-              smokingProgress = (daysSmokeFree / logsInRange.length) * 100;
+              smokingProgress = (periodSmokeFreeDays / logsInRange.length) * 100;
             } else {
-              smokingProgress = daysSmokeFree > 0 ? 50 : 0;
+              smokingProgress = periodSmokeFreeDays > 0 ? 50 : 0;
             }
 
             let prepWeight = 0.7, smokingWeight = 0.3;
@@ -342,13 +338,13 @@ class QuitTrackerService {
               return logDate >= planStartDate && logDate <= currentDate;
             });
             progressPercentage = logsInRange.length > 0 ?
-              Math.round((daysSmokeFree / logsInRange.length) * 100) : 0;
+              Math.round((periodSmokeFreeDays / logsInRange.length) * 100) : 0;
           }
         }
         progressPercentage = Math.min(progressPercentage, 100);
 
       } else if (goalDays > 0) {
-        progressPercentage = Math.round((daysSmokeFree / goalDays) * 100);
+        progressPercentage = Math.round((periodSmokeFreeDays / goalDays) * 100);
         progressPercentage = Math.min(progressPercentage, 100);
       }
 

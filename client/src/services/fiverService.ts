@@ -11,7 +11,7 @@ export interface RelevanceOption {
 }
 
 export interface UserRelevanceSelection {
-  userId: string; // UUID as string
+  userId: number; // UUID as string
   selectedOptions: number[];
 }
 
@@ -46,7 +46,7 @@ class FiverService {
   }
 
   // Get user relevance selections
-  async getUserRelevanceSelections(userId: string): Promise<RelevanceOption[]> {
+  async getUserRelevanceSelections(userId: number): Promise<RelevanceOption[]> {
     try {
       const response = await axios.get(`${API_BASE_URL}/fiver/relevance-selections/${userId}`);
       return response.data.data;
@@ -57,7 +57,7 @@ class FiverService {
   }
 
   // Get user 5R progress
-  async getUser5RProgress(userId: string): Promise<User5RProgress | null> {
+  async getUser5RProgress(userId: number): Promise<User5RProgress | null> {
     try {
       const response = await axios.get(`${API_BASE_URL}/fiver/progress/${userId}`);
       return response.data.data;

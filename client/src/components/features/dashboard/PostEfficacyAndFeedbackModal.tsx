@@ -90,6 +90,15 @@ export function PostEfficacyAndFeedbackModal({
         }
     };
 
+    const handleOptionSelect = (questionId: number, value: string, isFeedback: boolean) => {
+        handleResponseChange(questionId, value, isFeedback);
+        if (currentQuestionIndex < currentQuestions.length - 1) {
+            setTimeout(() => {
+                setCurrentQuestionIndex(prev => prev + 1);
+            }, 300);
+        }
+    };
+
     const currentQuestions = step === 'efficacy' ? efficacyQuestions : feedbackQuestions;
     const currentResponses = step === 'efficacy' ? efficacyResponses : feedbackResponses;
 
@@ -284,7 +293,7 @@ export function PostEfficacyAndFeedbackModal({
                                                     name={`question-${currentQuestion.id}`}
                                                     value={option}
                                                     checked={currentResponses[currentQuestion.id] === option}
-                                                    onChange={(e) => handleResponseChange(currentQuestion.id, e.target.value, !isEfficacy)}
+                                                    onChange={(e) => handleOptionSelect(currentQuestion.id, e.target.value, !isEfficacy)}
                                                     className="sr-only"
                                                 />
                                                 <div
@@ -320,37 +329,25 @@ export function PostEfficacyAndFeedbackModal({
                     </Button>
 
                     <div className="flex gap-3">
-                        {isLastQuestion ? (
-                            <Button
-                                onClick={isEfficacy ? submitEfficacy : submitFeedback}
-                                disabled={!canGoNext || isSubmitting}
-                                className="rounded-xl px-8"
-                                style={{ backgroundColor: "#20B2AA", color: "white" }}
-                            >
-                                {isSubmitting ? (
-                                    <div className="flex items-center">
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                        Saving...
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center">
-                                        {isEfficacy ? 'Next Step' : 'Submit Feedback'}
-                                        {!isEfficacy && <CheckCircle className="w-4 h-4 ml-2" />}
-                                        {isEfficacy && <ChevronRight className="w-4 h-4 ml-2" />}
-                                    </div>
-                                )}
-                            </Button>
-                        ) : (
-                            <Button
-                                onClick={goToNextQuestion}
-                                disabled={!canGoNext}
-                                className="rounded-xl px-8"
-                                style={{ backgroundColor: "#20B2AA", color: "white" }}
-                            >
-                                Next
-                                <ChevronRight className="w-4 h-4 ml-2" />
-                            </Button>
-                        )}
+                        <Button
+                            onClick={isEfficacy ? submitEfficacy : submitFeedback}
+                            disabled={!isLastQuestion || !canGoNext || isSubmitting}
+                            className="rounded-xl px-8"
+                            style={{ backgroundColor: "#20B2AA", color: "white" }}
+                        >
+                            {isSubmitting ? (
+                                <div className="flex items-center">
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                    Saving...
+                                </div>
+                            ) : (
+                                <div className="flex items-center">
+                                    {isEfficacy ? 'Next Step' : 'Submit Feedback'}
+                                    {!isEfficacy && <CheckCircle className="w-4 h-4 ml-2" />}
+                                    {isEfficacy && <ChevronRight className="w-4 h-4 ml-2" />}
+                                </div>
+                            )}
+                        </Button>
                     </div>
                 </div>
             </Card>

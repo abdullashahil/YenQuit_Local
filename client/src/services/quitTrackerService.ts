@@ -54,8 +54,8 @@ interface ProgressResponse {
 }
 
 interface LogResponse {
-  id: string;
-  user_id: string;
+  id: number;
+  user_id: number;
   log_date: string;
   smoked: boolean;
   cigarettes_count: number | null;
@@ -119,7 +119,7 @@ const quitTrackerService = {
   },
 
   // Update a specific log by ID
-  async updateLog(id: string, logData: Partial<LogData>): Promise<LogResponse> {
+  async updateLog(id: number, logData: Partial<LogData>): Promise<LogResponse> {
     try {
       const response = await axios.put(
         `${API_BASE_URL}/quit-tracker/log/${id}`,
@@ -134,7 +134,7 @@ const quitTrackerService = {
   },
 
   // Delete a log by ID
-  async deleteLog(id: string): Promise<LogResponse> {
+  async deleteLog(id: number): Promise<LogResponse> {
     try {
       const response = await axios.delete(
         `${API_BASE_URL}/quit-tracker/log/${id}`,
@@ -169,7 +169,7 @@ const quitTrackerService = {
   },
 
   // Get a specific log by ID
-  async getLogById(id: string): Promise<LogResponse> {
+  async getLogById(id: number): Promise<LogResponse> {
     try {
       const response = await axios.get(
         `${API_BASE_URL}/quit-tracker/logs/${id}`,
@@ -285,7 +285,7 @@ const quitTrackerService = {
   },
 
   // Get specific user's quit tracker progress for admin
-  async getAdminUserProgress(userId: string): Promise<ProgressResponse> {
+  async getAdminUserProgress(userId: number): Promise<ProgressResponse> {
     try {
       const response = await axios.get(
         `${API_BASE_URL}/quit-tracker/admin/user/${userId}/progress`,

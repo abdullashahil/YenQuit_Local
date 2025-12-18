@@ -57,6 +57,15 @@ export function SelfEfficacyModal({ open, onOpenChange, onComplete, isPostSelfEf
     }));
   };
 
+  const handleOptionSelect = (questionId: number, value: string) => {
+    handleResponseChange(questionId, value);
+    if (currentQuestionIndex < questions.length - 1) {
+      setTimeout(() => {
+        setCurrentQuestionIndex(prev => prev + 1);
+      }, 300);
+    }
+  };
+
   const goToNextQuestion = () => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
@@ -73,12 +82,12 @@ export function SelfEfficacyModal({ open, onOpenChange, onComplete, isPostSelfEf
     if (!questions.length || currentQuestionIndex >= questions.length) {
       return null;
     }
-    
+
     const currentQuestion = questions[currentQuestionIndex];
     if (!currentQuestion) {
       return null;
     }
-    
+
     if (currentQuestion.is_required && !responses[currentQuestion.id]) {
       return 'This question is required';
     }
@@ -110,7 +119,7 @@ export function SelfEfficacyModal({ open, onOpenChange, onComplete, isPostSelfEf
       } else {
         await quitTrackerService.saveQuestionnaireResponses(formattedResponses);
       }
-      
+
       onComplete();
       onOpenChange(false);
     } catch (err: any) {
@@ -203,15 +212,14 @@ export function SelfEfficacyModal({ open, onOpenChange, onComplete, isPostSelfEf
                           name={`question-${currentQuestion.id}`}
                           value={option}
                           checked={responses[currentQuestion.id] === option}
-                          onChange={(e) => handleResponseChange(currentQuestion.id, e.target.value)}
+                          onChange={(e) => handleOptionSelect(currentQuestion.id, e.target.value)}
                           className="sr-only"
                         />
                         <div
-                          className={`w-4 h-4 rounded-full border-2 mr-3 flex items-center justify-center ${
-                            responses[currentQuestion.id] === option
+                          className={`w-4 h-4 rounded-full border-2 mr-3 flex items-center justify-center ${responses[currentQuestion.id] === option
                               ? "border-[#20B2AA] bg-[#20B2AA]"
                               : "border-gray-300"
-                          }`}
+                            }`}
                         >
                           {responses[currentQuestion.id] === option && (
                             <div className="w-2 h-2 rounded-full bg-white" />
@@ -235,12 +243,11 @@ export function SelfEfficacyModal({ open, onOpenChange, onComplete, isPostSelfEf
                         <button
                           key={num}
                           type="button"
-                          onClick={() => handleResponseChange(currentQuestion.id, num.toString())}
-                          className={`flex-1 py-3 rounded-lg font-medium transition-colors ${
-                            responses[currentQuestion.id] === num.toString()
+                          onClick={() => handleOptionSelect(currentQuestion.id, num.toString())}
+                          className={`flex-1 py-3 rounded-lg font-medium transition-colors ${responses[currentQuestion.id] === num.toString()
                               ? "bg-[#20B2AA] text-white"
                               : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                          }`}
+                            }`}
                         >
                           {num}
                         </button>
@@ -277,36 +284,24 @@ export function SelfEfficacyModal({ open, onOpenChange, onComplete, isPostSelfEf
           </Button>
 
           <div className="flex gap-3">
-            {isLastQuestion ? (
-              <Button
-                onClick={handleSubmit}
-                disabled={!canGoNext || isSubmitting}
-                className="rounded-xl px-8"
-                style={{ backgroundColor: "#20B2AA", color: "white" }}
-              >
-                {isSubmitting ? (
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Saving...
-                  </div>
-                ) : (
-                  <div className="flex items-center">
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    {isPostSelfEfficacy ? 'Complete Assessment' : 'Complete Setup'}
-                  </div>
-                )}
-              </Button>
-            ) : (
-              <Button
-                onClick={goToNextQuestion}
-                disabled={!canGoNext}
-                className="rounded-xl px-8"
-                style={{ backgroundColor: "#20B2AA", color: "white" }}
-              >
-                Next
-                <ChevronRight className="w-4 h-4 ml-2" />
-              </Button>
-            )}
+            <Button
+              onClick={handleSubmit}
+              disabled={!isLastQuestion || !canGoNext || isSubmitting}
+              className="rounded-xl px-8"
+              style={{ backgroundColor: "#20B2AA", color: "white" }}
+            >
+              {isSubmitting ? (
+                <div className="flex items-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Saving...
+                </div>
+              ) : (
+                <div className="flex items-center">
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  {isPostSelfEfficacy ? 'Complete Assessment' : 'Complete Setup'}
+                </div>
+              )}
+            </Button>
           </div>
         </div>
       </Card>

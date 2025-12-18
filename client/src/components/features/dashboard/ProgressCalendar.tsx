@@ -136,10 +136,10 @@ export function ProgressCalendar() {
       info.el.style.boxSizing = 'border-box';
       info.el.style.zIndex = '10';
       info.el.style.position = 'relative';
-      info.el.style.color = '#1C3B5E';
+      info.el.style.color = 'rgba(32, 178, 170, 1)';
       info.el.style.fontWeight = 'bold';
       info.el.style.fontSize = '160%';
-      info.el.style.textShadow = '0 0 3px rgba(0, 6, 61, 0.5)';
+      info.el.style.textShadow = '0 0 3px rgba(172, 247, 242, 1)';
     }
 
     // Highlight quit date in red

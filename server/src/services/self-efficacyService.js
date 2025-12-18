@@ -184,13 +184,14 @@ export async function saveUserFeedback(userId, responses) {
   const client = await getClient();
   try {
     await client.query('BEGIN');
-    for (const [qId, val] of Object.entries(responses)) {
+    for (const response of responses) {
+      const { questionId, value } = response;
       await client.query(`
-                INSERT INTO user_assessment_responses (user_id, question_id, response_data, assessment_context, created_at, updated_at)
-                VALUES ($1, $2, $3, 'feedback', NOW(), NOW())
-                ON CONFLICT (user_id, question_id, assessment_context)
-                DO UPDATE SET response_data = EXCLUDED.response_data, updated_at = NOW()
-           `, [userId, Number(qId), JSON.stringify(val)]);
+        INSERT INTO user_assessment_responses (user_id, question_id, response_data, assessment_context, created_at, updated_at)
+        VALUES ($1, $2, $3, 'feedback', NOW(), NOW())
+        ON CONFLICT (user_id, question_id, assessment_context)
+        DO UPDATE SET response_data = EXCLUDED.response_data, updated_at = NOW()
+      `, [userId, questionId, JSON.stringify(value)]);
     }
     await client.query('COMMIT');
     return { success: true };

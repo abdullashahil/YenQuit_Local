@@ -5,7 +5,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/a
 export type PublicContentType = 'video' | 'podcast' | 'image';
 
 export interface PublicContentItem {
-  id: string;
+  id: number;
   title: string;
   category: string;
   description?: string | null;
@@ -40,7 +40,7 @@ export const contentService = {
     return res.data; // { success, message, data, pagination? }
   },
 
-  async getPublicContentById(id: string) {
+  async getPublicContentById(id: number) {
     const res = await axios.get(`${API_BASE_URL}/content/public/${id}`);
     return res.data; // { success, message, data }
   }

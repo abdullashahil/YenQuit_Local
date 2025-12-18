@@ -1,15 +1,6 @@
 /**
- * Helper utilities to handle user ID compatibility between UUID and integer formats
+ * Helper utilities to handle user ID compatibility (Integer IDs)
  */
-
-/**
- * Determines if a value is likely a UUID string
- */
-export function isUUID(str) {
-  if (typeof str !== 'string') return false;
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(str);
-}
 
 /**
  * Determines if a value is likely an integer (or can be converted to one)
@@ -23,51 +14,46 @@ export function isInteger(val) {
  * Returns the appropriate query parameter and SQL fragment
  */
 export function normalizeUserIdForQuery(userId) {
-  if (isUUID(userId)) {
-    return {
-      value: userId,
-      sqlCast: '::uuid',
-      comparison: '= $1::uuid'
-    };
-  } else if (isInteger(userId)) {
+  if (isInteger(userId)) {
     return {
       value: parseInt(userId, 10),
-      sqlCast: '',
+      sqlCast: '::integer', // Explicit cast just in case
       comparison: '= $1'
     };
   } else {
-    // Fallback: try text comparison
+    // Fallback: try text comparison or error?
+    // Since we are moving to integers, we should try to parse.
+    // If it fails, return as string but likely will fail in DB if column is int.
     return {
-      value: String(userId),
-      sqlCast: '::text',
-      comparison: '::text = $1'
+      value: userId, // Keep original if not int? Or force 0/null?
+      sqlCast: '::integer',
+      comparison: '= $1'
     };
   }
 }
 
 /**
- * Creates a flexible WHERE clause for user_id that works with both UUID and integer
+ * Creates a flexible WHERE clause for user_id
  */
 export function createUserIdWhereClause(userId, alias = '') {
   const column = alias ? `${alias}.user_id` : 'user_id';
-  const { comparison } = normalizeUserIdForQuery(userId);
-  return `${column} ${comparison}`;
+  // We don't really need normalizeUserIdForQuery complexity anymore if it's always int
+  // But keeping structure for minimal code churn elsewhere
+  return `${column} = $1`;
 }
 
 /**
- * Creates a flexible INSERT clause for user_id that works with both UUID and integer
+ * Creates a flexible INSERT clause for user_id
  */
 export function createUserIdInsertValue(userId) {
-  const { sqlCast } = normalizeUserIdForQuery(userId);
-  return `$1${sqlCast}`;
+  return `$1`;
 }
 
 /**
- * Creates a flexible VALUES clause for user_id that works with both UUID and integer
- * This is useful for dynamic INSERT statements
+ * Creates a flexible VALUES clause for user_id
  */
 export function createUserIdValuesClause(userId, additionalParams = []) {
-  const { sqlCast } = normalizeUserIdForQuery(userId);
-  const paramCount = additionalParams.length + 1;
-  return `($1${sqlCast}, ${additionalParams.map((_, i) => `$${i + 2}`).join(', ')})`;
+  // $1 is user_id
+  const otherParams = additionalParams.map((_, i) => `$${i + 2}`).join(', ');
+  return `($1, ${otherParams})`;
 }

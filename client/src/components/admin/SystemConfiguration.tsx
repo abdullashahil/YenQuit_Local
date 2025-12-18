@@ -1,19 +1,15 @@
 import { Card } from "../ui/card";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { Textarea } from "../ui/textarea";
+
 import { Button } from "../ui/button";
-import { Switch } from "../ui/switch";
-import { Checkbox } from "../ui/checkbox";
-import { Settings, MessageSquare, Key, CheckCircle2, Eye, EyeOff } from "lucide-react";
+
+
+import { Key, CheckCircle2, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 
 export function SystemConfiguration() {
-  const [bannerMessage, setBannerMessage] = useState("Welcome to Quitting Journey App - Your path to freedom!");
-  const [bannerEnabled, setBannerEnabled] = useState(true);
-  const [landingHeadline, setLandingHeadline] = useState("Start Your Journey to a Smoke-Free Life Today");
-  const [landingSubtext, setLandingSubtext] = useState("Join thousands of people who have successfully quit smoking with our evidence-based support program.");
-  const [landingCTA, setLandingCTA] = useState("Begin Your Journey");
+
   const [aiApiKey, setAiApiKey] = useState("sk_test_••••••••••••••••••••••");
   const [analyticsKey, setAnalyticsKey] = useState("UA-••••••••-•");
   const [showAiKey, setShowAiKey] = useState(false);
@@ -49,116 +45,8 @@ export function SystemConfiguration() {
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="text-center space-y-2">
-        <h2 className="text-3xl font-bold" style={{ color: "#1C3B5E" }}>
-          System Configuration
-        </h2>
-        <p className="text-lg" style={{ color: "#333333", opacity: 0.7 }}>
-          Configure global system settings and integrations
-        </p>
-      </div>
 
-      {/* Banner Messages */}
-      <Card className="p-8 rounded-3xl border-0 shadow-xl">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-3 rounded-2xl" style={{ backgroundColor: "#20B2AA20" }}>
-            <MessageSquare className="w-6 h-6" style={{ color: "#20B2AA" }} />
-          </div>
-          <h3 className="text-xl font-semibold" style={{ color: "#1C3B5E" }}>
-            Site Banner Messages
-          </h3>
-        </div>
 
-        <div className="space-y-6">
-          <div className="space-y-3">
-            <Label className="text-sm font-semibold" style={{ color: "#1C3B5E" }}>
-              Banner Content
-            </Label>
-            <Textarea
-              value={bannerMessage}
-              onChange={(e) => setBannerMessage(e.target.value)}
-              className="rounded-2xl border-gray-200 min-h-24 resize-none focus:border-[#20B2AA] transition-colors"
-              placeholder="Enter banner message to display across the platform..."
-            />
-          </div>
-
-          <div className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50">
-            <Switch
-              checked={bannerEnabled}
-              onCheckedChange={setBannerEnabled}
-              style={{ backgroundColor: bannerEnabled ? "#20B2AA" : "#ccc" }}
-            />
-            <div>
-              <Label className="text-sm font-semibold cursor-pointer" style={{ color: "#1C3B5E" }}>
-                Display banner message to all users
-              </Label>
-              <p className="text-xs mt-1" style={{ color: "#333333", opacity: 0.7 }}>
-                When enabled, this message will appear at the top of all pages
-              </p>
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      {/* Landing Page Content Editor */}
-      <Card className="p-8 rounded-3xl border-0 shadow-xl">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-3 rounded-2xl" style={{ backgroundColor: "#1C3B5E20" }}>
-            <Settings className="w-6 h-6" style={{ color: "#1C3B5E" }} />
-          </div>
-          <h3 className="text-xl font-semibold" style={{ color: "#1C3B5E" }}>
-            Landing Page Content
-          </h3>
-        </div>
-
-        <div className="space-y-6">
-          <div className="space-y-3">
-            <Label className="text-sm font-semibold" style={{ color: "#1C3B5E" }}>
-              Main Headline
-            </Label>
-            <Input
-              value={landingHeadline}
-              onChange={(e) => setLandingHeadline(e.target.value)}
-              className="rounded-2xl border-gray-200 h-12 focus:border-[#20B2AA] transition-colors"
-              placeholder="Enter landing page headline..."
-            />
-          </div>
-
-          <div className="space-y-3">
-            <Label className="text-sm font-semibold" style={{ color: "#1C3B5E" }}>
-              Subheading Text
-            </Label>
-            <Textarea
-              value={landingSubtext}
-              onChange={(e) => setLandingSubtext(e.target.value)}
-              className="rounded-2xl border-gray-200 min-h-24 resize-none focus:border-[#20B2AA] transition-colors"
-              placeholder="Enter landing page description..."
-            />
-          </div>
-
-          <div className="space-y-3">
-            <Label className="text-sm font-semibold" style={{ color: "#1C3B5E" }}>
-              Call-to-Action Button Text
-            </Label>
-            <Input
-              value={landingCTA}
-              onChange={(e) => setLandingCTA(e.target.value)}
-              className="rounded-2xl border-gray-200 h-12 focus:border-[#20B2AA] transition-colors"
-              placeholder="Enter CTA button text..."
-            />
-          </div>
-
-          <div className="p-4 rounded-2xl" style={{ backgroundColor: "#20B2AA10" }}>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-[#20B2AA]"></div>
-              <p className="text-sm font-medium" style={{ color: "#20B2AA" }}>
-                Preview your changes on the landing page before saving
-              </p>
-            </div>
-          </div>
-        </div>
-      </Card>
 
       {/* API Keys */}
       <Card className="p-8 rounded-3xl border-0 shadow-xl">

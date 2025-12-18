@@ -49,7 +49,7 @@ export function DailyLogModal({ open, onOpenChange, onLogChange, quitDate }: Dai
       setNotes("");
       setError(null);
       setShowSmokeFreeConfirmation(false);
-      
+
       // Load existing log for today if any
       loadTodayLog();
     }
@@ -62,7 +62,7 @@ export function DailyLogModal({ open, onOpenChange, onLogChange, quitDate }: Dai
         endDate: today,
         limit: 1
       });
-      
+
       if (logsResult.logs.length > 0) {
         const log = logsResult.logs[0];
         setExistingLog(log);
@@ -127,7 +127,7 @@ export function DailyLogModal({ open, onOpenChange, onLogChange, quitDate }: Dai
       if (onLogChange) {
         onLogChange();
       }
-      
+
       // Refresh the page to show updated data in all components
       window.location.reload();
 
@@ -241,7 +241,7 @@ export function DailyLogModal({ open, onOpenChange, onLogChange, quitDate }: Dai
                 style={{ color: cigaretteCount === 0 ? "#20B2AA" : "#999" }}
               />
               <span style={{ color: cigaretteCount === 0 ? "#20B2AA" : "#333333" }}>
-                Smoke-Free Day! 🎉
+                Tobacco-Free Day! 🎉
               </span>
             </button>
 
@@ -267,7 +267,7 @@ export function DailyLogModal({ open, onOpenChange, onLogChange, quitDate }: Dai
                 placeholder="0"
               />
               <span className="text-sm" style={{ color: "#333333", opacity: 0.7 }}>
-                cigarettes today
+                cigarettes / units today
               </span>
             </div>
 

@@ -42,8 +42,8 @@ interface Community {
 
 interface ChatMessage {
   id: string
-  community_id: string
-  user_id: string
+  community_id: number
+  user_id: number
   content: string
   message_type: "text" | "image" | "file" | "system"
   file_url?: string
@@ -353,37 +353,37 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
       }
     }
 
-    const handleMessageEdited = (message: ChatMessage) => {
-      setMessages((prev) => prev.map((m) => (m.id === message.id ? message : m)))
-    }
+const handleMessageEdited = (message: ChatMessage) => {
+  setMessages((prev) => prev.map((m) => (m.id === message.id ? message : m)))
+}
 
-    const handleMessageDeleted = ({ messageId }: { messageId: string }) => {
-      setMessages((prev) => prev.filter((m) => m.id !== messageId))
-    }
+const handleMessageDeleted = ({ messageId }: { messageId: string }) => {
+  setMessages((prev) => prev.filter((m) => m.id !== messageId))
+}
 
-    const handleOnlineUsersUpdated = (users: OnlineUser[]) => {
-      setOnlineUsers(users)
-    }
+const handleOnlineUsersUpdated = (users: OnlineUser[]) => {
+  setOnlineUsers(users)
+}
 
-    const handleUserTyping = ({ userId: typingUserId }: { userId: string }) => {
-      if (typingUserId !== currentUser.id) {
-        setTypingUsers((prev) => {
-          const exists = prev.find(u => u.id === typingUserId)
-          if (!exists) {
-            // Get user name from online users or messages
-            const typingUser = onlineUsers.find(u => u.user_id === typingUserId) ||
-              messages.find(m => m.user_id === typingUserId)
-            const userName = typingUser?.full_name || typingUser?.email || 'Someone'
-            return [...prev, { id: typingUserId, name: userName }]
-          }
-          return prev
-        })
+const handleUserTyping = ({ userId: typingUserId }: { userId: string }) => {
+  if (typingUserId !== currentUser.id) {
+    setTypingUsers((prev) => {
+      const exists = prev.find(u => u.id === typingUserId)
+      if (!exists) {
+        // Get user name from online users or messages
+        const typingUser = onlineUsers.find(u => u.user_id === typingUserId) ||
+          messages.find(m => m.user_id === typingUserId)
+        const userName = typingUser?.full_name || typingUser?.email || 'Someone'
+        return [...prev, { id: typingUserId, name: userName }]
       }
-    }
+      return prev
+    })
+  }
+}
 
-    const handleUserStopTyping = ({ userId: typingUserId }: { userId: string }) => {
-      setTypingUsers((prev) => prev.filter((user) => user.id !== typingUserId))
-    }
+const handleUserStopTyping = ({ userId: typingUserId }: { userId: string }) => {
+  setTypingUsers((prev) => prev.filter((user) => user.id !== typingUserId))
+}
 
     // Register listeners immediately
     socketService.onNewMessage(handleNewMessage)
@@ -515,7 +515,7 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
     setReplyingTo(null)
   }
 
-  const handleDeleteMessage = (messageId: string) => {
+  const handleDeleteMessage = (messageId: number) => {
     socketService.deleteMessage(messageId)
   }
 

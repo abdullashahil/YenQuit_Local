@@ -135,12 +135,12 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
     loadData();
   }, []);
 
-  const handleFagerstromAnswer = (questionId: string, value: string) => {
+  const handleFagerstromAnswer = (questionId: number, value: string) => {
     if (submitted) return;
     setFagerstromAnswers(prev => ({ ...prev, [questionId]: value }));
   };
 
-  const handleAssessAnswer = (questionId: string, value: number | string) => {
+  const handleAssessAnswer = (questionId: number, value: number | string) => {
     if (submitted) return;
     setAssessAnswers(prev => ({ ...prev, [`assess_${questionId}`]: value }));
   };

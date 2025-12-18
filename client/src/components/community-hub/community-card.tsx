@@ -27,7 +27,7 @@ interface CommunityCardProps {
   isSelected?: boolean
   onClick?: () => void
   onSelect?: () => void
-  onJoin?: (communityId: string) => void
+  onJoin?: (communityId: number) => void
 }
 
 export function CommunityCard({ community, isSelected = false, onClick, onSelect, onJoin }: CommunityCardProps) {

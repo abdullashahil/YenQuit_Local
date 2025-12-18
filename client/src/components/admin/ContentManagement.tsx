@@ -127,7 +127,7 @@ export function ContentManagement({ activeTab, setActiveTab, onExitAdmin, onLogo
     fetchStats();
   };
 
-  const handleDelete = async (contentId: string) => {
+  const handleDelete = async (contentId: number) => {
     if (!confirm('Are you sure you want to delete this content?')) return;
     
     try {

@@ -9,8 +9,8 @@ import {
   LogOut,
   Menu,
   Shield,
-  Users,
-  MessageSquare
+  MessageSquare,
+  Activity
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
 import { useState } from "react";
@@ -33,7 +33,7 @@ export function AdminSidebar({ activeTab, setActiveTab, onExitAdmin, onLogout }:
     const confirmed = window.confirm(
       "Are you sure you want to log out? You will need to sign in again to access your account."
     );
-    
+
     if (!confirmed) return;
 
     try {
@@ -47,7 +47,7 @@ export function AdminSidebar({ activeTab, setActiveTab, onExitAdmin, onLogout }:
       localStorage.removeItem('accessToken');
       localStorage.removeItem('user');
       sessionStorage.clear();
-      
+
       // Redirect to login page
       router.push('/login');
     }
@@ -55,9 +55,9 @@ export function AdminSidebar({ activeTab, setActiveTab, onExitAdmin, onLogout }:
 
   const navItems = [
     { id: "admin-dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/admin", badge: null },
-    { id: "user-management", label: "User Management", icon: Users, href: "/admin/users", badge: null },
     { id: "content-management", label: "Content Management", icon: FileText, href: "/admin/content", badge: null },
     { id: "communities", label: "Communities", icon: MessageSquare, href: "/admin/communities", badge: null },
+    { id: "reports", label: "Report", icon: Activity, href: "/admin/report", badge: null },
     { id: "system-settings", label: "System Settings", icon: Settings, href: "/admin/settings", badge: null },
   ];
 
@@ -94,32 +94,28 @@ export function AdminSidebar({ activeTab, setActiveTab, onExitAdmin, onLogout }:
                 setActiveTab(item.id);
                 setOpen(false);
               }}
-              className={`w-full flex items-center gap-3 px-4 py-4 rounded-2xl transition-all duration-200 group relative ${
-                isActive
-                  ? "bg-gradient-to-r from-[#20B2AA] to-[#1C9B94] shadow-lg shadow-[#20B2AA]/25"
-                  : "hover:bg-white/10 hover:translate-x-1"
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-4 rounded-2xl transition-all duration-200 group relative ${isActive
+                ? "bg-gradient-to-r from-[#20B2AA] to-[#1C9B94] shadow-lg shadow-[#20B2AA]/25"
+                : "hover:bg-white/10 hover:translate-x-1"
+                }`}
             >
               <Icon
-                className={`w-5 h-5 transition-colors ${
-                  isActive ? "text-white" : "text-white/60 group-hover:text-white"
-                }`}
+                className={`w-5 h-5 transition-colors ${isActive ? "text-white" : "text-white/60 group-hover:text-white"
+                  }`}
               />
               <span
-                className={`text-sm font-medium transition-colors ${
-                  isActive ? "text-white" : "text-white/80 group-hover:text-white"
-                }`}
+                className={`text-sm font-medium transition-colors ${isActive ? "text-white" : "text-white/80 group-hover:text-white"
+                  }`}
               >
                 {item.label}
               </span>
 
               {item.badge && (
                 <span
-                  className={`ml-auto px-2 py-1 rounded-full text-xs font-medium ${
-                    isActive
-                      ? "bg-white/20 text-white"
-                      : "bg-[#20B2AA] text-white"
-                  }`}
+                  className={`ml-auto px-2 py-1 rounded-full text-xs font-medium ${isActive
+                    ? "bg-white/20 text-white"
+                    : "bg-[#20B2AA] text-white"
+                    }`}
                 >
                   {item.badge}
                 </span>
@@ -131,7 +127,7 @@ export function AdminSidebar({ activeTab, setActiveTab, onExitAdmin, onLogout }:
 
       {/* Footer Actions */}
       <div className="p-4 border-t border-white/10 space-y-2">
-        
+
         {onLogout && (
           <button
             onClick={handleLogout}
