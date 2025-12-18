@@ -34,7 +34,7 @@ const TEST_USER_ID = "d5799f0c-f707-415e-b9ea-68816351912c" // keep for testing
 interface Community {
   id: string
   name: string
-description?: string
+  description?: string
   member_count: number
   online_count: number
   user_role?: string
@@ -79,7 +79,7 @@ interface ChatAreaProps {
 export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) {
   // Determine YenAI mode
   const isYenAI = community?.id === "yenai-chat"
-  const { incrementUnreadCount } = useNotifications()
+  const { incrementUnreadCount, markAsRead } = useNotifications()
 
   // Helper to get current user info
   const getCurrentUser = () => {
@@ -105,9 +105,13 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
   const [editingMessage, setEditingMessage] = useState<ChatMessage | null>(null)
   const [typingUsers, setTypingUsers] = useState<{ id: string, name: string }[]>([])
   const [showOnlineUsers, setShowOnlineUsers] = useState(false)
+  const [showOptionsMenu, setShowOptionsMenu] = useState(false)
+  const [showLeaveModal, setShowLeaveModal] = useState(false)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const socketInitializedRef = useRef(false)
+  const currentCommunityRef = useRef<string | null>(null)
 
   // Utility
   const scrollToBottom = () => {
@@ -286,13 +290,13 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
     }, [community, isYenAI])
 
   // Socket initialization & handlers
+  // Socket initialization - set up listeners only once
   const initializeSocket = useCallback(
     (c?: Community) => {
       if (!c) return
 
       // Additional defensive check - don't initialize socket if user is not a member
       if (!isYenAI && !c.user_role) {
-        console.log('DEBUG: Blocking socket initialization for non-member')
         return
       }
 
@@ -302,108 +306,173 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
       const userId = currentUser?.id
 
       if (!token || !userId) {
-        console.error("Authentication token or user ID not found")
         setError("Please log in to join the chat")
         return
       }
 
       try {
-        console.log('DEBUG: Initializing socket for community:', c.id)
+        // Connect and authenticate
         socketService.connect(userId, token)
+
+        // Join community room
         socketService.joinCommunity(c.id)
-        console.log('DEBUG: Socket connected and joined community')
-
-        // Only set up listeners once
-        socketService.onNewMessage((message: ChatMessage) => {
-          console.log('DEBUG: Received new message:', message)
-          setMessages((prev) => [...prev, message])
-          scrollToBottom()
-
-          // Increment unread count if message is not from current user
-          if (message.user_id !== currentUser?.id && community && !isYenAI) {
-            incrementUnreadCount(community.id)
-          }
-        })
-
-        socketService.onMessageEdited((message: ChatMessage) => {
-          setMessages((prev) => prev.map((m) => (m.id === message.id ? message : m)))
-        })
-
-        socketService.onMessageDeleted(({ messageId }: { messageId: number }) => {
-          setMessages((prev) => prev.filter((m) => m.id !== messageId))
-        })
-
-        socketService.onOnlineUsersUpdated((users: OnlineUser[]) => {
-          setOnlineUsers(users)
-        })
-
-        socketService.onUserTyping(({ userId: typingUserId }: { userId: number }) => {
-          if (typingUserId !== userId) {
-            // Look up user from online users or messages to get the name
-            const typingUser = onlineUsers.find(u => u.user_id === typingUserId) ||
-              messages.find(m => m.user_id === typingUserId)
-            const userName = typingUser?.full_name || typingUser?.email || 'Someone'
-
-            setTypingUsers((prev) => {
-              const exists = prev.find(u => u.id === typingUserId)
-              if (!exists) {
-                return [...prev, { id: typingUserId, name: userName }]
-              }
-              return prev
-            })
-          }
-        })
-
-        socketService.onUserStopTyping(({ userId: typingUserId }: { userId: number }) => {
-          setTypingUsers((prev) => prev.filter((user) => user.id !== typingUserId))
-        })
 
         return () => {
-          console.log('DEBUG: Cleaning up socket connection')
           socketService.leaveCommunity(c.id)
-          // Don't disconnect completely, just leave the community
-          // socketService.disconnect()
         }
       } catch (err) {
-        console.error("Failed to initialize socket:", err)
         setError("Failed to connect to chat")
       }
     },
     [currentUser?.id, isYenAI]
   )
 
-  // Effects to load data depending on mode
+  // Set up socket event listeners - register AFTER socket connects
+  useEffect(() => {
+    if (isYenAI || !currentUser?.id || !community) return
+
+    const handleNewMessage = (message: ChatMessage) => {
+      setMessages((prev) => {
+        // Prevent duplicates
+        if (prev.some(m => m.id === message.id)) {
+          return prev
+        }
+        return [...prev, message]
+      })
+      scrollToBottom()
+
+      // Only increment unread count if:
+      // 1. Message is not from current user
+      // 2. Message is for a DIFFERENT community than the one currently being viewed
+      // This prevents badges from appearing when user is actively viewing the chat
+      if (message.user_id !== currentUser?.id && !isYenAI) {
+        // Use ref to get current community ID
+        if (message.community_id !== currentCommunityRef.current) {
+          incrementUnreadCount(message.community_id)
+        }
+      }
+    }
+
+const handleMessageEdited = (message: ChatMessage) => {
+  setMessages((prev) => prev.map((m) => (m.id === message.id ? message : m)))
+}
+
+const handleMessageDeleted = ({ messageId }: { messageId: string }) => {
+  setMessages((prev) => prev.filter((m) => m.id !== messageId))
+}
+
+const handleOnlineUsersUpdated = (users: OnlineUser[]) => {
+  setOnlineUsers(users)
+}
+
+const handleUserTyping = ({ userId: typingUserId }: { userId: string }) => {
+  if (typingUserId !== currentUser.id) {
+    setTypingUsers((prev) => {
+      const exists = prev.find(u => u.id === typingUserId)
+      if (!exists) {
+        // Get user name from online users or messages
+        const typingUser = onlineUsers.find(u => u.user_id === typingUserId) ||
+          messages.find(m => m.user_id === typingUserId)
+        const userName = typingUser?.full_name || typingUser?.email || 'Someone'
+        return [...prev, { id: typingUserId, name: userName }]
+      }
+      return prev
+    })
+  }
+}
+
+const handleUserStopTyping = ({ userId: typingUserId }: { userId: string }) => {
+  setTypingUsers((prev) => prev.filter((user) => user.id !== typingUserId))
+}
+
+    // Register listeners immediately
+    socketService.onNewMessage(handleNewMessage)
+    socketService.onMessageEdited(handleMessageEdited)
+    socketService.onMessageDeleted(handleMessageDeleted)
+    socketService.onOnlineUsersUpdated(handleOnlineUsersUpdated)
+    socketService.onUserTyping(handleUserTyping)
+    socketService.onUserStopTyping(handleUserStopTyping)
+
+    // Cleanup function - remove all listeners
+    return () => {
+      socketService.offNewMessage(handleNewMessage)
+      socketService.offMessageEdited(handleMessageEdited)
+      socketService.offMessageDeleted(handleMessageDeleted)
+      socketService.offOnlineUsersUpdated(handleOnlineUsersUpdated)
+      socketService.offUserTyping(handleUserTyping)
+      socketService.offUserStopTyping(handleUserStopTyping)
+    }
+  }, [currentUser?.id, isYenAI, incrementUnreadCount, community?.id, onlineUsers, messages]) // Added community.id to re-register on community change
+
+  // Effects to load data and initialize socket
   useEffect(() => {
     if (!community) return
 
     // Additional defensive check - don't run effects for non-members
     if (!isYenAI && !community.user_role) {
-      console.log('DEBUG: Blocking useEffect for non-member')
+      console.log('DEBUG [Effect]: Blocking useEffect for non-member')
+      socketInitializedRef.current = false
       return
     }
 
     if (isYenAI) {
+      console.log('DEBUG [Effect]: Loading YenAI history')
       fetchYenaiHistory()
       return
     }
 
+    console.log('DEBUG [Effect]: Loading messages for community:', community.id)
     fetchMessages()
 
-    // Initialize socket connection (only once per user)
+    // Prevent double initialization in React Strict Mode
+    if (socketInitializedRef.current) {
+      console.log('DEBUG [Effect]: Socket already initialized for this community, skipping')
+      return
+    }
+
+    socketInitializedRef.current = true
+
+    // Initialize socket connection
     const cleanup = initializeSocket(community)
 
-    return cleanup
-  }, [community, isYenAI, fetchYenaiHistory, fetchMessages, initializeSocket])
+    return () => {
+      socketInitializedRef.current = false
+      cleanup?.()
+    }
+  }, [community?.id, isYenAI, fetchYenaiHistory, fetchMessages]) // Removed initializeSocket to prevent re-initialization
 
   // Separate effect to handle community changes for socket
   useEffect(() => {
     if (!community || isYenAI) return
 
+    // Update ref with current community ID for socket listeners
+    currentCommunityRef.current = community.id
+
+    // Clear badge immediately in notification context
+    markAsRead(community.id)
+
+    // Mark messages as read on server when opening chat
+    const markAsReadOnServer = async () => {
+      try {
+        const token = localStorage.getItem("accessToken")
+        if (!token) return
+
+        await axios.post(
+          `${API_BASE}/communities/${community.id}/mark-read`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+      } catch (error) {
+        // Silent fail - not critical
+      }
+    }
+
+    markAsReadOnServer()
+
     // Only join/leave community when it changes, don't disconnect completely
     if (socketService.isConnected()) {
       const currentCommunity = socketService.getCurrentCommunity()
       if (currentCommunity !== community.id) {
-        console.log('DEBUG: Switching from community', currentCommunity, 'to', community.id)
         if (currentCommunity) {
           socketService.leaveCommunity(currentCommunity)
         }
@@ -433,12 +502,10 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
     setError(null)
 
     if (editingMessage) {
-      console.log('DEBUG: Editing message:', editingMessage.id)
       socketService.editMessage(editingMessage.id, trimmed)
       setEditingMessage(null)
     } else {
-      console.log('DEBUG: Sending message to community:', community.id)
-      socketService.sendMessage(community!.id, trimmed, "text", undefined, replyingTo?.id)
+      socketService.sendMessage(community.id, trimmed, "text", undefined, replyingTo?.id)
     }
   }
 
@@ -474,28 +541,56 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
     handleSendSocketMessage()
   }
 
-  if (!community) {
-    return (
-      <div className="flex-1 flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <p className="text-gray-500 text-lg">Select a community to start chatting</p>
-        </div>
-      </div>
-    )
+  const handleLeaveCommunity = async () => {
+    if (!community || isYenAI) return
+    setShowLeaveModal(false)
+
+    try {
+      const token = localStorage.getItem("accessToken")
+      if (!token) {
+        setError("Please log in to leave the community")
+        return
+      }
+
+      // Use POST instead of DELETE to match backend route
+      await axios.post(`${API_BASE}/communities/${community.id}/leave`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      // Leave the socket room
+      socketService.leaveCommunity(community.id)
+
+      // Close the chat area
+      handleCloseChatArea()
+    } catch (err: any) {
+      console.error("Error leaving community:", err)
+      setError(err.response?.data?.message || "Failed to leave community")
+    }
   }
 
-  // Check if user is authenticated (except for YenAI)
-  if (!isYenAI && !currentUser) {
+  const handleCloseChatArea = () => {
+    if (onClose) {
+      onClose()
+    } else {
+      // Fallback: reload the page to reset state
+      window.location.reload()
+    }
+  }
+
+  // Empty state when no community selected
+  if (!community) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <p className="text-gray-500 text-lg mb-4">Please log in to join the chat</p>
-          <button
-            onClick={() => window.location.href = '/auth'}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Log In
-          </button>
+      <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 p-8">
+        <div className="text-center max-w-md">
+          <div className="mb-6 inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-200">
+            <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">Welcome to Community Hub</h3>
+          <p className="text-gray-500 mb-6">
+            Interact with people and know their part of the story
+          </p>
         </div>
       </div>
     )
@@ -554,14 +649,53 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
             </button>
           )}
 
-          <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-            <MoreVertical className="w-5 h-5 text-gray-700" />
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setShowOptionsMenu(!showOptionsMenu)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <MoreVertical className="w-5 h-5 text-gray-700" />
+            </button>
+
+            {showOptionsMenu && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                <button
+                  onClick={() => {
+                    setShowOptionsMenu(false)
+                    // Add community info logic here
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700"
+                >
+                  Community Info
+                </button>
+                <button
+                  onClick={() => {
+                    setShowOptionsMenu(false)
+                    // Add mute logic here
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700"
+                >
+                  Mute Notifications
+                </button>
+                {!isYenAI && (
+                  <button
+                    onClick={() => {
+                      setShowOptionsMenu(false)
+                      setShowLeaveModal(true)
+                    }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-red-600"
+                  >
+                    Leave Community
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
 
           {onClose && (
             <button
               onClick={onClose}
-              className="hidden md:flex p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               aria-label="Close chat"
             >
               <X className="w-5 h-5 text-gray-700" />
@@ -842,6 +976,33 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
             </div>
           </div>
         </>
+      )}
+
+      {/* Leave Community Confirmation Modal */}
+      {showLeaveModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 shadow-xl">
+            <h3 className="text-xl font-bold text-gray-900 mb-3">Leave Community?</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to leave <span className="font-semibold text-gray-900">"{community?.name}"</span>?
+              You will no longer receive messages from this community.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowLeaveModal(false)}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLeaveCommunity}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+              >
+                Leave Community
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

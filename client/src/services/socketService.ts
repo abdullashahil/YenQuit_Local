@@ -51,10 +51,15 @@ class SocketService {
   private currentCommunity: string | null = null;
 
   // Connect to Socket.IO server
-  connect(userId: number, token: string) {
-    // If already connected with same user, don't reconnect
-    if (this.socket && this.userId === userId) {
-      console.log('DEBUG: Socket already connected for user:', userId)
+  connect(userId: string, token: string) {
+    // If already connected with same user and socket is connected, don't reconnect
+    if (this.socket && this.userId === userId && this.socket.connected) {
+      return this.socket;
+    }
+
+    // If socket exists but not connected, try to reconnect
+    if (this.socket && this.userId === userId && !this.socket.connected) {
+      this.socket.connect();
       return this.socket;
     }
 
@@ -65,21 +70,36 @@ class SocketService {
     }
 
     this.userId = userId;
-    
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+    // Socket.IO connects to the base URL
+    let API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+    if (API_BASE_URL.endsWith('/api')) {
+      API_BASE_URL = API_BASE_URL.slice(0, -4);
+    }
+
     this.socket = io(API_BASE_URL, {
       auth: {
         token: token
       },
-      transports: ['websocket', 'polling']
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
     });
-    
+
     this.setupEventListeners();
-    
+
     // Send authentication event after connecting
     this.socket.on('connect', () => {
-      console.log('DEBUG: Socket connected, authenticating user:', userId)
       this.socket?.emit('authenticate', { userId, token });
+    });
+
+    this.socket.on('disconnect', (reason) => {
+      // Socket disconnected
+    });
+
+    this.socket.on('connect_error', (error) => {
+      // Socket connection error
     });
 
     return this.socket;
@@ -96,10 +116,21 @@ class SocketService {
   }
 
   // Join a community room
-  joinCommunity(communityId: number) {
-    if (this.socket && this.userId) {
-      this.currentCommunity = communityId;
+  joinCommunity(communityId: string) {
+    if (!this.socket || !this.userId) {
+      return;
+    }
+
+    this.currentCommunity = communityId;
+
+    // If socket is connected, join immediately
+    if (this.socket.connected) {
       this.socket.emit('join_community', { communityId });
+    } else {
+      // Wait for connection before joining
+      this.socket.once('connect', () => {
+        this.socket?.emit('join_community', { communityId });
+      });
     }
   }
 
@@ -114,16 +145,44 @@ class SocketService {
   }
 
   // Send a message
-  sendMessage(communityId: number, content: string, messageType: 'text' | 'image' | 'file' = 'text', fileUrl?: string, replyTo?: number) {
-    if (this.socket && this.userId) {
-      this.socket.emit('send_message', {
-        communityId,
-        content,
-        messageType,
-        fileUrl,
-        replyTo
-      });
+  sendMessage(communityId: string, content: string, messageType: 'text' | 'image' | 'file' = 'text', fileUrl?: string, replyTo?: string) {
+    if (!this.socket || !this.userId) {
+      return;
     }
+
+    // If socket is not connected, wait for connection
+    if (!this.socket.connected) {
+      const sendWhenConnected = () => {
+        if (this.socket?.connected) {
+          this.socket.emit('send_message', {
+            communityId,
+            content,
+            messageType,
+            fileUrl,
+            replyTo
+          });
+        }
+      };
+
+      // Listen for connect event
+      this.socket.once('connect', sendWhenConnected);
+
+      // Set timeout to prevent waiting forever
+      setTimeout(() => {
+        this.socket?.off('connect', sendWhenConnected);
+      }, 5000);
+
+      return;
+    }
+
+    // Socket is connected, send immediately
+    this.socket.emit('send_message', {
+      communityId,
+      content,
+      messageType,
+      fileUrl,
+      replyTo
+    });
   }
 
   // Edit a message
@@ -183,23 +242,27 @@ class SocketService {
     if (!this.socket) return;
 
     this.socket.on('connect', () => {
-      console.log('Connected to Socket.IO server');
+      // Connected to Socket.IO server
     });
 
     this.socket.on('disconnect', () => {
-      console.log('Disconnected from Socket.IO server');
+      // Disconnected from Socket.IO server
     });
 
     this.socket.on('authenticated', (data) => {
-      console.log('Authenticated with Socket.IO server:', data);
+      // User authenticated
     });
 
     this.socket.on('authentication_error', (error) => {
-      console.error('Socket.IO authentication error:', error);
+      // Authentication error
+    });
+
+    this.socket.on('joined_community', (data) => {
+      // Successfully joined community room
     });
 
     this.socket.on('error', (error) => {
-      console.error('Socket.IO error:', error);
+      // Socket error
     });
   }
 

@@ -26,9 +26,10 @@ class CommunityModel {
       SELECT 
         c.*,
         cm.role as user_role,
+        COALESCE(cm.unread_count, 0) as unread_count,
         (SELECT COUNT(*) FROM community_members WHERE community_id = c.id) as member_count,
-        (SELECT COUNT(*) FROM community_online_users WHERE community_id = c.id) as online_count,
-        (SELECT COUNT(*) FROM chat_messages WHERE community_id = c.id) as message_count
+        (SELECT COUNT(*) FROM chat_messages WHERE community_id = c.id) as message_count,
+        (SELECT created_at FROM chat_messages WHERE community_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_time
       FROM communities c
       LEFT JOIN community_members cm ON c.id = cm.community_id AND cm.user_id = $1
       WHERE c.is_private = false OR cm.user_id IS NOT NULL
@@ -50,8 +51,7 @@ class CommunityModel {
       SELECT 
         c.*,
         cm.role as user_role,
-        (SELECT COUNT(*) FROM community_members WHERE community_id = c.id) as member_count,
-        (SELECT COUNT(*) FROM community_online_users WHERE community_id = c.id) as online_count
+        (SELECT COUNT(*) FROM community_members WHERE community_id = c.id) as member_count
       FROM communities c
       LEFT JOIN community_members cm ON c.id = cm.community_id AND cm.user_id = $2
       WHERE c.id = $1
@@ -174,6 +174,38 @@ class CommunityModel {
       return result.rows[0];
     } catch (error) {
       console.error('Error checking membership:', error);
+      throw error;
+    }
+  }
+
+  // Increment unread count for all members except sender
+  static async incrementUnreadCount(communityId, excludeUserId) {
+    const sql = `
+      UPDATE community_members
+      SET unread_count = unread_count + 1
+      WHERE community_id = $1 AND user_id != $2
+    `;
+
+    try {
+      await query(sql, [communityId, excludeUserId]);
+    } catch (error) {
+      console.error('Error incrementing unread count:', error);
+      throw error;
+    }
+  }
+
+  // Reset unread count for a user in a community
+  static async resetUnreadCount(communityId, userId) {
+    const sql = `
+      UPDATE community_members
+      SET unread_count = 0, last_read_at = CURRENT_TIMESTAMP
+      WHERE community_id = $1 AND user_id = $2
+    `;
+
+    try {
+      await query(sql, [communityId, userId]);
+    } catch (error) {
+      console.error('Error resetting unread count:', error);
       throw error;
     }
   }

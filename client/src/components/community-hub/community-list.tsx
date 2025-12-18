@@ -1,9 +1,11 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { Plus, Search, ChevronDown, Sparkles } from "lucide-react"
+import { Plus, Search, ChevronDown, Sparkles, Bell } from "lucide-react"
 import axios from "axios"
 import CommunityCard from "./community-card" // default export from your CommunityCard file
+import InviteUsersModal from "./InviteUsersModal"
+import PendingInvitesModal from "./PendingInvitesModal"
 import { useNotifications } from "@/contexts/NotificationContext"
 
 interface Community {
@@ -35,10 +37,16 @@ export default function CommunityList({ selectedCommunity, onSelectCommunity }: 
   const [communitiesRaw, setCommunitiesRaw] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
-  const [showPublic, setShowPublic] = useState(true)
+  const [showPublic, setShowPublic] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showInviteModal, setShowInviteModal] = useState(false)
+  const [newCommunityId, setNewCommunityId] = useState<string | null>(null)
+  const [newCommunityName, setNewCommunityName] = useState<string>("")
   const [error, setError] = useState<string | null>(null)
-  const { unreadCounts, markAsRead } = useNotifications()
+  const [showPendingInvites, setShowPendingInvites] = useState(false)
+  const [pendingInvites, setPendingInvites] = useState<any[]>([])
+  const [pendingCount, setPendingCount] = useState(0)
+  const { unreadCounts, markAsRead, setUnreadCount } = useNotifications()
 
   // Fetch communities from backend
   const fetchCommunities = async () => {
@@ -52,14 +60,23 @@ export default function CommunityList({ selectedCommunity, onSelectCommunity }: 
       const res = await axios.get(`${API_BASE_URL}/communities`, {
         headers: { Authorization: `Bearer ${token}` },
       })
+
+      let communities: any[] = []
       if (res.data?.success && Array.isArray(res.data.data)) {
-        setCommunitiesRaw(res.data.data)
+        communities = res.data.data
       } else if (Array.isArray(res.data)) {
         // fallback in case API returns raw array
-        setCommunitiesRaw(res.data)
-      } else {
-        setCommunitiesRaw([])
+        communities = res.data
       }
+
+      setCommunitiesRaw(communities)
+
+      // Initialize notification context with server's unread counts
+      communities.forEach((community) => {
+        if (community.unread_count && community.unread_count > 0) {
+          setUnreadCount(community.id, community.unread_count)
+        }
+      })
     } catch (err) {
       console.error("Error fetching communities:", err)
       setError("Failed to load communities")
@@ -69,8 +86,28 @@ export default function CommunityList({ selectedCommunity, onSelectCommunity }: 
     }
   }
 
+  // Fetch pending invites
+  const fetchPendingInvites = async () => {
+    try {
+      const token = localStorage.getItem("accessToken")
+      if (!token) return
+
+      const response = await axios.get(`${API_BASE_URL}/user-invites/pending`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      if (response.data?.success && Array.isArray(response.data.data)) {
+        setPendingInvites(response.data.data)
+        setPendingCount(response.data.data.length)
+      }
+    } catch (err) {
+      console.error("Error fetching pending invites:", err)
+    }
+  }
+
   useEffect(() => {
     fetchCommunities()
+    fetchPendingInvites()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -97,12 +134,13 @@ export default function CommunityList({ selectedCommunity, onSelectCommunity }: 
     })
   }, [communitiesRaw])
 
-  // derive recent conversations (top 3 by updated_at)
+  // derive recent conversations (top 3 by last message time, only show communities user is a member of)
   const recentConversations = useMemo(() => {
     return [...uiCommunities]
+      .filter((c) => c.user_role) // Only show communities user is a member of
       .sort((a, b) => {
-        const dateA = new Date(a.updated_at || a.last_message_time || a.created_at || 0).getTime()
-        const dateB = new Date(b.updated_at || b.last_message_time || b.created_at || 0).getTime()
+        const dateA = new Date(a.last_message_time || a.updated_at || a.created_at || 0).getTime()
+        const dateB = new Date(b.last_message_time || b.updated_at || b.created_at || 0).getTime()
         return dateB - dateA
       })
       .slice(0, 3)
@@ -161,12 +199,12 @@ export default function CommunityList({ selectedCommunity, onSelectCommunity }: 
       // Don't allow non-members to open chat, show join prompt instead
       return
     }
-    
+
     // Mark messages as read when selecting a community
     if (id !== "yenai-chat") {
       markAsRead(id)
     }
-    
+
     onSelectCommunity(id, community)
   }
 
@@ -178,11 +216,11 @@ export default function CommunityList({ selectedCommunity, onSelectCommunity }: 
         console.error("No auth token found")
         return
       }
-      
+
       const response = await axios.post(`${API_BASE_URL}/communities/${communityId}/join`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      
+
       if (response.data?.success) {
         // Refresh communities list to show updated membership
         fetchCommunities()
@@ -206,6 +244,29 @@ export default function CommunityList({ selectedCommunity, onSelectCommunity }: 
       <div className="p-4 md:p-6 border-b border-gray-200">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl md:text-3xl font-semibold text-[#1C3B5E]">Communities</h1>
+          <div className="flex items-center gap-2">
+            {/* Notification Bell */}
+            <button
+              onClick={() => setShowPendingInvites(true)}
+              className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <Bell className="w-5 h-5 text-gray-600" />
+              {pendingCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  {pendingCount > 9 ? "9+" : pendingCount}
+                </span>
+              )}
+            </button>
+
+            {/* Create Button */}
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-[#2D9B8F] text-white rounded-lg hover:bg-[#248080] transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Create</span>
+            </button>
+          </div>
         </div>
 
         {/* Search */}
@@ -227,11 +288,10 @@ export default function CommunityList({ selectedCommunity, onSelectCommunity }: 
         <div className="p-4 md:p-6 border-b border-gray-200">
           <button
             onClick={() => handleSelect("yenai-chat")}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-              selectedCommunity === "yenai-chat"
-                ? "bg-gradient-to-r from-[#B2E8D8] to-white border border-[#B2E8D8]"
-                : "bg-gradient-to-r from-[#D4F5ED] to-white border border-[#D4F5ED] hover:from-[#B2E8D8] hover:to-white"
-            }`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${selectedCommunity === "yenai-chat"
+              ? "bg-gradient-to-r from-[#B2E8D8] to-white border border-[#B2E8D8]"
+              : "bg-gradient-to-r from-[#D4F5ED] to-white border border-[#D4F5ED] hover:from-[#B2E8D8] hover:to-white"
+              }`}
           >
             <Sparkles className="w-5 h-5 text-[#2D9B8F] flex-shrink-0" />
             <div className="text-left">
@@ -265,7 +325,7 @@ export default function CommunityList({ selectedCommunity, onSelectCommunity }: 
                     updated_at: c.updated_at,
                     lastMessage: c.last_message,
                     lastMessageTime: tryFormatTime(c.last_message_time || c.updated_at || c.created_at),
-                    unreadCount: unreadCounts[c.id] || c.unread_count || 0,
+                    unreadCount: unreadCounts[c.id] ?? 0,
                     avatar: c.avatar_url ?? c.avatar
                   }}
                   isSelected={selectedCommunity === c.id}
@@ -277,10 +337,10 @@ export default function CommunityList({ selectedCommunity, onSelectCommunity }: 
           </div>
         </div>
 
-        {/* Public Communities */}
+        {/* Public Communities - Collapsible */}
         <div className="p-4 md:p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-[#1C3B5E]">Public Communities</h2>
+            <h2 className="text-lg font-semibold text-[#1C3B5E]">Discover Communities</h2>
             <button
               onClick={() => setShowPublic((s) => !s)}
               className="p-1 hover:bg-gray-100 rounded transition-colors"
@@ -293,77 +353,36 @@ export default function CommunityList({ selectedCommunity, onSelectCommunity }: 
           </div>
 
           {showPublic && (
-            <>
-              {/* Search inside public list is already shared */}
-              <div className="space-y-2">
-                {publicCommunities.length === 0 ? (
-                  <div className="text-sm text-gray-500">No public communities found</div>
-                ) : (
-                  publicCommunities.map((c) => (
-                    <CommunityCard
-                      key={c.id}
-                      community={{
-                        id: c.id,
-                        name: c.name,
-                        description: c.description,
-                        avatar_url: c.avatar_url,
-                        member_count: c.member_count,
-                        online_count: c.online_count,
-                        message_count: c.message_count,
-                        user_role: c.user_role,
-                        is_private: c.is_private,
-                        created_at: c.created_at,
-                        updated_at: c.updated_at,
-                        lastMessage: c.last_message,
-                        lastMessageTime: tryFormatTime(c.last_message_time || c.updated_at || c.created_at),
-                        unreadCount: unreadCounts[c.id] || c.unread_count || 0,
-                        avatar: c.avatar_url ?? c.avatar
-                      }}
-                      isSelected={selectedCommunity === c.id}
-                      onSelect={() => handleSelect(c.id)}
-                    />
-                  ))
-                )}
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* All communities (search results) */}
-        <div className="p-2">
-          <h3 className="text-sm text-gray-500 mb-2">All Communities</h3>
-
-          {filteredMainList.length === 0 ? (
-            <div className="p-4 text-center text-gray-500">
-              {searchQuery ? "No communities found matching your search" : "No communities available"}
-            </div>
-          ) : (
             <div className="space-y-2">
-              {filteredMainList.map((c) => (
-                <CommunityCard
-                  key={c.id}
-                  community={{
-                    id: c.id,
-                    name: c.name,
-                    description: c.description,
-                    avatar_url: c.avatar_url,
-                    member_count: c.member_count,
-                    online_count: c.online_count,
-                    message_count: c.message_count,
-                    user_role: c.user_role,
-                    is_private: c.is_private,
-                    created_at: c.created_at,
-                    updated_at: c.updated_at,
-                    lastMessage: c.last_message,
-                    lastMessageTime: tryFormatTime(c.last_message_time || c.updated_at || c.created_at),
-                    unreadCount: unreadCounts[c.id] || c.unread_count || 0,
-                    avatar: c.avatar_url ?? c.avatar
-                  }}
-                  isSelected={selectedCommunity === c.id}
-                  onSelect={() => handleSelect(c.id, c)}
-                  onJoin={handleJoinCommunity}
-                />
-              ))}
+              {publicCommunities.length === 0 ? (
+                <div className="text-sm text-gray-500">No public communities found</div>
+              ) : (
+                publicCommunities.map((c) => (
+                  <CommunityCard
+                    key={c.id}
+                    community={{
+                      id: c.id,
+                      name: c.name,
+                      description: c.description,
+                      avatar_url: c.avatar_url,
+                      member_count: c.member_count,
+                      online_count: c.online_count,
+                      message_count: c.message_count,
+                      user_role: c.user_role,
+                      is_private: c.is_private,
+                      created_at: c.created_at,
+                      updated_at: c.updated_at,
+                      lastMessage: c.last_message,
+                      lastMessageTime: tryFormatTime(c.last_message_time || c.updated_at || c.created_at),
+                      unreadCount: unreadCounts[c.id] ?? 0,
+                      avatar: c.avatar_url ?? c.avatar
+                    }}
+                    isSelected={selectedCommunity === c.id}
+                    onSelect={() => handleSelect(c.id)}
+                    onJoin={handleJoinCommunity}
+                  />
+                ))
+              )}
             </div>
           )}
         </div>
@@ -373,9 +392,47 @@ export default function CommunityList({ selectedCommunity, onSelectCommunity }: 
       {showCreateModal && (
         <CreateCommunityModal
           onClose={() => setShowCreateModal(false)}
-          onSuccess={() => {
+          onSuccess={(createdCommunity) => {
+            console.log('Community created:', createdCommunity)
             setShowCreateModal(false)
+            // Trigger invite modal
+            setNewCommunityId(createdCommunity.id)
+            setNewCommunityName(createdCommunity.name)
+            setShowInviteModal(true)
+            console.log('Invite modal should show now', { id: createdCommunity.id, name: createdCommunity.name })
             fetchCommunities()
+          }}
+        />
+      )}
+
+      {/* Invite Users Modal */}
+      {showInviteModal && newCommunityId && (
+        <InviteUsersModal
+          communityId={newCommunityId}
+          communityName={newCommunityName}
+          onClose={() => {
+            setShowInviteModal(false)
+            setNewCommunityId(null)
+            setNewCommunityName('')
+          }}
+          onComplete={() => {
+            setShowInviteModal(false)
+            setNewCommunityId(null)
+            setNewCommunityName('')
+            fetchCommunities()
+          }}
+        />
+      )}
+
+      {/* Pending Invites Modal */}
+      {showPendingInvites && (
+        <PendingInvitesModal
+          invites={pendingInvites}
+          onClose={() => setShowPendingInvites(false)}
+          onInviteAction={() => {
+            fetchPendingInvites()
+            fetchCommunities()
+            setShowPendingInvites(false)
           }}
         />
       )}
@@ -387,7 +444,7 @@ export default function CommunityList({ selectedCommunity, onSelectCommunity }: 
    CreateCommunityModal
    ----------------------- */
 
-function CreateCommunityModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+function CreateCommunityModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (community: any) => void }) {
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [isPrivate, setIsPrivate] = useState(false)
@@ -405,9 +462,9 @@ function CreateCommunityModal({ onClose, onSuccess }: { onClose: () => void; onS
       if (!token) {
         throw new Error("No authentication token found. Please log in again.")
       }
-      
+
       console.log("Creating community with token:", token.substring(0, 20) + "...")
-      
+
       // Use fetch to completely bypass any axios interceptors
       const res = await fetch(`${API_BASE_URL}/communities`, {
         method: 'POST',
@@ -421,19 +478,19 @@ function CreateCommunityModal({ onClose, onSuccess }: { onClose: () => void; onS
           is_private: !!isPrivate,
         })
       })
-      
+
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}))
         throw new Error(errorData.error || `HTTP ${res.status}`)
       }
-      
+
       const data = await res.json()
 
       if (data?.success) {
-        onSuccess()
+        onSuccess(data.data)
       } else {
         // accept other shapes too
-        onSuccess()
+        onSuccess(data)
       }
     } catch (err: any) {
       console.error("Error creating community:", err)
@@ -505,3 +562,7 @@ function CreateCommunityModal({ onClose, onSuccess }: { onClose: () => void; onS
     </div>
   )
 }
+
+/* -----------------------
+   Main Component Return
+   ----------------------- */

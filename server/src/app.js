@@ -23,6 +23,9 @@ import learningProgressRoutes from './routes/learningProgress.js';
 import communityRoutes from './routes/communityRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
+import communityInviteRoutes from './routes/communityInviteRoutes.js';
+import userInviteRoutes from './routes/userInviteRoutes.js';
+import CommunityInviteController from './controllers/communityInviteController.js';
 import { startChatCleanupJob } from './jobs/chatCleanupJob.js';
 import socketService from './services/socketService.js';
 
@@ -69,6 +72,11 @@ app.use('/api/learning-progress', learningProgressRoutes);
 app.use('/api/communities', communityRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/community-invites', communityInviteRoutes);
+app.use('/api/user-invites', userInviteRoutes);
+
+// Initialize community invites table
+CommunityInviteController.initialize();
 
 // Start chat cleanup job
 startChatCleanupJob();
