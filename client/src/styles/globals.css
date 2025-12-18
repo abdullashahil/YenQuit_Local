@@ -126,6 +126,30 @@ body {
   font-family: "Poppins", sans-serif;
 }
 
+/* Text selection styling */
+::selection {
+  background-color: #20B2AA;
+  color: #ffffff;
+}
+
+::-moz-selection {
+  background-color: #20B2AA;
+  color: #ffffff;
+}
+
+/* Input and textarea selection */
+input::selection,
+textarea::selection {
+  background-color: #20B2AA;
+  color: #ffffff;
+}
+
+input::-moz-selection,
+textarea::-moz-selection {
+  background-color: #20B2AA;
+  color: #ffffff;
+}
+
 /* Slick slider custom styles for testimonials */
 .slick-slide {
   padding: 0 8px;

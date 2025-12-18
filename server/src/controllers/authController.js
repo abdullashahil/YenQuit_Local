@@ -23,6 +23,19 @@ export async function register(req, res, next) {
   }
 }
 
+export async function checkEmailExists(req, res, next) {
+  try {
+    const { email } = req.params;
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+    const user = await userService.findUserByEmail(email);
+    res.json({ exists: !!user });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function login(req, res, next) {
   try {
     const { email, password } = req.body;
@@ -57,7 +70,7 @@ export async function refresh(req, res, next) {
       return res.status(401).json({ error: 'Invalid refresh token' });
     }
     const accessToken = generateAccessToken({ userId: payload.userId, role: payload.role });
-res.json({ accessToken });
+    res.json({ accessToken });
   } catch (err) {
     next(err);
   }
@@ -83,7 +96,7 @@ export async function logout(req, res, next) {
 export async function googleAuth(req, res, next) {
   try {
     const { idToken } = req.body;
-    
+
     if (!idToken) {
       return res.status(400).json({ error: 'Google ID token is required' });
     }
@@ -103,25 +116,25 @@ export async function googleAuth(req, res, next) {
 
     // Check if user exists
     let user = await userService.findUserByEmail(email);
-    
+
     if (user) {
       // User exists, login them
       const accessToken = generateAccessToken({ userId: user.id, role: user.role });
       const refreshToken = generateRefreshToken({ userId: user.id, role: user.role });
       delete user.password_hash;
-      
+
       const completed = !!user.onboarding_completed;
       const rawStep = user.onboarding_step;
       const step = completed ? 5 : (Number.isInteger(rawStep) ? rawStep : 0);
       const requiresOnboarding = !completed && step < 5;
-      
-      res.json({ 
-        user, 
-        accessToken, 
-        refreshToken, 
-        requiresOnboarding, 
+
+      res.json({
+        user,
+        accessToken,
+        refreshToken,
+        requiresOnboarding,
         currentStep: step,
-        isNewUser: false 
+        isNewUser: false
       });
     } else {
       // New user, create account
@@ -135,11 +148,11 @@ export async function googleAuth(req, res, next) {
         }
       };
 
-      const result = await authService.registerUserWithProfile({ 
-        email, 
+      const result = await authService.registerUserWithProfile({
+        email,
         password: Math.random().toString(36).slice(-16), // Random password for Google users
-        role: 'user', 
-        profile 
+        role: 'user',
+        profile
       });
 
       const newUser = result.user;
@@ -147,13 +160,13 @@ export async function googleAuth(req, res, next) {
       const refreshToken = generateRefreshToken({ userId: newUser.id, role: newUser.role });
       delete newUser.password_hash;
 
-      res.json({ 
-        user: newUser, 
-        accessToken, 
-        refreshToken, 
-        requiresOnboarding: true, 
+      res.json({
+        user: newUser,
+        accessToken,
+        refreshToken,
+        requiresOnboarding: true,
         currentStep: 0,
-        isNewUser: true 
+        isNewUser: true
       });
     }
   } catch (err) {
