@@ -200,16 +200,11 @@ class QuitTrackerService {
         // If the table doesn't exist or there's an error, just log it and continue
       }
 
-      // Get tracker settings to determine start date fallback
-      const settings = await query('SELECT created_at FROM quit_tracker_settings WHERE user_id = $1', [userId]);
-      const settingsStartDate = settings.rows[0]?.created_at ? new Date(settings.rows[0].created_at) : null;
-
-      // Determine the official "Tracker Start Date"
+      // Use join_date from profile as the primary start date, fallback to assist plan date or today
       const today = new Date();
-      // Use join_date from profile as the primary start date, fallback to other dates if not available
       const trackerStartDate = joinDate ?
         new Date(joinDate) :
-        (assistPlanData?.updated_at ? new Date(assistPlanData.updated_at) : (settingsStartDate || new Date()));
+        (assistPlanData?.updated_at ? new Date(assistPlanData.updated_at) : new Date());
 
       // Check if 30 days have completed since start date
       const dayDiff = Math.floor((today - trackerStartDate) / (1000 * 60 * 60 * 24));

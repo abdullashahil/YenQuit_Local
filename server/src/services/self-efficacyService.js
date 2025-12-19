@@ -214,46 +214,27 @@ export async function hasUserProvidedFeedback(userId) {
   return parseInt(res.rows[0].completed_count) > 0;
 }
 
-// Get user's quit tracker settings (Table 'quit_tracker_settings' remains separate? 
-// Plan said "Consolidate ... into user_assessment_responses" but listed tables were:
-// fagerstrom_user_answers, fivea_user_answers, user_personal_roadblocks, pre_self_efficacy, post_self_efficacy, quit_tracker_user_feedback.
-// It did NOT list quit_tracker_settings. So we keep it.)
+// Get user's quit tracker settings
+// Table 'quit_tracker_settings' has been removed. Returning default values.
 export async function getUserSettings(userId) {
-  const res = await query(`
-    SELECT goal_days, daily_reminder_time, is_tracking_enabled, created_at, updated_at
-    FROM quit_tracker_settings
-    WHERE user_id = $1
-  `, [userId]);
-
-  if (res.rows.length === 0) {
-    // Create default settings
-    await query(`
-      INSERT INTO quit_tracker_settings (user_id, goal_days, daily_reminder_time, is_tracking_enabled)
-      VALUES ($1, 30, '09:00:00', true)
-    `, [userId]);
-
-    return {
-      goal_days: 30,
-      daily_reminder_time: '09:00:00',
-      is_tracking_enabled: true,
-      created_at: new Date(),
-      updated_at: new Date()
-    };
-  }
-
-  return res.rows[0];
+  return {
+    goal_days: 30,
+    daily_reminder_time: '09:00:00',
+    is_tracking_enabled: true,
+    created_at: new Date(),
+    updated_at: new Date()
+  };
 }
 
 // Update user's quit tracker settings
+// Mock update since table is removed
 export async function updateUserSettings(userId, settings) {
   const { goalDays, reminderTime, isTrackingEnabled } = settings;
 
-  const res = await query(`
-    UPDATE quit_tracker_settings
-    SET goal_days = $1, daily_reminder_time = $2, is_tracking_enabled = $3, updated_at = NOW()
-    WHERE user_id = $4
-    RETURNING goal_days, daily_reminder_time, is_tracking_enabled, updated_at
-  `, [goalDays, reminderTime, isTrackingEnabled, userId]);
-
-  return res.rows[0];
+  return {
+    goal_days: goalDays || 30,
+    daily_reminder_time: reminderTime || '09:00:00',
+    is_tracking_enabled: isTrackingEnabled !== undefined ? isTrackingEnabled : true,
+    updated_at: new Date()
+  };
 }
