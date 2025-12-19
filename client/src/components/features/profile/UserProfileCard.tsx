@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card } from "../../ui/card";
 import { Button } from "../../ui/button";
-import { User, Settings, X, Camera } from "lucide-react";
+import { User, Settings, X } from "lucide-react";
 import userService from "../../../services/userService";
 
 export function UserProfileCard() {
@@ -80,23 +80,7 @@ export function UserProfileCard() {
     }
   };
 
-  const handleAvatarUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
 
-    try {
-      setSaving(true);
-      const response = await userService.uploadAvatar(file);
-      if (response.success) {
-        setProfile(prev => ({ ...prev, avatar_url: response.data.avatar_url }));
-        setSuccess("Avatar updated successfully!");
-      }
-    } catch (err) {
-      setError(err.message || "Failed to upload avatar");
-    } finally {
-      setSaving(false);
-    }
-  };
 
   // Disable background scroll and preserve scrollbar width to prevent layout shift
   useEffect(() => {
@@ -142,25 +126,16 @@ export function UserProfileCard() {
               style={{ backgroundColor: "#20B2AA20" }}
             >
               {profile?.avatar_url ? (
-                <img 
-                  src={`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'}${profile.avatar_url}`} 
-                  alt="Profile" 
+                <img
+                  src={`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'}${profile.avatar_url}`}
+                  alt="Profile"
                   className="w-full h-full object-cover"
                 />
               ) : (
                 <User className="w-12 h-12 sm:w-10 sm:h-10" style={{ color: "#20B2AA" }} />
               )}
             </div>
-            <label className="absolute bottom-0 right-0 bg-[#20B2AA] text-white p-1 rounded-full cursor-pointer hover:opacity-90">
-              <Camera className="w-4 h-4" />
-              <input 
-                type="file" 
-                className="hidden" 
-                accept="image/*" 
-                onChange={handleAvatarUpload}
-                disabled={saving}
-              />
-            </label>
+
           </div>
 
           {/* User Info */}
