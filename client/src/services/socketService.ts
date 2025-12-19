@@ -47,7 +47,7 @@ interface Reaction {
 
 class SocketService {
   private socket: Socket | null = null;
-  private userId: number | null = null;
+  private userId: string | null = null;
   private currentCommunity: string | null = null;
 
   // Connect to Socket.IO server
@@ -135,7 +135,7 @@ class SocketService {
   }
 
   // Leave a community room
-  leaveCommunity(communityId: number) {
+  leaveCommunity(communityId: string) {
     if (this.socket && this.userId) {
       this.socket.emit('leave_community', { communityId });
       if (this.currentCommunity === communityId) {

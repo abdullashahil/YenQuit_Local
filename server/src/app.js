@@ -25,6 +25,7 @@ import reportRoutes from './routes/reportRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import communityInviteRoutes from './routes/communityInviteRoutes.js';
 import userInviteRoutes from './routes/userInviteRoutes.js';
+import assessmentRoutes from './routes/assessmentRoutes.js';
 import CommunityInviteController from './controllers/communityInviteController.js';
 import { startChatCleanupJob } from './jobs/chatCleanupJob.js';
 import socketService from './services/socketService.js';
@@ -63,6 +64,7 @@ app.use('/api/rewards', rewardsRoutes);
 app.use('/api/roadblocks', roadblocksRoutes);
 app.use('/api/personal-roadblocks', personalRoadblocksRoutes);
 app.use('/api/admin/5a', fiveAAdminRoutes);
+app.use('/api/admin/assessment', assessmentRoutes);
 // Register public content routes BEFORE admin content routes so /public doesn't hit the generic /:id handler
 app.use('/api/content', publicContentRoutes);
 app.use('/api/content', contentRoutes);
