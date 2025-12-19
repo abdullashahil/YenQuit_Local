@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS public.user_5r_progress
     updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     user_id integer,
     CONSTRAINT user_5r_progress_pkey PRIMARY KEY (id),
+    CONSTRAINT user_5r_progress_user_id_key UNIQUE (user_id),
     CONSTRAINT user_5r_progress_user_id_fkey FOREIGN KEY (user_id)
         REFERENCES public.users (id) MATCH SIMPLE
         ON UPDATE NO ACTION

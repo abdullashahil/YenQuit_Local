@@ -1,9 +1,11 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 export interface AssessmentQuestion {
   id: number;
   question_text: string;
+  question_type: 'multiple_choice' | 'checkboxes' | 'short_text' | 'long_text';
   options: string[];
+  display_order: number;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -30,7 +32,7 @@ export interface UpdateAssessmentQuestionRequest {
 
 // Get all questions for a specific step and tobacco category
 export async function getAssessmentQuestions(
-  step: string, 
+  step: string,
   tobaccoCategory: 'smoked' | 'smokeless' = 'smoked',
   includeInactive: boolean = false
 ): Promise<{ questions: AssessmentQuestion[] }> {
@@ -38,7 +40,7 @@ export async function getAssessmentQuestions(
   if (!token) throw new Error("Unauthorized");
 
   const res = await fetch(
-    `${API_BASE_URL}/api/admin/assessment/questions?step=${step}&tobacco_category=${tobaccoCategory}&include_inactive=${includeInactive}`,
+    `${API_BASE_URL}/admin/assessment/questions?step=${step}&tobacco_category=${tobaccoCategory}&include_inactive=${includeInactive}`,
     {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -60,7 +62,7 @@ export async function getAllAssessmentQuestions(
   if (!token) throw new Error("Unauthorized");
 
   const res = await fetch(
-    `${API_BASE_URL}/api/admin/assessment/questions?category=fivea&include_inactive=${includeInactive}`,
+    `${API_BASE_URL}/admin/assessment/questions?category=fivea&include_inactive=${includeInactive}`,
     {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -74,6 +76,51 @@ export async function getAllAssessmentQuestions(
   return res.json();
 }
 
+// Get Fagerström questions filtered by tobacco category
+export async function getFagerstromQuestions(
+  tobaccoCategory: 'smoked' | 'smokeless',
+  includeInactive: boolean = false
+): Promise<{ questions: AssessmentQuestion[] }> {
+  const token = localStorage.getItem("accessToken");
+  if (!token) throw new Error("Unauthorized");
+
+  const res = await fetch(
+    `${API_BASE_URL}/admin/assessment/questions?category=fagerstrom&tobacco_category=${tobaccoCategory}&include_inactive=${includeInactive}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch Fagerström questions");
+  }
+  return res.json();
+}
+
+// Get all Fagerström questions (both tobacco categories)
+export async function getAllFagerstromQuestions(
+  includeInactive: boolean = false
+): Promise<{ questions: AssessmentQuestion[] }> {
+  const token = localStorage.getItem("accessToken");
+  if (!token) throw new Error("Unauthorized");
+
+  const res = await fetch(
+    `${API_BASE_URL}/admin/assessment/questions?category=fagerstrom&include_inactive=${includeInactive}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch all Fagerström questions");
+  }
+  return res.json();
+}
+
 // Create a new assessment question
 export async function createAssessmentQuestion(
   data: CreateAssessmentQuestionRequest
@@ -81,7 +128,7 @@ export async function createAssessmentQuestion(
   const token = localStorage.getItem("accessToken");
   if (!token) throw new Error("Unauthorized");
 
-  const res = await fetch(`${API_BASE_URL}/api/admin/assessment/questions`, {
+  const res = await fetch(`${API_BASE_URL}/admin/assessment/questions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -104,7 +151,7 @@ export async function updateAssessmentQuestion(
   const token = localStorage.getItem("accessToken");
   if (!token) throw new Error("Unauthorized");
 
-  const res = await fetch(`${API_BASE_URL}/api/admin/assessment/questions/${id}`, {
+  const res = await fetch(`${API_BASE_URL}/admin/assessment/questions/${id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -125,7 +172,7 @@ export async function softDeleteAssessmentQuestion(id: number): Promise<void> {
   if (!token) throw new Error("Unauthorized");
 
   const res = await fetch(
-    `${API_BASE_URL}/api/admin/assessment/questions/${id}/soft-delete`,
+    `${API_BASE_URL}/admin/assessment/questions/${id}/soft-delete`,
     {
       method: "PUT",
       headers: {
@@ -145,7 +192,7 @@ export async function deleteAssessmentQuestion(id: number): Promise<void> {
   if (!token) throw new Error("Unauthorized");
 
   const res = await fetch(
-    `${API_BASE_URL}/api/admin/assessment/questions/${id}`,
+    `${API_BASE_URL}/admin/assessment/questions/${id}`,
     {
       method: "DELETE",
       headers: {
@@ -167,7 +214,7 @@ export async function getAssessmentQuestionById(
   if (!token) throw new Error("Unauthorized");
 
   const res = await fetch(
-    `${API_BASE_URL}/api/admin/assessment/questions/${id}`,
+    `${API_BASE_URL}/admin/assessment/questions/${id}`,
     {
       headers: {
         Authorization: `Bearer ${token}`,
