@@ -113,7 +113,6 @@ client/tsconfig.tsbuildinfo
 *.bruno.json
 bruno-export/
 
-server/migrations
 server/uploads
 server/package-lock.json
 
