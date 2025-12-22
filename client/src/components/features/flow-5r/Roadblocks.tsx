@@ -8,18 +8,22 @@ import { getRoadblocksContent, Roadblock } from '../../../services/roadblocksSer
 import { getPersonalRoadblockQuestions, getUserPersonalRoadblocks, saveUserPersonalRoadblock, PersonalRoadblockQuestion, UserPersonalRoadblock } from '../../../services/personalRoadblocksService';
 import { userService } from '../../../services/userService';
 
+import { fiverService } from '../../../services/fiverService';
+
 interface FiveR_RoadblocksProps {
   onNext: (data: any) => void;
   onBack: () => void;
+  userId?: string;
 }
 
-export function FiveR_Roadblocks({ onNext, onBack }: FiveR_RoadblocksProps) {
+export function FiveR_Roadblocks({ onNext, onBack, userId }: FiveR_RoadblocksProps) {
   const [commonRoadblocks, setCommonRoadblocks] = useState<Roadblock[]>([]);
   const [personalQuestions, setPersonalQuestions] = useState<PersonalRoadblockQuestion[]>([]);
   const [userResponses, setUserResponses] = useState<UserPersonalRoadblock[]>([]);
   const [selectedRoadblocks, setSelectedRoadblocks] = useState<string[]>([]);
   const [showResolutions, setShowResolutions] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [userOnboardingStep, setUserOnboardingStep] = useState<number | null>(null);
@@ -46,9 +50,22 @@ export function FiveR_Roadblocks({ onNext, onBack }: FiveR_RoadblocksProps) {
           getRoadblocksContent(),
           getPersonalRoadblockQuestions()
         ]);
-        
+
         setCommonRoadblocks(roadblocksData.roadblocks);
         setPersonalQuestions(questionsData.questions);
+
+        // Load existing selections from 5R progress
+        const currentUserId = userId || (() => {
+          const user = localStorage.getItem('user');
+          return user ? JSON.parse(user).id : null;
+        })();
+
+        if (currentUserId) {
+          const existing = await fiverService.getUser5RSelections(currentUserId, 'roadblocks');
+          if (Array.isArray(existing)) {
+            setSelectedRoadblocks(existing.map((r: any) => r.id.toString()));
+          }
+        }
 
         // Try to load user responses if authenticated
         try {
@@ -66,33 +83,57 @@ export function FiveR_Roadblocks({ onNext, onBack }: FiveR_RoadblocksProps) {
     };
 
     loadData();
-  }, []);
+  }, [userId]);
 
   const toggleRoadblock = (id: number) => {
-    setSelectedRoadblocks(prev => 
-      prev.includes(id.toString()) 
+    setSelectedRoadblocks(prev =>
+      prev.includes(id.toString())
         ? prev.filter(r => r !== id.toString())
         : [...prev, id.toString()]
     );
   };
 
-  const handleNext = () => {
-    onNext({ 
+  const saveSelections = async (ids: string[]) => {
+    const currentUserId = userId || (() => {
+      const user = localStorage.getItem('user');
+      return user ? JSON.parse(user).id : null;
+    })();
+
+    if (currentUserId && ids.length > 0) {
+      setSaving(true);
+      try {
+        await fiverService.saveUser5RSelections({
+          userId: currentUserId,
+          step: 'roadblocks',
+          selections: ids.map(id => parseInt(id))
+        });
+      } catch (err) {
+        console.error('Error saving roadblocks:', err);
+      } finally {
+        setSaving(false);
+      }
+    }
+  };
+
+  const handleNext = async () => {
+    await saveSelections(selectedRoadblocks);
+    onNext({
       selectedRoadblocks,
       personalResponses: userResponses
     });
   };
 
-  const handleShowResolutions = () => {
+  const handleShowResolutions = async () => {
+    await saveSelections(selectedRoadblocks);
     setShowResolutions(true);
   };
 
   const handlePersonalResponseChange = (questionId: number, response: string) => {
     // Update local state immediately for better UX
     const existingResponse = userResponses.find(r => r.question_id === questionId);
-    
+
     if (existingResponse) {
-      setUserResponses(prev => 
+      setUserResponses(prev =>
         prev.map(r => r.question_id === questionId ? { ...r, response } : r)
       );
     } else {
@@ -115,10 +156,10 @@ export function FiveR_Roadblocks({ onNext, onBack }: FiveR_RoadblocksProps) {
   const handleSavePersonalResponses = async () => {
     try {
       // Save all personal responses to backend
-      const savePromises = userResponses.map(response => 
+      const savePromises = userResponses.map(response =>
         saveUserPersonalRoadblock(response.question_id, response.response)
       );
-      
+
       await Promise.all(savePromises);
       setHasUnsavedChanges(false);
       console.log('Personal responses saved successfully');
@@ -170,14 +211,14 @@ export function FiveR_Roadblocks({ onNext, onBack }: FiveR_RoadblocksProps) {
         <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg p-6 md:p-8 lg:p-10 border border-gray-100">
           <h1 className="text-[#1C3B5E] mb-2">Step 4: ROADBLOCKS</h1>
           <p className="text-[#333333] mb-8">
-            Identify potential obstacles to quitting and plan strategies to overcome them. 
+            Identify potential obstacles to quitting and plan strategies to overcome them.
             Being prepared helps you stay on track when challenges arise.
           </p>
 
           {/* Info Banner */}
-          <div 
+          <div
             className="mb-8 p-6 rounded-2xl"
-            style={{ 
+            style={{
               backgroundColor: 'rgba(251, 146, 60, 0.1)',
               border: '2px solid rgba(251, 146, 60, 0.3)'
             }}
@@ -187,8 +228,8 @@ export function FiveR_Roadblocks({ onNext, onBack }: FiveR_RoadblocksProps) {
               <div>
                 <h3 className="text-[#1C3B5E] mb-2">Preparation is Key</h3>
                 <p className="text-[#333333] text-sm">
-                  Everyone faces challenges when quitting. The difference between success and relapse 
-                  is having a plan. Select the roadblocks you expect to face and review proven strategies 
+                  Everyone faces challenges when quitting. The difference between success and relapse
+                  is having a plan. Select the roadblocks you expect to face and review proven strategies
                   to overcome them.
                 </p>
               </div>
@@ -199,7 +240,7 @@ export function FiveR_Roadblocks({ onNext, onBack }: FiveR_RoadblocksProps) {
           <div className="mb-8">
             <h2 className="text-[#1C3B5E] mb-6 text-2xl font-semibold">Identify Your Roadblocks</h2>
             <p className="text-[#333333] mb-8 text-lg">
-              Select the challenges you face when trying to quit smoking. 
+              Select the challenges you face when trying to quit smoking.
               {!showResolutions && selectedRoadblocks.length > 0 && (
                 <span className="block mt-2 text-[#20B2AA] font-medium">
                   {selectedRoadblocks.length} selected. Ready to see strategies?
@@ -213,20 +254,18 @@ export function FiveR_Roadblocks({ onNext, onBack }: FiveR_RoadblocksProps) {
                   {commonRoadblocks.map((roadblock) => {
                     const isSelected = selectedRoadblocks.includes(roadblock.id.toString());
                     return (
-                      <div 
+                      <div
                         key={roadblock.id}
-                        className={`p-5 rounded-2xl border-2 cursor-pointer transition-all ${
-                          isSelected 
-                            ? 'border-[#20B2AA] bg-[#F0F9F9]' 
-                            : 'border-gray-200 hover:border-gray-300 bg-white'
-                        }`}
+                        className={`p-5 rounded-2xl border-2 cursor-pointer transition-all ${isSelected
+                          ? 'border-[#20B2AA] bg-[#F0F9F9]'
+                          : 'border-gray-200 hover:border-gray-300 bg-white'
+                          }`}
                         onClick={() => toggleRoadblock(roadblock.id)}
                       >
                         <div className="flex items-center gap-4">
-                          <div 
-                            className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
-                              isSelected ? 'bg-[#20B2AA]' : 'bg-gray-100 border-2 border-gray-300'
-                            }`}
+                          <div
+                            className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${isSelected ? 'bg-[#20B2AA]' : 'bg-gray-100 border-2 border-gray-300'
+                              }`}
                           >
                             {isSelected && <Check className="w-4 h-4 text-white" />}
                           </div>
@@ -254,7 +293,7 @@ export function FiveR_Roadblocks({ onNext, onBack }: FiveR_RoadblocksProps) {
                   {commonRoadblocks
                     .filter(r => selectedRoadblocks.includes(r.id.toString()))
                     .map((roadblock) => (
-                      <div 
+                      <div
                         key={roadblock.id}
                         className="p-6 rounded-2xl bg-white border-2 border-[#E0F2F1]"
                       >
@@ -269,7 +308,7 @@ export function FiveR_Roadblocks({ onNext, onBack }: FiveR_RoadblocksProps) {
                 </div>
               </div>
             )}
-            
+
             <p className="text-sm text-[#333333] opacity-70 mt-4 text-center">
               Click to select roadblocks and view strategies ({selectedRoadblocks.length} selected)
             </p>
@@ -284,11 +323,11 @@ export function FiveR_Roadblocks({ onNext, onBack }: FiveR_RoadblocksProps) {
                   <span className="text-sm text-orange-600 font-medium">You have unsaved changes</span>
                 )}
               </div>
-              
+
               <div className="space-y-4">
                 {personalQuestions.map((question) => {
                   const userResponse = userResponses.find(r => r.question_id === question.id);
-                  
+
                   return (
                     <div key={question.id}>
                       <label className="block text-sm mb-2" style={{ color: '#333333' }}>

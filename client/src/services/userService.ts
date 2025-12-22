@@ -6,11 +6,11 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/a
 // Get auth token from localStorage
 const getAuthHeaders = () => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-  
+
   if (!token) {
     throw new Error('No authentication token found');
   }
-  
+
   return {
     'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json'
@@ -36,7 +36,7 @@ export const userService = {
   } = {}) {
     try {
       const searchParams = new URLSearchParams();
-      
+
       if (params.page) searchParams.append('page', params.page.toString());
       if (params.limit) searchParams.append('limit', params.limit.toString());
       if (params.search) searchParams.append('search', params.search);
@@ -138,7 +138,7 @@ export const userService = {
       const response = await axios.put(
         `${API_BASE_URL}/users/admin/users/${id}/avatar`,
         formData,
-        { 
+        {
           headers: {
             ...getAuthHeadersForUpload(),
             'Content-Type': 'multipart/form-data'
@@ -232,7 +232,7 @@ export const userService = {
       const response = await axios.post(
         `${API_BASE_URL}/users/upload-avatar`,
         formData,
-        { 
+        {
           headers: {
             ...headers,
             'Content-Type': 'multipart/form-data'
@@ -257,12 +257,12 @@ export const userService = {
         {},
         { headers }
       );
-      
+
       // Clear local storage
       localStorage.removeItem('accessToken');
       localStorage.removeItem('user');
       sessionStorage.clear();
-      
+
       return response.data;
     } catch (error) {
       // Clear local storage even if server logout fails

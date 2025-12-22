@@ -50,13 +50,13 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
 
   const handleSave = async () => {
     setError(null);
-    
+
     // Validation based on category
     if (!category) {
       setError('Category is required');
       return;
     }
-    
+
     // Category-specific validation
     if (category === 'Video' || category === 'Podcast') {
       if (!title.trim()) {
@@ -85,7 +85,7 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
 
     try {
       setIsLoading(true);
-      
+
       const formData = new FormData();
       formData.append('title', title.trim());
       formData.append('category', category);
@@ -95,11 +95,11 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
       formData.append('publish_date', publishDate);
       formData.append('end_date', endDate);
       formData.append('media_url', mediaUrl);
-      
+
       // Parse tags
       const tagsArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
       formData.append('tags', JSON.stringify(tagsArray));
-      
+
       // Add file if selected
       if (selectedFile) {
         formData.append('media', selectedFile);
@@ -113,12 +113,12 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
       console.log('selectedFile:', selectedFile ? selectedFile.name : 'No file selected');
       console.log('selectedFile size:', selectedFile ? selectedFile.size : 'N/A');
 
-      const url = editContent?.id 
+      const url = editContent?.id
         ? `${API_BASE_URL}/content/${editContent.id}`
         : `${API_BASE_URL}/content`;
-      
+
       const method = editContent?.id ? 'put' : 'post';
-      
+
       const response = await axios[method](url, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -138,14 +138,14 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
           setSelectedFile(null);
           setStep('category');
         }
-        
+
         // Call success callback if provided
         if (onContentSaved) {
           onContentSaved(response.data.data);
         }
-        
+
         onOpenChange(false);
-        
+
         // Show success message (you could use a toast library here)
         console.log(editContent ? 'Content updated successfully!' : 'Content created successfully!');
       }
@@ -178,17 +178,17 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
       // Validate file type and size
       const allowedTypes = ['image/png', 'image/jpeg', 'video/mp4', 'application/pdf'];
       const maxSize = 10 * 1024 * 1024; // 10MB
-      
+
       if (!allowedTypes.includes(file.type)) {
         setError('Invalid file type. Only PNG, JPG, MP4, and PDF files are allowed.');
         return;
       }
-      
+
       if (file.size > maxSize) {
         setError('File size too large. Maximum size is 10MB.');
         return;
       }
-      
+
       setSelectedFile(file);
       setError(null);
       console.log("File selected:", file.name);
@@ -225,7 +225,7 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
               <p className="text-red-600 text-sm">{error}</p>
             </div>
           )}
-          
+
           {step === 'category' ? (
             /* Category Selection Step */
             <div className="space-y-6">
@@ -233,7 +233,7 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
                 <h3 className="text-xl font-semibold text-[#1C3B5E]">Choose Content Type</h3>
                 <p className="text-gray-600">Select the type of content you want to create</p>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <button
                   onClick={() => handleCategorySelect('Video')}
@@ -242,7 +242,7 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
                   <Video className="w-8 h-8 text-red-500 mb-3" />
                   <h4 className="font-semibold text-[#1C3B5E] mb-2">Video Content</h4>
                 </button>
-                
+
                 <button
                   onClick={() => handleCategorySelect('Podcast')}
                   className="p-6 rounded-2xl border-2 border-gray-200 hover:border-purple-500 hover:bg-purple-50 transition-all duration-200 text-left group"
@@ -250,7 +250,7 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
                   <FileText className="w-8 h-8 text-purple-500 mb-3" />
                   <h4 className="font-semibold text-[#1C3B5E] mb-2">Podcast</h4>
                 </button>
-                
+
                 <button
                   onClick={() => handleCategorySelect('Image')}
                   className="p-6 rounded-2xl border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all duration-200 text-left group"
@@ -258,7 +258,7 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
                   <Image className="w-8 h-8 text-green-500 mb-3" />
                   <h4 className="font-semibold text-[#1C3B5E] mb-2">Image-Based Learning</h4>
                 </button>
-                
+
                 <button
                   onClick={() => handleCategorySelect('Blog')}
                   className="p-6 rounded-2xl border-2 border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 text-left group"
@@ -266,7 +266,7 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
                   <FileText className="w-8 h-8 text-blue-500 mb-3" />
                   <h4 className="font-semibold text-[#1C3B5E] mb-2">Blog Article</h4>
                 </button>
-                
+
                 {/* <button
                   onClick={() => handleCategorySelect('Quote')}
                   className="p-6 rounded-2xl border-2 border-gray-200 hover:border-orange-500 hover:bg-orange-50 transition-all duration-200 text-left group"
@@ -291,7 +291,7 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
                   {category}
                 </div>
               </div>
-              
+
               {/* Video/Podcast Fields */}
               {(category === 'Video' || category === 'Podcast') && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -308,7 +308,7 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
                         className="rounded-2xl border-gray-200 h-12 focus:border-[#20B2AA] focus:ring-[#20B2AA]/20"
                       />
                     </div>
-                    
+
                     <div className="space-y-3">
                       <Label className="text-sm font-semibold text-[#1C3B5E] flex items-center gap-2">
                         <Video className="w-4 h-4" />
@@ -322,13 +322,13 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
                       />
                     </div>
                   </div>
-                  
+
                   <div className="space-y-6">
-                    
+
                   </div>
                 </div>
               )}
-              
+
               {/* Image-Based Learning Fields */}
               {category === 'Image' && (
                 <div className="space-y-6">
@@ -380,7 +380,7 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
                               <span className="text-sm text-gray-700">Image URL</span>
                             </label>
                           </div>
-                          
+
                           {!mediaUrl ? (
                             <div className="space-y-3">
                               <div className="border-2 border-dashed border-gray-300 rounded-2xl p-6 text-center hover:border-[#20B2AA] transition-colors">
@@ -430,7 +430,7 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
                   </div>
                 </div>
               )}
-              
+
               {/* Blog/Quote Fields */}
               {(category === 'Blog' || category === 'Quote') && (
                 <div className="space-y-6">
@@ -449,7 +449,7 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
                         />
                       </div>
                     </div>
-                    
+
                     <div className="space-y-6">
                       <div className="space-y-3">
                         <Label className="text-sm font-semibold text-[#1C3B5E] flex items-center gap-2">
@@ -465,7 +465,7 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-3">
                     <Label className="text-sm font-semibold text-[#1C3B5E]">
                       {category === 'Blog' ? 'Content' : 'Quote Text'} <span className="text-red-500">*</span>
@@ -501,7 +501,7 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
                 onClick={handleSave}
                 disabled={isLoading}
                 className="px-8 py-3 rounded-2xl text-white transition-all duration-200 hover:shadow-lg shadow-md disabled:opacity-50"
-                style={{ 
+                style={{
                   background: "linear-gradient(135deg, #20B2AA 0%, #1C9B94 100%)"
                 }}
               >

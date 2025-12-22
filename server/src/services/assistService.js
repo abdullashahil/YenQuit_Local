@@ -8,7 +8,7 @@ export async function getCopingStrategies(isActiveOnly = true) {
     `SELECT id, title as name, description, is_active, created_at, updated_at
        FROM app_resources
        WHERE type = 'coping_strategy' ${whereClause}
-       ORDER BY id ASC`
+       ORDER BY is_active DESC, id ASC`
   );
   return res.rows;
 }

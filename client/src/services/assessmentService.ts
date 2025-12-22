@@ -9,6 +9,7 @@ export interface AssessmentQuestion {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  category: 'fivea' | 'fagerstrom';
   metadata: {
     step: 'ask' | 'advise' | 'assess' | 'assist' | 'arrange';
     tobacco_category: 'smoked' | 'smokeless';

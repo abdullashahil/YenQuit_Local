@@ -38,7 +38,7 @@ export function FiveA_Ask({ onNext, questions = [], savedAnswers = [], submitted
       try {
         const response = await userService.getProfile();
         setUserOnboardingStep(response.data.onboarding_step || 0);
-        console.log(response,"these are the steps");
+        console.log(response, "these are the steps");
       } catch (error) {
         console.error('Error fetching user profile:', error);
         setUserOnboardingStep(0);
@@ -54,11 +54,11 @@ export function FiveA_Ask({ onNext, questions = [], savedAnswers = [], submitted
       const prefilled: Record<string, string> = {};
       const prefilledSelected: Record<string, string> = {};
       const prefilledOtherTexts: Record<string, string> = {};
-      
+
       savedAnswers.forEach(sa => {
         const key = `q${sa.question_id}`;
         prefilled[key] = sa.answer_text;
-        
+
         // Check if the answer corresponds to an "Others" option
         const question = questions.find(q => q.id === sa.question_id);
         if (question && question.options.includes("Others")) {
@@ -74,7 +74,7 @@ export function FiveA_Ask({ onNext, questions = [], savedAnswers = [], submitted
           prefilledSelected[key] = sa.answer_text;
         }
       });
-      
+
       setAnswers(prefilled);
       setSelectedOptions(prefilledSelected);
       setOtherTexts(prefilledOtherTexts);
@@ -88,9 +88,9 @@ export function FiveA_Ask({ onNext, questions = [], savedAnswers = [], submitted
 
   const handleOptionChange = (questionId: number, option: string) => {
     if (submitted) return;
-    
+
     setSelectedOptions(prev => ({ ...prev, [questionId]: option }));
-    
+
     if (option === "Others") {
       // When "Others" is selected, set answer to current other text or empty string
       setAnswers(prev => ({ ...prev, [questionId]: otherTexts[questionId] || "" }));
@@ -102,9 +102,9 @@ export function FiveA_Ask({ onNext, questions = [], savedAnswers = [], submitted
 
   const handleOtherTextChange = (questionId: number, value: string) => {
     if (submitted) return;
-    
+
     setOtherTexts(prev => ({ ...prev, [questionId]: value }));
-    
+
     // If "Others" is currently selected, update the answer with the new text
     if (selectedOptions[questionId] === "Others") {
       setAnswers(prev => ({ ...prev, [questionId]: value }));
@@ -208,7 +208,7 @@ export function FiveA_Ask({ onNext, questions = [], savedAnswers = [], submitted
                           {option}
                         </Label>
                       </div>
-                      
+
                       {option === "Others" && selectedOptions[`q${q.id}`] === "Others" && (
                         <div className="mt-3 ml-4">
                           <input

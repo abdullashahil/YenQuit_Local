@@ -10,7 +10,7 @@ interface SidebarProps {
 
 export function Sidebar({ activeTab, setActiveTab, onLogout }: SidebarProps) {
   const [open, setOpen] = useState(false);
-  
+
   const navItems = [
     { id: "dashboard", label: "Home", icon: Home },
     { id: "learning", label: "Learning Hub", icon: BookOpen },
@@ -27,8 +27,13 @@ export function Sidebar({ activeTab, setActiveTab, onLogout }: SidebarProps) {
   const SidebarContent = () => (
     <div className="h-full flex flex-col" style={{ backgroundColor: "#1C3B5E" }}>
       {/* create a logo "YENQUIT" */}
-      <div className="p-6 mb-6">
-        <h1 className="ml-2 text-2xl font-bold text-white">YEN<span className="text-[#FFC107]">QUIT</span></h1>
+      <div className="p-6 mb-6 flex flex-col items-center gap-3">
+        <img
+          src="/images/YenQuit_logo.jpg"
+          alt="YenQuit Logo"
+          className="w-24 h-24 object-contain"
+        />
+        <h1 className="text-2xl font-bold text-white">YEN<span className="text-[#FFC107]">QUIT</span></h1>
       </div>
 
       {/* Emergency Support Button */}
@@ -47,14 +52,13 @@ export function Sidebar({ activeTab, setActiveTab, onLogout }: SidebarProps) {
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
-          
+
           return (
             <button
               key={item.id}
               onClick={() => handleNavClick(item.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${
-                isActive ? "bg-white/10" : "hover:bg-white/5"
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${isActive ? "bg-white/10" : "hover:bg-white/5"
+                }`}
             >
               <Icon className="w-5 h-5 text-white" />
               <span className="text-white text-sm md:text-base">{item.label}</span>
@@ -69,9 +73,9 @@ export function Sidebar({ activeTab, setActiveTab, onLogout }: SidebarProps) {
           <p className="text-white/60 text-sm">Quitting Journey</p>
           <p className="text-white/40 text-xs mt-1">Your path to freedom</p>
         </div> */}
-        
-        {/* Admin Link */}
-        {/* <button
+
+      {/* Admin Link */}
+      {/* <button
           onClick={() => handleNavClick("admin")}
           className="w-full text-xs hover:text-white/80 transition-all mb-3"
           style={{ color: "#ffffff40" }}
@@ -79,8 +83,8 @@ export function Sidebar({ activeTab, setActiveTab, onLogout }: SidebarProps) {
           Admin Panel →
         </button> */}
 
-        {/* Logout Button */}
-        {/* {onLogout && (
+      {/* Logout Button */}
+      {/* {onLogout && (
           <button
             onClick={onLogout}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl transition-all hover:bg-white/10"

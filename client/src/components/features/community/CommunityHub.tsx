@@ -4,7 +4,7 @@ import { useState } from "react"
 import CommunityList from "@/components/community-hub/community-list"
 import ChatArea from "@/components/community-hub/chat-area"
 import useIsMobile from "@/hooks/use-mobile"
-import { NotificationProvider } from "@/contexts/NotificationContext"
+import { useNotifications } from "@/contexts/NotificationContext"
 
 interface Community {
   id: string
@@ -16,6 +16,7 @@ interface Community {
 }
 
 export function CommunityHub() {
+  const { setActiveCommunityId } = useNotifications()
   const [selectedCommunityId, setSelectedCommunityId] = useState<string | null>(null)
   const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null)
   const isMobile = useIsMobile()
@@ -25,21 +26,29 @@ export function CommunityHub() {
   const showChat = !isMobile || selectedCommunityId
   const canShowChatArea = showChat && selectedCommunity && (selectedCommunity.id === "yenai-chat" || selectedCommunity.user_role)
 
-  const handleSelectCommunity = (communityId: number, community?: Community) => {
-    console.log('DEBUG: handleSelectCommunity called', { communityId, community, user_role: community?.user_role })
+  const handleSelectCommunity = (communityId: string | number, community?: Community) => {
+
 
     // Check if user is a member (except for YenAI)
-    if (communityId !== "yenai-chat" && community && !community.user_role) {
-      console.log('DEBUG: Blocking non-member from opening chat')
+    if (String(communityId) !== "yenai-chat" && community && !community.user_role) {
+
       // Don't allow non-members to open chat
       return
     }
 
-    console.log('DEBUG: Allowing community selection')
-    setSelectedCommunityId(communityId)
+
+    setSelectedCommunityId(String(communityId))
+
+    // Set active community in notification context
+    const idNum = typeof communityId === 'string' ? parseInt(communityId, 10) : communityId
+    if (!isNaN(idNum)) {
+      setActiveCommunityId(idNum)
+    } else {
+      setActiveCommunityId(null)
+    }
 
     // Handle YenAI special case
-    if (communityId === "yenai-chat") {
+    if (String(communityId) === "yenai-chat") {
       setSelectedCommunity({
         id: "yenai-chat",
         name: "Chat with YenAI",
@@ -56,31 +65,33 @@ export function CommunityHub() {
   const handleCloseChatArea = () => {
     setSelectedCommunityId(null)
     setSelectedCommunity(null)
+    setActiveCommunityId(null)
     // Trigger a refresh of the community list to reflect any changes
     window.location.reload()
   }
 
   return (
-    <NotificationProvider>
-      <div className="flex h-screen bg-white overflow-hidden">
-        {/* Community List */}
-        {showList && (
-          <div className={`${isMobile ? "w-full" : "w-1/3"} border-r border-gray-200 flex flex-col`}>
-            <CommunityList selectedCommunity={selectedCommunityId} onSelectCommunity={handleSelectCommunity} />
-          </div>
-        )}
+    <div className="flex h-screen bg-white overflow-hidden">
+      {/* Community List */}
+      {showList && (
+        <div className={`${isMobile ? "w-full" : "w-1/3"} border-r border-gray-200 flex flex-col`}>
+          <CommunityList selectedCommunity={selectedCommunityId} onSelectCommunity={handleSelectCommunity} />
+        </div>
+      )}
 
-        {/* Chat Area */}
-        {showChat && (
-          <div className={`${isMobile ? "w-full" : "w-2/3"} flex flex-col`}>
-            <ChatArea
-              community={selectedCommunity}
-              onBack={isMobile ? () => setSelectedCommunityId(null) : undefined}
-              onClose={handleCloseChatArea}
-            />
-          </div>
-        )}
-      </div>
-    </NotificationProvider>
+      {/* Chat Area */}
+      {showChat && (
+        <div className={`${isMobile ? "w-full" : "w-2/3"} flex flex-col`}>
+          <ChatArea
+            community={selectedCommunity}
+            onBack={isMobile ? () => {
+              setSelectedCommunityId(null)
+              setActiveCommunityId(null)
+            } : undefined}
+            onClose={handleCloseChatArea}
+          />
+        </div>
+      )}
+    </div>
   )
 }
