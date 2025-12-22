@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { Badge } from '../../components/ui/badge';
+import { Button } from '../../src/components/ui/button';
+import { Input } from '../../src/components/ui/input';
+import { Label } from '../../src/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '../../src/components/ui/card';
+import { Badge } from '../../src/components/ui/badge';
 import { Loader2, Plus, Edit, Trash2, Save, X } from 'lucide-react';
 import {
   getNotificationTemplates,
@@ -11,7 +11,7 @@ import {
   updateNotificationTemplate,
   softDeleteNotificationTemplate,
   NotificationTemplate
-} from '../../services/assistService';
+} from '../../src/services/assistService';
 
 export default function NotificationTemplatesPage() {
   const [templates, setTemplates] = useState<NotificationTemplate[]>([]);
@@ -60,11 +60,11 @@ export default function NotificationTemplatesPage() {
         title: formData.title.trim(),
         default_time: formData.default_time.trim() || null
       });
-      
+
       // Reset form
       setFormData({ key: '', title: '', default_time: '' });
       setShowCreateForm(false);
-      
+
       // Reload templates
       await loadTemplates();
     } catch (error) {
@@ -93,10 +93,10 @@ export default function NotificationTemplatesPage() {
         title: formData.title.trim(),
         default_time: formData.default_time.trim() || null
       });
-      
+
       setEditing(null);
       setFormData({ key: '', title: '', default_time: '' });
-      
+
       await loadTemplates();
     } catch (error) {
       console.error('Error updating template:', error);
@@ -302,7 +302,7 @@ export default function NotificationTemplatesPage() {
                         )}
                       </div>
                       <p className="text-sm text-gray-500">
-                        Created: {new Date(template.created_at).toLocaleDateString()} | 
+                        Created: {new Date(template.created_at).toLocaleDateString()} |
                         Updated: {new Date(template.updated_at).toLocaleDateString()}
                       </p>
                     </div>

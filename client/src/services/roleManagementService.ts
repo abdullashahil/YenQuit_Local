@@ -20,7 +20,7 @@ export const roleManagementService = {
       const response = await axios.get(`${API_BASE_URL}/users/admins`, {
         headers: getAuthHeaders()
       });
-      
+
       return response.data;
     } catch (error) {
       console.error('Error fetching admins:', error);
@@ -29,13 +29,13 @@ export const roleManagementService = {
   },
 
   // Promote user to admin
-  async promoteUser(userId: number) {
+  async promoteUser(userId: string) {
     try {
-      const response = await axios.patch(`${API_BASE_URL}/users/user/${userId}/promote`, 
+      const response = await axios.patch(`${API_BASE_URL}/users/user/${userId}/promote`,
         {},
         { headers: getAuthHeaders() }
       );
-      
+
       return response.data;
     } catch (error) {
       console.error('Error promoting user:', error);
@@ -46,11 +46,11 @@ export const roleManagementService = {
   // Demote admin to user
   async demoteAdmin(adminId: string) {
     try {
-      const response = await axios.patch(`${API_BASE_URL}/users/admin/${adminId}/demote`, 
+      const response = await axios.patch(`${API_BASE_URL}/users/admin/${adminId}/demote`,
         {},
         { headers: getAuthHeaders() }
       );
-      
+
       return response.data;
     } catch (error) {
       console.error('Error demoting admin:', error);
@@ -64,7 +64,7 @@ export const roleManagementService = {
       const response = await axios.get(`${API_BASE_URL}/users/non-admin-users`, {
         headers: getAuthHeaders()
       });
-      
+
       return response.data;
     } catch (error) {
       console.error('Error fetching non-admin users:', error);

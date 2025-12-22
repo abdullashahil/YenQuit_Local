@@ -3,16 +3,15 @@ import { query } from '../db/index.js';
 // Get user's last 3 visited content items
 export const getUserLearningProgress = async (req, res) => {
   try {
-    console.log('GET Controller - req.user:', req.user);
-    console.log('GET Controller - req.user.userId:', req.user?.userId);
+
 
     if (!req.user || !req.user.userId) {
-      console.log('GET Controller - No user found in request');
+
       return res.status(401).json({ message: 'User not authenticated' });
     }
 
     const userId = req.user.userId; // Changed from req.user.id to req.user.userId
-    console.log('GET Controller - userId:', userId);
+
 
     // Get user's learning progress
     const progressResult = await query(
@@ -24,12 +23,11 @@ export const getUserLearningProgress = async (req, res) => {
       return res.json({ items: [] });
     }
 
-    console.log('GET Controller - contentIds from DB:', progressResult.rows[0].content_ids);
-    console.log('GET Controller - contentIds type:', typeof progressResult.rows[0].content_ids);
+
 
     const contentIds = progressResult.rows[0].content_ids;
     if (!Array.isArray(contentIds) || contentIds.length === 0) {
-      console.log('GET Controller - No content IDs found, returning empty array');
+
       return res.json({ items: [] });
     }
 
@@ -43,7 +41,7 @@ export const getUserLearningProgress = async (req, res) => {
         return Number.isInteger(num) && num > 0;
       });
 
-    console.log('GET Controller - lastThreeIds (filtered):', lastThreeIds);
+
 
     if (lastThreeIds.length === 0) {
       return res.json({ items: [] });
@@ -76,16 +74,15 @@ export const getUserLearningProgress = async (req, res) => {
 // Get user's learning progress count for milestone tracking
 export const getLearningProgressCount = async (req, res) => {
   try {
-    console.log('GET Count Controller - req.user:', req.user);
-    console.log('GET Count Controller - req.user.userId:', req.user?.userId);
+
 
     if (!req.user || !req.user.userId) {
-      console.log('GET Count Controller - No user found in request');
+
       return res.status(401).json({ message: 'User not authenticated' });
     }
 
     const userId = req.user.userId;
-    console.log('GET Count Controller - userId:', userId);
+
 
     // Get user's learning progress
     const progressResult = await query(
@@ -105,7 +102,7 @@ export const getLearningProgressCount = async (req, res) => {
     const count = Array.isArray(contentIds) ? contentIds.length : 0;
     const hasCompletedMilestone = count >= 15;
 
-    console.log('GET Count Controller - content count:', count, 'milestone achieved:', hasCompletedMilestone);
+
 
     res.json({
       count,
@@ -121,18 +118,17 @@ export const getLearningProgressCount = async (req, res) => {
 // Add content ID to user's learning progress
 export const addContentToProgress = async (req, res) => {
   try {
-    console.log('Controller - req.user:', req.user);
-    console.log('Controller - req.user.userId:', req.user?.userId);
+
 
     if (!req.user || !req.user.userId) {
-      console.log('Controller - No user found in request');
+
       return res.status(401).json({ message: 'User not authenticated' });
     }
 
     const userId = req.user.userId; // Changed from req.user.id to req.user.userId
     const { contentId, type } = req.body;
 
-    console.log('Controller - userId:', userId, 'contentId:', contentId);
+
 
     if (!contentId) {
       return res.status(400).json({ message: 'Content ID is required' });

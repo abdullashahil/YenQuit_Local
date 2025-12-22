@@ -27,28 +27,28 @@ interface CommunityCardProps {
   isSelected?: boolean
   onClick?: () => void
   onSelect?: () => void
-  onJoin?: (communityId: number) => void
+  onJoin?: (communityId: string | number) => void
 }
 
 export function CommunityCard({ community, isSelected = false, onClick, onSelect, onJoin }: CommunityCardProps) {
   const [isJoining, setIsJoining] = useState(false)
-  
+
   const handleClick = async () => {
     if (onClick) return onClick()
-    
+
     // If user is not a member and onJoin is provided, show join prompt
     if (!community.user_role && onJoin) {
       onJoin(community.id)
       return
     }
-    
+
     if (onSelect) return onSelect()
   }
 
   const handleJoinClick = async (e: React.MouseEvent) => {
     e.stopPropagation()
     if (isJoining) return
-    
+
     setIsJoining(true)
     try {
       const token = localStorage.getItem("accessToken")
@@ -56,12 +56,12 @@ export function CommunityCard({ community, isSelected = false, onClick, onSelect
         console.error("No auth token found")
         return
       }
-      
+
       const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
       const response = await axios.post(`${API_BASE}/communities/${community.id}/join`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       })
-      
+
       if (response.data?.success) {
         // Refresh the page or update the community list to show the user as a member
         window.location.reload()
@@ -99,11 +99,10 @@ export function CommunityCard({ community, isSelected = false, onClick, onSelect
   return (
     <button
       onClick={handleClick}
-      className={`w-full p-3 rounded-lg transition-colors text-left flex items-start gap-3 ${
-        isSelected
+      className={`w-full p-3 rounded-lg transition-colors text-left flex items-start gap-3 ${isSelected
           ? "bg-[#E0F7F6] border border-[#20B2AA]"
           : "hover:bg-gray-50 border border-transparent"
-      }`}
+        }`}
     >
       {/* Avatar */}
       <div className="flex-shrink-0">
@@ -143,7 +142,7 @@ export function CommunityCard({ community, isSelected = false, onClick, onSelect
                 {isJoining ? "Joining..." : "Join"}
               </button>
             )}
-            
+
             {typeof community.unreadCount === "number" && community.unreadCount > 0 ? (
               <div className="flex-shrink-0 w-6 h-6 bg-[#20B2AA] text-white rounded-full flex items-center justify-center text-xs font-semibold">
                 {community.unreadCount > 99 ? "99+" : community.unreadCount}

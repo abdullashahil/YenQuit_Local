@@ -130,7 +130,7 @@ class SocketService {
           this.io.to(`community_${communityId}`).emit('online_users_updated', onlineUsers);
 
           socket.emit('left_community', { communityId });
-          console.log(`User ${userId} left community ${communityId}`);
+          // console.log(`User ${userId} left community ${communityId}`);
         } catch (error) {
           console.error('Error leaving community:', error);
           socket.emit('error', { message: 'Failed to leave community' });
@@ -221,7 +221,7 @@ class SocketService {
           // Broadcast to all members in community
           this.io.to(`community_${communityId}`).emit('message_edited', fullMessage);
 
-          console.log(`Message ${messageId} edited by user ${userId}`);
+          // console.log(`Message ${messageId} edited by user ${userId}`);
         } catch (error) {
           console.error('Error editing message:', error);
           socket.emit('error', { message: 'Failed to edit message' });
@@ -256,7 +256,7 @@ class SocketService {
           // Broadcast to all members in community
           this.io.to(`community_${message.community_id}`).emit('message_deleted', { messageId });
 
-          console.log(`Message ${messageId} deleted by user ${userId}`);
+          // console.log(`Message ${messageId} deleted by user ${userId}`);
         } catch (error) {
           console.error('Error deleting message:', error);
           socket.emit('error', { message: 'Failed to delete message' });
@@ -299,7 +299,7 @@ class SocketService {
             reactions
           });
 
-          console.log(`Reaction added to message ${messageId} by user ${userId}`);
+          // console.log(`Reaction added to message ${messageId} by user ${userId}`);
         } catch (error) {
           console.error('Error adding reaction:', error);
           socket.emit('error', { message: 'Failed to add reaction' });
@@ -340,7 +340,7 @@ class SocketService {
             reactions
           });
 
-          console.log(`Reaction removed from message ${messageId} by user ${userId}`);
+          // console.log(`Reaction removed from message ${messageId} by user ${userId}`);
         } catch (error) {
           console.error('Error removing reaction:', error);
           socket.emit('error', { message: 'Failed to remove reaction' });
@@ -398,14 +398,14 @@ class SocketService {
             }
           }
 
-          console.log(`User disconnected: ${socket.id}`);
+          // console.log(`User disconnected: ${socket.id}`);
         } catch (error) {
           console.error('Error handling disconnect:', error);
         }
       });
     });
 
-    console.log('Socket.IO server initialized');
+    // console.log('Socket.IO server initialized');
   }
 
   // Get online users from Socket.IO room

@@ -20,16 +20,16 @@ export function DashboardPage({ activeTab, setActiveTab, onLogout, onboardingNam
   useEffect(() => {
     const loadUserProfile = async () => {
       try {
-        console.log('👤 Dashboard - Loading user profile...');
+
         const response = await userService.getProfile();
-        console.log('👤 Dashboard - Profile response:', response);
+
 
         if (response.success && response.data) {
           const name = response.data.full_name || onboardingName || "User";
-          console.log('👤 Dashboard - Setting display name:', name);
+
           setDisplayName(name);
         } else {
-          console.log('👤 Dashboard - No profile data, using fallback');
+
           setDisplayName(onboardingName || "User");
         }
       } catch (err) {

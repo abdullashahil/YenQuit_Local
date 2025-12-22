@@ -24,9 +24,7 @@ export async function getUserAssistPlan(req, res, next) {
 
 export async function createOrUpdateUserAssistPlan(req, res, next) {
   try {
-    console.log('Request user object:', req.user);
-    const userId = req.user.userId;
-    console.log('Extracted userId:', userId);
+
 
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
@@ -84,7 +82,6 @@ export async function upsertUserNotifications(req, res, next) {
     const userId = req.user.userId; // Changed from req.user.id to req.user.userId
     const { notifications } = req.body;
 
-    console.log('Received notifications data:', notifications);
 
     if (!Array.isArray(notifications)) {
       return res.status(400).json({ error: 'notifications must be an array' });

@@ -44,8 +44,7 @@ export const userService = {
       if (params.status && params.status !== 'all') searchParams.append('status', params.status);
 
       const headers = getAuthHeaders();
-      console.log('Request headers:', headers);
-      console.log('Request URL:', `${API_BASE_URL}/users/admin/users?${searchParams.toString()}`);
+
 
       const response = await axios.get(
         `${API_BASE_URL}/users/admin/users?${searchParams.toString()}`,
@@ -54,9 +53,7 @@ export const userService = {
 
       return response.data;
     } catch (error: any) {
-      console.error('Full error:', error);
-      console.error('Error response:', error.response?.data);
-      console.error('Error status:', error.response?.status);
+
       handleApiError(error, 'Failed to fetch users');
     }
   },
@@ -170,8 +167,7 @@ export const userService = {
   async getUserStats() {
     try {
       const headers = getAuthHeaders();
-      console.log('Stats request headers:', headers);
-      console.log('Stats request URL:', `${API_BASE_URL}/users/admin/users/stats`);
+
 
       const response = await axios.get(
         `${API_BASE_URL}/users/admin/users/stats`,
@@ -180,9 +176,7 @@ export const userService = {
 
       return response.data;
     } catch (error: any) {
-      console.error('Full stats error:', error);
-      console.error('Stats error response:', error.response?.data);
-      console.error('Stats error status:', error.response?.status);
+
       handleApiError(error, 'Failed to fetch user statistics');
     }
   },

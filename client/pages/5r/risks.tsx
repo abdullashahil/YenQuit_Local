@@ -15,5 +15,5 @@ export default function Risks() {
     router.push('/5r/relevance')
   }
 
-  return <FiveR_Risks onNext={handleNext} onBack={handleBack} />
+  return <FiveR_Risks onNext={handleNext} />
 }

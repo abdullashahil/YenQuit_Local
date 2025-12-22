@@ -15,5 +15,5 @@ export default function Rewards() {
     router.push('/5r/risks')
   }
 
-  return <FiveR_Rewards onNext={handleNext} onBack={handleBack} />
+  return <FiveR_Rewards onNext={handleNext} />
 }

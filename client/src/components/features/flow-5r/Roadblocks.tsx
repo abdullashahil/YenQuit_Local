@@ -72,8 +72,7 @@ export function FiveR_Roadblocks({ onNext, onBack, userId }: FiveR_RoadblocksPro
           const userResponsesData = await getUserPersonalRoadblocks();
           setUserResponses(userResponsesData.responses);
         } catch (err) {
-          // User not authenticated, continue without loading responses
-          console.log('User not authenticated, skipping personal responses');
+
         }
       } catch (err: any) {
         setError(err.message || 'Failed to load roadblocks content');
@@ -162,7 +161,7 @@ export function FiveR_Roadblocks({ onNext, onBack, userId }: FiveR_RoadblocksPro
 
       await Promise.all(savePromises);
       setHasUnsavedChanges(false);
-      console.log('Personal responses saved successfully');
+
     } catch (err) {
       console.error('Failed to save personal roadblock responses:', err);
     }

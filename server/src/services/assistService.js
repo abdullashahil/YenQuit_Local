@@ -151,7 +151,7 @@ export async function createOrUpdateUserAssistPlan(userId, { quitDate, triggers,
     throw new Error('User ID is required');
   }
 
-  console.log('Creating/updating assist plan for userId:', userId);
+
 
   const client = await getClient();
   try {

@@ -348,7 +348,7 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
     const handleNewMessage = (message: ChatMessage) => {
       setMessages((prev) => {
         // Prevent duplicates
-        if (prev.some(m => m.id === message.id)) {
+        if (prev.some(m => String(m.id) === String(message.id))) {
           return prev
         }
         return [...prev, message]
@@ -368,35 +368,37 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
     }
 
     const handleMessageEdited = (message: ChatMessage) => {
-      setMessages((prev) => prev.map((m) => (m.id === message.id ? message : m)))
+      setMessages((prev) => prev.map((m) => (String(m.id) === String(message.id) ? message : m)))
     }
 
-    const handleMessageDeleted = ({ messageId }: { messageId: string }) => {
-      setMessages((prev) => prev.filter((m) => m.id !== messageId))
+    const handleMessageDeleted = ({ messageId }: { messageId: number | string }) => {
+      setMessages((prev) => prev.filter((m) => String(m.id) !== String(messageId)))
     }
 
     const handleOnlineUsersUpdated = (users: OnlineUser[]) => {
       setOnlineUsers(users)
     }
 
-    const handleUserTyping = ({ userId: typingUserId }: { userId: string }) => {
-      if (typingUserId !== currentUser.id) {
+    const handleUserTyping = ({ userId: typingUserId }: { userId: number | string }) => {
+      const typingUserIdStr = String(typingUserId)
+      if (typingUserIdStr !== String(currentUser?.id)) {
         setTypingUsers((prev) => {
-          const exists = prev.find(u => u.id === typingUserId)
+          const exists = prev.find(u => u.id === typingUserIdStr)
           if (!exists) {
             // Get user name from online users or messages
-            const typingUser = onlineUsers.find(u => u.user_id === typingUserId) ||
-              messages.find(m => m.user_id === typingUserId)
+            const typingUser = onlineUsers.find(u => String(u.user_id) === typingUserIdStr) ||
+              messages.find(m => String(m.user_id) === typingUserIdStr)
             const userName = typingUser?.full_name || typingUser?.email || 'Someone'
-            return [...prev, { id: typingUserId, name: userName }]
+            return [...prev, { id: typingUserIdStr, name: userName }]
           }
           return prev
         })
       }
     }
 
-    const handleUserStopTyping = ({ userId: typingUserId }: { userId: string }) => {
-      setTypingUsers((prev) => prev.filter((user) => user.id !== typingUserId))
+    const handleUserStopTyping = ({ userId: typingUserId }: { userId: number | string }) => {
+      const typingUserIdStr = String(typingUserId)
+      setTypingUsers((prev) => prev.filter((user) => user.id !== typingUserIdStr))
     }
 
     // Register listeners immediately
@@ -505,7 +507,7 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
     new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
 
   const isOwnMessage = (message: ChatMessage) => {
-    return message.user_id === currentUser?.id
+    return String(message.user_id) === String(currentUser?.id)
   }
 
   const handleSendSocketMessage = () => {

@@ -5,10 +5,7 @@ class ContentController {
   // Create new content
   static async createContent(req, res) {
     try {
-      // Debug: Log request data
-      console.log('Request body:', req.body);
-      console.log('Uploaded file:', req.file);
-      console.log('Request headers:', req.headers);
+
 
       const {
         title,
@@ -46,21 +43,16 @@ class ContentController {
         }
       } else if (category === 'Image') {
         // For image category, either media_url or uploaded file should be present
-        console.log('Image validation check:');
-        console.log('media_url:', media_url);
-        console.log('media_url type:', typeof media_url);
-        console.log('media_url trimmed:', media_url?.trim());
-        console.log('req.file:', req.file);
-        console.log('req.file exists:', !!req.file);
+
 
         if ((!media_url || media_url.trim() === '') && !req.file) {
-          console.log('Image validation FAILED - no URL and no file');
+
           return res.status(400).json({
             success: false,
             message: 'Either an image URL or uploaded file is required for image-based learning'
           });
         } else {
-          console.log('Image validation PASSED');
+
         }
       } else if (category === 'Blog' || category === 'Quote') {
         if (!title) {
