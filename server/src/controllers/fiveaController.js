@@ -178,7 +178,7 @@ export async function getAdvise(req, res, next) {
         `Q: ${a.question_text}\nA: ${a.answer_text}`
       ).join('\n\n');
 
-      const prompt = `You are a compassionate tobacco cessation counselor. Generate a short, personalized motivational message (2-3 sentences) for a user who wants to quit tobacco.
+      const prompt = `You are a compassionate tobacco cessation counselor. Generate a short, personalized motivational message (2 sentences) for a user who wants to quit tobacco.
 
 USER PROFILE:
 - Age: ${userAge}
@@ -190,14 +190,9 @@ USER'S RESPONSES TO ASSESSMENT:
 ${answersContext}
 
 INSTRUCTIONS:
-- Write 2-3 sentences maximum
-- Be warm, encouraging, and specific to their situation
 - Mention relevant health benefits based on their age and usage pattern
-- Include a motivating statistic or fact if relevant
-- Sound human and supportive, not robotic
+- Include a motivating statistic or fact
 - Do NOT use phrases like "I'm here to help" or "As an AI"
-- Focus on their specific situation and the positive impact of quitting
-
 Generate only the personalized message, nothing else.`;
 
       const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:5000/api';

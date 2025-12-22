@@ -95,6 +95,7 @@ next-env.d.ts
 
 package-lock.json
 client/tsconfig.tsbuildinfo
+
 # ==============================================================================
 # SECTION 2: CONTENT & DOCUMENTATION (TOGGLE FOR AI CONTEXT)
 # Comment these out if you want the AI to read READMEs, docs, or specific schemas.
@@ -134,9 +135,3 @@ large-avatar.*
 *.sqlite
 *.sqlite3
 *.db
-
-# Helper function artifacts
-create-admin.js
-create-admin.sql
-
-server/run-fagerstrom-migration.js

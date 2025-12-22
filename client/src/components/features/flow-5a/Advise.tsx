@@ -170,7 +170,7 @@ export function FiveA_Advise({ onNext, userData = {}, video, quote, ai_message, 
                   </div>
                 ) : (
                   <div style={{ color: '#333333', lineHeight: '1.6' }}>
-                    <p className="mb-3">{ai_message || 'As a 25-year-old user, quitting now may add 10 healthy years to your life. Studies show that people who quit before age 40 reduce their risk of dying from smoking-related disease by about 90%.'}</p>
+                    <p className="mb-3">{ai_message || 'As a years-old user, quitting now may add 10 healthy years to your life. Studies show that people who quit before age 40 reduce their risk of dying from smoking-related disease by about 90%.'}</p>
                     <p style={{ color: '#333333', opacity: 0.85, lineHeight: '1.6' }}>
                       Your investment in health today will compound over the years, giving you more time
                       with loved ones and greater quality of life.
