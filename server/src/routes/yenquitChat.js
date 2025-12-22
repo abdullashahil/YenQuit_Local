@@ -352,61 +352,16 @@ router.post('/', async (req, res) => {
   } catch (error) {
     console.error('YenQuit Chat API Error:', error);
 
-    const status = error.response ? Number(error.response.status) : null;
-    console.log('OpenRouter API Error Status:', status);
-
-    // FALLBACK: If AI service fails (401, 402, 429, 5xx), return a mock response to keep the app usable
-    // This allows the app to function in "Offline/Demo Mode" if the API key is invalid or credits are exhausted
-    if (status && [400, 401, 402, 403, 429, 500, 502, 503, 504].includes(status)) {
-      console.log('Falling back to Offline/Demo Mode due to API error:', status);
-
-      const mockReply = "I apologize, but I'm currently having trouble connecting to my AI brain (Service Error " + status + "). \n\n  \n\nINTENT: faq\nSUMMARY: System is in offline mode.";
-
-      // Clean up the mock reply similar to the real one
-      const lines = mockReply.split('\n');
-      let detectedIntent = 'faq';
-      let updatedSummary = null;
-      const contentLines = [];
-
-      for (const line of lines) {
-        if (line.startsWith('INTENT:')) {
-          detectedIntent = line.replace('INTENT:', '').trim();
-        } else if (line.startsWith('SUMMARY:')) {
-          updatedSummary = line.replace('SUMMARY:', '').trim() || null;
-        } else {
-          contentLines.push(line);
-        }
-      }
-
-      return res.json({
-        reply: contentLines.join('\n').trim(),
-        intent: detectedIntent,
-        summary: updatedSummary,
-        timestamp: new Date().toISOString(),
-        isFallback: true
-      });
-    }
-
-    // Handle other error types
-    if (error.response) {
-      // OpenRouter API error (that wasn't handled by fallback)
-      return res.status(error.response.status).json({
-        error: 'AI service error',
-        details: error.response.data?.error?.message || 'Unknown AI service error'
-      });
-    } else if (error.request) {
-      // Network error (no response received)
-      console.error('No response received from AI service');
-      return res.status(503).json({
-        error: 'AI service unavailable - Network Error'
-      });
-    } else {
-      // Other error in setup
-      return res.status(500).json({
-        error: 'Internal server error',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
-      });
-    }
+    // Simplify fallback logic: Return isFallback: true for ANY error.
+    // The client will handle picking a random fallback message.
+    return res.json({
+      reply: "Fallback triggered",
+      intent: "faq",
+      summary: null,
+      timestamp: new Date().toISOString(),
+      isFallback: true,
+      debugError: error.message || "Unknown error"
+    });
   }
 });
 
