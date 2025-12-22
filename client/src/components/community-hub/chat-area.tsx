@@ -33,7 +33,7 @@ const TEST_USER_ID = "d5799f0c-f707-415e-b9ea-68816351912c" // keep for testing
 
 // Types
 interface Community {
-  id: string
+  id: string | number
   name: string
   description?: string
   member_count: number
@@ -42,7 +42,7 @@ interface Community {
 }
 
 interface ChatMessage {
-  id: string
+  id: number
   community_id: number
   user_id: number
   content: string
@@ -79,7 +79,7 @@ interface ChatAreaProps {
 
 export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) {
   // Determine YenAI mode
-  const isYenAI = community?.id === "yenai-chat"
+  const isYenAI = String(community?.id) === "yenai-chat"
   const { incrementUnreadCount, markAsRead } = useNotifications()
 
   // Helper to get current user info
@@ -329,10 +329,10 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
         socketService.connect(userId, token)
 
         // Join community room
-        socketService.joinCommunity(c.id)
+        socketService.joinCommunity(String(c.id))
 
         return () => {
-          socketService.leaveCommunity(c.id)
+          socketService.leaveCommunity(String(c.id))
         }
       } catch (err) {
         setError("Failed to connect to chat")
@@ -361,8 +361,8 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
       // This prevents badges from appearing when user is actively viewing the chat
       if (message.user_id !== currentUser?.id && !isYenAI) {
         // Use ref to get current community ID
-        if (message.community_id !== currentCommunityRef.current) {
-          incrementUnreadCount(message.community_id)
+        if (String(message.community_id) !== String(currentCommunityRef.current)) {
+          incrementUnreadCount(Number(message.community_id))
         }
       }
     }
@@ -460,10 +460,10 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
     if (!community || isYenAI) return
 
     // Update ref with current community ID for socket listeners
-    currentCommunityRef.current = community.id
+    currentCommunityRef.current = String(community.id)
 
     // Clear badge immediately in notification context
-    markAsRead(community.id)
+    markAsRead(Number(community.id))
 
     // Mark messages as read on server when opening chat
     const markAsReadOnServer = async () => {
@@ -486,11 +486,11 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
     // Only join/leave community when it changes, don't disconnect completely
     if (socketService.isConnected()) {
       const currentCommunity = socketService.getCurrentCommunity()
-      if (currentCommunity !== community.id) {
+      if (currentCommunity !== String(community.id)) {
         if (currentCommunity) {
           socketService.leaveCommunity(currentCommunity)
         }
-        socketService.joinCommunity(community.id)
+        socketService.joinCommunity(String(community.id))
       }
     }
   }, [community?.id, isYenAI])
@@ -519,7 +519,7 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
       socketService.editMessage(editingMessage.id, trimmed)
       setEditingMessage(null)
     } else {
-      socketService.sendMessage(community.id, trimmed, "text", undefined, replyingTo?.id)
+      socketService.sendMessage(String(community.id), trimmed, "text", undefined, replyingTo?.id ? String(replyingTo.id) : undefined)
     }
   }
 
@@ -540,10 +540,10 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
 
   const handleTyping = () => {
     if (!community) return
-    socketService.startTyping(community.id)
+    socketService.startTyping(Number(community.id))
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
     typingTimeoutRef.current = setTimeout(() => {
-      socketService.stopTyping(community.id)
+      socketService.stopTyping(Number(community.id))
     }, 1000)
   }
 
@@ -572,7 +572,7 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
       })
 
       // Leave the socket room
-      socketService.leaveCommunity(community.id)
+      socketService.leaveCommunity(String(community.id))
 
       // Close the chat area
       handleCloseChatArea()
@@ -654,11 +654,11 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
           {!isYenAI && (
             <button
               onClick={() => setShowOnlineUsers(!showOnlineUsers)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-1"
             >
               <Users className="w-5 h-5 text-gray-700" />
               {onlineUsers.length > 0 && (
-                <span className="ml-1 text-xs text-gray-600">({onlineUsers.length})</span>
+                <span className="text-xs text-gray-600">({onlineUsers.length})</span>
               )}
             </button>
           )}
@@ -847,79 +847,101 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
                 {messages.map((message) => (
                   <div
                     key={message.id}
-                    className={`flex ${isOwnMessage(message) ? "justify-end" : "justify-start"} mb-4`}
+                    className={`flex ${isOwnMessage(message) ? "justify-end" : "justify-start"} mb-2 group`}
                   >
-                    <div className={`max-w-xs lg:max-w-md ${isOwnMessage(message) ? "order-2" : "order-1"}`}>
-                      {/* Sender info for other users */}
+                    <div className={`relative max-w-xs lg:max-w-md ${isOwnMessage(message) ? "order-2" : "order-1"}`}>
+                      {/* Sender info for other users - only show name above bubble */}
                       {!isOwnMessage(message) && (
-                        <div className="flex items-center space-x-2 mb-1">
-                          {message.avatar_url ? (
-                            <img
-                              src={message.avatar_url}
-                              alt={message.full_name || message.email}
-                              className="w-6 h-6 rounded-full"
-                            />
-                          ) : (
-                            <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center">
-                              <span className="text-xs">
-                                {(message.full_name || message.email || "A").charAt(0).toUpperCase()}
-                              </span>
-                            </div>
-                          )}
-                          <span className="font-semibold text-gray-800">{message.full_name || message.email}</span>
-                          <span className="text-xs text-gray-500">{formatTime(message.created_at)}</span>
+                        <div className="flex items-center space-x-2 mb-1 ml-1">
+                          <span className="text-xs font-medium text-gray-600">
+                            {message.full_name || message.email}
+                          </span>
                         </div>
                       )}
 
                       {/* Message bubble */}
                       <div
-                        className={`px-4 py-2 rounded-lg ${isOwnMessage(message)
-                          ? "bg-[#2D9B8F] text-white rounded-br-none"
-                          : "bg-gray-100 text-gray-800 rounded-bl-none"
+                        className={`relative px-3 py-2 rounded-lg shadow-sm ${isOwnMessage(message)
+                          ? "bg-[#20B2AA] text-white rounded-br-none"
+                          : "bg-white text-gray-900 rounded-bl-none border border-gray-200"
                           }`}
                       >
                         {message.reply_to && message.reply_content && (
-                          <div className="text-xs opacity-75 mb-1 border-l-2 border-current pl-2">
-                            <p>Replying to {message.reply_author_name || message.reply_author_email}</p>
+                          <div className="text-xs opacity-75 mb-2 border-l-2 border-current pl-2 py-1 bg-black/5 rounded -mx-1 px-2">
+                            <p className="font-semibold">{message.reply_author_name || message.reply_author_email}</p>
                             <p className="truncate">{message.reply_content}</p>
                           </div>
                         )}
 
-                        <p className="break-words">{message.content}</p>
+                        <p className="break-words text-sm leading-relaxed pr-12">{message.content}</p>
 
-                        {message.is_edited && <p className="text-xs opacity-75 mt-1">edited</p>}
+                        {/* Timestamp and edited indicator inside bubble - WhatsApp style */}
+                        <div className="flex items-center justify-end gap-1 mt-1 -mb-1">
+                          {message.is_edited && (
+                            <span className={`text-[10px] ${isOwnMessage(message) ? "text-white/70" : "text-gray-500"}`}>edited</span>
+                          )}
+                          <span className={`text-[10px] ${isOwnMessage(message) ? "text-white/80" : "text-gray-500"}`}>
+                            {formatTime(message.created_at)}
+                          </span>
+                        </div>
+
+                        {/* Dropdown menu button - appears on hover */}
+                        <button
+                          className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-black/10 rounded"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Toggle dropdown for this message
+                            const dropdown = e.currentTarget.nextElementSibling as HTMLElement;
+                            if (dropdown) {
+                              dropdown.classList.toggle('hidden');
+                            }
+                          }}
+                        >
+                          <MoreVertical className={`h-4 w-4 ${isOwnMessage(message) ? "text-white" : "text-gray-600"}`} />
+                        </button>
+
+                        {/* Dropdown menu */}
+                        <div
+                          className={`hidden absolute ${isOwnMessage(message) ? "left-0" : "right-0"} top-8 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 min-w-[140px]`}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {isOwnMessage(message) ? (
+                            <>
+                              <button
+                                onClick={(e) => {
+                                  handleEditMessage(message);
+                                  (e.currentTarget.parentElement as HTMLElement).classList.add('hidden');
+                                }}
+                                className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-2"
+                              >
+                                <Edit3 className="h-3.5 w-3.5" />
+                                Edit
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  handleDeleteMessage(message.id);
+                                  (e.currentTarget.parentElement as HTMLElement).classList.add('hidden');
+                                }}
+                                className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-red-600 flex items-center gap-2"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                Delete
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={(e) => {
+                                handleReply(message);
+                                (e.currentTarget.parentElement as HTMLElement).classList.add('hidden');
+                              }}
+                              className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700 flex items-center gap-2"
+                            >
+                              <Reply className="h-3.5 w-3.5" />
+                              Reply
+                            </button>
+                          )}
+                        </div>
                       </div>
-
-                      {/* "You" and timestamp for own messages */}
-                      {isOwnMessage(message) && (
-                        <div className="flex items-center justify-end space-x-2 mt-1">
-                          <span className="text-xs text-gray-500">You</span>
-                          <span className="text-xs text-gray-500">{formatTime(message.created_at)}</span>
-                        </div>
-                      )}
-
-                      {/* Actions */}
-                      {isOwnMessage(message) && (
-                        <div className="flex space-x-2 mt-1 justify-end">
-                          <button onClick={() => handleEditMessage(message)} className="p-1 hover:bg-gray-200 rounded">
-                            <Edit3 className="h-3 w-3" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteMessage(message.id)}
-                            className="p-1 hover:bg-gray-200 rounded"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </button>
-                        </div>
-                      )}
-
-                      {!isOwnMessage(message) && (
-                        <div className="flex space-x-2 mt-1">
-                          <button onClick={() => handleReply(message)} className="p-1 hover:bg-gray-200 rounded">
-                            <Reply className="h-3 w-3" />
-                          </button>
-                        </div>
-                      )}
                     </div>
                   </div>
                 ))}

@@ -17,8 +17,8 @@ export function BackToHomeButton({ className = '' }: BackToHomeButtonProps) {
       onClick={handleBackToHome}
       className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 hover:bg-opacity-80 ${className}`}
       style={{
-        backgroundColor: '#E0F2FE',
-        color: '#0284C7',
+        backgroundColor: '#20B2AA',
+        color: '#FFFFFF',
         border: 'none',
         cursor: 'pointer',
         fontSize: '14px',
@@ -34,7 +34,7 @@ export function BackToHomeButton({ className = '' }: BackToHomeButtonProps) {
       >
         <path
           d="M15 18L9 12L15 6"
-          stroke="#0284C7"
+          stroke="#FFFFFF"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
