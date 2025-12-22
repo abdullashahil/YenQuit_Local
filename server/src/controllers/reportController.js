@@ -53,6 +53,7 @@ const getAsReport = async (res, next, type) => {
       SELECT 
         u.id as user_id, 
         COALESCE(u.full_name, u.email) as user_identifier,
+        TO_CHAR(uar.created_at, 'YYYY-MM-DD HH24:MI:SS') as created_at,
         TO_CHAR(fap.quit_date, 'YYYY-MM-DD') as quit_date,
         fap.triggers,
         uar.question_id, 
@@ -73,7 +74,9 @@ const getAsReport = async (res, next, type) => {
     answersRes.rows.forEach(row => {
       if (!userMap[row.user_id]) {
         const userObj = {
+          "User ID": row.user_id,
           "User Name": row.user_identifier,
+          "Date": row.created_at || '-',
           "Current Quit Date": row.quit_date || '-',
           "Triggers": row.triggers || '-'
         };
@@ -138,41 +141,44 @@ const getFagerstromReport = async (res, next, type) => {
       return sendResponse(res, []);
     }
 
-    // 2. Fetch User Answers
+    // 2. Fetch History (Multiple attempts per user)
     const userTypeFilter = tobaccoCategory === 'smoked'
       ? "(u.tobacco_type = 'smoked' OR u.tobacco_type IS NULL)"
       : "u.tobacco_type = 'smokeless'";
 
+    const historySql = `
+      SELECT 
+        fh.user_id,
+        COALESCE(u.full_name, u.email) as user_identifier,
+        TO_CHAR(fh.created_at, 'YYYY-MM-DD HH24:MI:SS') as test_date,
+        (fh.history_data->>'score')::int as score,
+        fh.created_at as raw_date
+      FROM fivea_history fh
+      JOIN users u ON fh.user_id = u.id
+      WHERE fh.stage = 'fagerstrom'
+      AND ${userTypeFilter}
+      ORDER BY fh.user_id, fh.created_at DESC
+    `;
+    const historyRes = await query(historySql);
+
+    // 3. Fetch Current Answers (Only exists for current state)
     const answersSql = `
       SELECT 
-        u.id as user_id, 
-        COALESCE(u.full_name, u.email) as user_identifier,
+        uar.user_id,
         uar.question_id, 
         uar.response_data
-      FROM users u
-      JOIN user_assessment_responses uar ON u.id = uar.user_id
+      FROM user_assessment_responses uar
       JOIN assessment_questions aq ON uar.question_id = aq.id
-      WHERE ${userTypeFilter}
-      AND aq.category = 'fagerstrom'
+      WHERE aq.category = 'fagerstrom'
       AND aq.metadata->>'tobacco_category' = $1
-      ORDER BY u.id, aq.id
     `;
     const answersRes = await query(answersSql, [tobaccoCategory]);
 
-    // 3. Construct Matrix
-    const userMap = {};
-
+    // Map answers by user_id -> question_id -> value
+    const answersMap = {};
     answersRes.rows.forEach(row => {
-      if (!userMap[row.user_id]) {
-        const userObj = { "User Name": row.user_identifier };
-        // Initialize all question columns to empty
-        questions.forEach(q => {
-          userObj[q.question_text] = '-';
-        });
-        userMap[row.user_id] = userObj;
-      }
+      if (!answersMap[row.user_id]) answersMap[row.user_id] = {};
 
-      // Parse answer
       let val = row.response_data;
       if (typeof val === 'string') {
         try {
@@ -182,17 +188,45 @@ const getFagerstromReport = async (res, next, type) => {
           }
         } catch (e) { }
       }
-      // If array, join it
       if (Array.isArray(val)) val = val.join(', ');
 
-      // Assign to correct column
-      const q = questions.find(q => q.id === row.question_id);
-      if (q) {
-        userMap[row.user_id][q.question_text] = val;
-      }
+      answersMap[row.user_id][row.question_id] = val;
     });
 
-    const report = Object.values(userMap);
+    // 4. Construct Report
+    // Group history by user to identify the "latest" one
+    const userHistoryCount = {};
+    historyRes.rows.forEach(row => {
+      if (!userHistoryCount[row.user_id]) userHistoryCount[row.user_id] = 0;
+      userHistoryCount[row.user_id]++;
+    });
+
+    // We iterate history. Use a tracker to know if we already assigned answers to this user (for the latest row)
+    const userAnswersAssigned = {};
+
+    const report = historyRes.rows.map(row => {
+      const isLatest = !userAnswersAssigned[row.user_id]; // Since we ordered by DESC, first one we see is latest
+      if (isLatest) userAnswersAssigned[row.user_id] = true;
+
+      const rowObj = {
+        "User ID": row.user_id,
+        "User Name": row.user_identifier,
+        "Date": row.test_date,
+        "Score": row.score !== null ? row.score : '-'
+      };
+
+      questions.forEach(q => {
+        // Only show detailed answers if this is the latest historical entry (proxy for current state)
+        if (isLatest && answersMap[row.user_id] && answersMap[row.user_id][q.id]) {
+          rowObj[q.question_text] = answersMap[row.user_id][q.id];
+        } else {
+          rowObj[q.question_text] = '-';
+        }
+      });
+
+      return rowObj;
+    });
+
     sendResponse(res, report);
 
   } catch (err) {
@@ -228,6 +262,7 @@ const getGenericPivotReport = async (res, next, categoryFilter, contextFilter = 
       SELECT 
         u.id as user_id, 
         COALESCE(u.full_name, u.email) as user_identifier,
+        TO_CHAR(uar.created_at, 'YYYY-MM-DD HH24:MI:SS') as created_at,
         uar.question_id, 
         uar.response_data
       FROM users u
@@ -252,7 +287,11 @@ const getGenericPivotReport = async (res, next, categoryFilter, contextFilter = 
 
     answersRes.rows.forEach(row => {
       if (!userMap[row.user_id]) {
-        const userObj = { "User Name": row.user_identifier };
+        const userObj = {
+          "User ID": row.user_id,
+          "User Name": row.user_identifier,
+          "Date": row.created_at || '-'
+        };
         questions.forEach(q => {
           userObj[q.question_text] = '-';
         });
@@ -303,11 +342,11 @@ export const getRsReport = async (req, res, next) => {
     const sql = `
       SELECT 
         u.id as user_id,
-        COALESCE(u.full_name, u.email) as user_identifier,
+        COALESCE(u.full_name, u.email) as username,
         rp.current_step, 
         rp.is_completed, 
-        TO_CHAR(rp.started_at, 'YYYY-MM-DD') as started_at,
-        TO_CHAR(rp.completed_at, 'YYYY-MM-DD') as completed_at,
+        TO_CHAR(rp.started_at, 'YYYY-MM-DD') as done_at,
+
         
         -- Aggregate Coping Strategies
         (
@@ -334,14 +373,14 @@ export const getDailyLogsReport = async (req, res, next) => {
     const sql = `
       SELECT 
         u.id as user_id,
-        COALESCE(u.full_name, u.email) as user_identifier,
+        COALESCE(u.full_name, u.email) as username,
         TO_CHAR(dl.log_date, 'YYYY-MM-DD') as log_date, 
         dl.smoked,
         dl.cigarettes_count, 
         dl.cravings_level, 
         dl.mood, 
-        dl.notes,
-        dl.created_at
+        dl.notes
+
       FROM daily_logs dl
       JOIN users u ON dl.user_id = u.id
       ORDER BY dl.log_date DESC
@@ -359,25 +398,19 @@ export const getContentSeekingsReport = async (req, res, next) => {
     const sql = `
       SELECT 
         u.id as user_id,
-        COALESCE(u.full_name, u.email) as user_identifier,
-        lp.content_ids,
+        COALESCE(u.full_name, u.email) as username,
         -- Calculate length of JSON array if it is an array
         CASE 
           WHEN jsonb_typeof(lp.content_ids) = 'array' THEN jsonb_array_length(lp.content_ids)
           ELSE 0 
-        END as items_consumed_count,
-        lp.updated_at as last_activity
+        END as yt_views,
+        TO_CHAR(lp.updated_at, 'YYYY-MM-DD') as last_activity
       FROM user_learning_progress lp
       JOIN users u ON lp.user_id = u.id
       ORDER BY u.id
     `;
     const result = await query(sql);
-    // Format content_ids to be readable string if needed, or keep as array
-    const rows = result.rows.map(row => ({
-      ...row,
-      content_ids: Array.isArray(row.content_ids) ? row.content_ids.join(', ') : JSON.stringify(row.content_ids)
-    }));
-    sendResponse(res, rows);
+    sendResponse(res, result.rows);
   } catch (err) {
     next(err);
   }

@@ -207,11 +207,11 @@ export default function ReportsPage() {
                     </div>
                   ) : data.length > 0 ? (
                     <div className="overflow-x-auto">
-                      <table className="w-full text-left text-sm text-gray-600">
+                      <table className="w-full text-center text-sm text-gray-600">
                         <thead className="bg-gradient-to-r from-blue-50 to-cyan-50 text-xs uppercase font-bold text-[#1C3B5E]">
                           <tr>
                             {Object.keys(data[0]).map((key) => (
-                              <th key={key} className="px-6 py-4 whitespace-nowrap tracking-wider">{key.replace(/_/g, " ")}</th>
+                              <th key={key} className="px-6 py-4 whitespace-nowrap tracking-wider text-center">{key.replace(/_/g, " ")}</th>
                             ))}
                           </tr>
                         </thead>
@@ -219,7 +219,7 @@ export default function ReportsPage() {
                           {data.map((row, index) => (
                             <tr key={index} className="transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-50/30 hover:to-cyan-50/30">
                               {Object.values(row).map((val: any, i) => (
-                                <td key={i} className="px-6 py-4 whitespace-nowrap">
+                                <td key={i} className="px-6 py-4 whitespace-nowrap text-center">
                                   {typeof val === 'object' ? JSON.stringify(val) : String(val)}
                                 </td>
                               ))}
