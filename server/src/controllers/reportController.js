@@ -203,6 +203,7 @@ const getFagerstromReport = async (res, next, type) => {
 
     // We iterate history. Use a tracker to know if we already assigned answers to this user (for the latest row)
     const userAnswersAssigned = {};
+    let lastUserId = null;
 
     const report = historyRes.rows.map(row => {
       const isLatest = !userAnswersAssigned[row.user_id]; // Since we ordered by DESC, first one we see is latest
@@ -215,9 +216,18 @@ const getFagerstromReport = async (res, next, type) => {
         "Score": row.score !== null ? row.score : '-'
       };
 
+      // Grouping Logic: If same user as previous row, blank out ID and Name to create "sub-row" effect
+      if (lastUserId === row.user_id) {
+        rowObj["User ID"] = "";
+        rowObj["User Name"] = "";
+      } else {
+        lastUserId = row.user_id;
+      }
+
       questions.forEach(q => {
-        // Only show detailed answers if this is the latest historical entry (proxy for current state)
-        if (isLatest && answersMap[row.user_id] && answersMap[row.user_id][q.id]) {
+        // Show current answers for all historical entries as per user request
+        // (Note: This displays the *latest* answers for past dates if individual history wasn't stored)
+        if (answersMap[row.user_id] && answersMap[row.user_id][q.id]) {
           rowObj[q.question_text] = answersMap[row.user_id][q.id];
         } else {
           rowObj[q.question_text] = '-';
