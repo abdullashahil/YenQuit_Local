@@ -272,6 +272,9 @@ export function DailyLogModal({ open, onOpenChange, onLogChange, quitDate }: Dai
             </div>
 
             <div className="px-2">
+              <Label className="text-sm block mb-3" style={{ color: "#1C3B5E" }}>
+                Cravings
+              </Label>
               <CravingSlider
                 value={cravingLevel}
                 onChange={setCravingLevel}

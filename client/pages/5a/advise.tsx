@@ -1,6 +1,7 @@
 import { FiveA_Advise } from '../../src/components/features/flow-5a/Advise';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
+import { getRandomAdviseFallback } from '../../src/utils/aiFallback';
 
 export default function AdvisePage() {
   const router = useRouter();
@@ -25,7 +26,15 @@ export default function AdvisePage() {
         const json = await res.json();
         setData(json);
       } catch (e: any) {
-        setError(e.message || 'Failed to load advise');
+        console.error("Advise fetch failed, using fallback:", e);
+        // Fallback dummy data if API fails
+        setData({
+          video: "https://www.youtube.com/watch?v=HuW3xK8I4Y0", // Generic health video
+          quote: "Small steps every day lead to big changes.",
+          ai_message: getRandomAdviseFallback()
+        });
+        // We do typically set error state, but here we want to show fallback
+        // setError(e.message || 'Failed to load advise'); 
       } finally {
         setAiLoading(false);
       }
