@@ -218,8 +218,34 @@ router.post('/', async (req, res) => {
     if (userId && !skipStorage) {
       try {
         await appendChatMessage(userId, 'user', message);
+
+        // Increment ai_interaction_count in user_learning_progress
+        // We do this using ON CONFLICT to ensure row exists if it doesn't
+        const updateAiCountSql = `
+          INSERT INTO user_learning_progress (user_id, ai_interaction_count, content_ids)
+          VALUES ($1, 1, '[]'::jsonb)
+          ON CONFLICT (id) DO NOTHING; -- This relies on ID which we don't have.
+          -- Wait, user_learning_progress has user_id FK, but not unique constraint on user_id?
+          -- Let's check schema. user_learning_progress has PK id, FK user_id. 
+          -- If there is a unique constraint on user_id, we can upsert. 
+          -- If not, we first try UPDATE, if 0 rows, we INSERT.
+        `;
+
+        // Using a safer approach: Try UPDATE, if result.rowCount === 0, INSERT
+        const updateRes = await query(
+          'UPDATE user_learning_progress SET ai_interaction_count = COALESCE(ai_interaction_count, 0) + 1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1',
+          [userId]
+        );
+
+        if (updateRes.rowCount === 0) {
+          await query(
+            'INSERT INTO user_learning_progress (user_id, ai_interaction_count, content_ids) VALUES ($1, 1, $2)',
+            [userId, JSON.stringify([])]
+          );
+        }
+
       } catch (dbError) {
-        console.error('Failed to store user message:', dbError);
+        console.error('Failed to store user message or update stats:', dbError);
         // Continue with AI response even if DB storage fails
       }
     }

@@ -130,7 +130,7 @@ export const addContentToProgress = async (req, res) => {
     }
 
     const userId = req.user.userId; // Changed from req.user.id to req.user.userId
-    const { contentId } = req.body;
+    const { contentId, type } = req.body;
 
     console.log('Controller - userId:', userId, 'contentId:', contentId);
 
@@ -149,9 +149,22 @@ export const addContentToProgress = async (req, res) => {
     if (existingProgress.rows.length === 0) {
       // Create new entry with this content ID
       updatedContentIds = [contentId];
+
+      let insertFields = 'user_id, content_ids';
+      let insertValues = '$1, $2';
+      let insertParams = [userId, JSON.stringify(updatedContentIds)];
+
+      if (type === 'image') {
+        insertFields += ', image_view_count';
+        insertValues += ', 1';
+      } else if (type === 'blog' || type === 'quote') {
+        insertFields += ', text_view_count';
+        insertValues += ', 1';
+      }
+
       await query(
-        'INSERT INTO user_learning_progress (user_id, content_ids) VALUES ($1, $2)',
-        [userId, JSON.stringify(updatedContentIds)]
+        `INSERT INTO user_learning_progress (${insertFields}) VALUES (${insertValues})`,
+        insertParams
       );
     } else {
       // Update existing entry
@@ -162,10 +175,19 @@ export const addContentToProgress = async (req, res) => {
       // Add the content ID to the end (most recent)
       updatedContentIds = [...filteredIds, contentId];
 
-      await query(
-        'UPDATE user_learning_progress SET content_ids = $1 WHERE user_id = $2',
-        [JSON.stringify(updatedContentIds), userId]
-      );
+      let updateSql = 'UPDATE user_learning_progress SET content_ids = $1, updated_at = CURRENT_TIMESTAMP';
+      let updateParams = [JSON.stringify(updatedContentIds)];
+
+      if (type === 'image') {
+        updateSql += ', image_view_count = COALESCE(image_view_count, 0) + 1';
+      } else if (type === 'blog' || type === 'quote') {
+        updateSql += ', text_view_count = COALESCE(text_view_count, 0) + 1';
+      }
+
+      updateSql += ' WHERE user_id = $2';
+      updateParams.push(userId);
+
+      await query(updateSql, updateParams);
     }
 
     res.json({

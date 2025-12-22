@@ -11,10 +11,11 @@ interface ContentViewPageProps {
   contentType: "video" | "podcast" | "image" | "blog" | "quote";
   items: PublicContentItem[];
   onBack: () => void;
+  onItemClick: (content: PublicContentItem) => void;
 }
 
-export function ContentViewPage({ contentType, items, onBack }: ContentViewPageProps) {
-  const [fullscreenVideo, setFullscreenVideo] = useState<{url: string, title: string, id: string | null, key?: number} | null>(null);
+export function ContentViewPage({ contentType, items, onBack, onItemClick }: ContentViewPageProps) {
+  const [fullscreenVideo, setFullscreenVideo] = useState<{ url: string, title: string, id: string | null, key?: number } | null>(null);
 
   const closeFullscreenVideo = useCallback(() => {
     setFullscreenVideo(null);
@@ -91,15 +92,20 @@ export function ContentViewPage({ contentType, items, onBack }: ContentViewPageP
   };
 
   const handleContentSelect = (content: PublicContentItem) => {
-    // Handle video/podcast playback using local video modal
+    // Call parent handler for tracking
+    if (onItemClick) {
+      onItemClick(content);
+    }
+
+    // Also handle local video playback if parent doesn't handle it (fallback)
+    // Note: If parent handles it, this might be redundant or cause double modals depending on parent implementation.
+    // Given the LearningHub logic, the parent handler will hijack the view for videos, so we are safe.
     if ((contentType === "video" || contentType === "podcast")) {
-      handleVideoClick(content);
-    } else if (contentType === "image") {
-      // For images, we could show a modal or just log - the LearningSection already handles image modal
-      console.log('Selected image content:', content);
+      // We let the parent handle it if it does. If we wanted local only: handleVideoClick(content);
+      // But if we want tracking, we MUST use parent.
+      // The parent handler tracks AND opens video modal.
     } else {
-      // Handle other content types (can be expanded based on requirements)
-      console.log('Selected content:', content);
+      // For other content
     }
   };
 
@@ -163,14 +169,14 @@ export function ContentViewPage({ contentType, items, onBack }: ContentViewPageP
 
       {/* Floating Recommended Sidebar */}
       {/* <RecommendedSidebar /> */}
-      
+
       {/* Fullscreen Video Modal */}
       {fullscreenVideo && fullscreenVideo.id && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4"
           onClick={closeFullscreenVideo}
         >
-          <div 
+          <div
             className="relative w-full max-w-4xl"
             onClick={e => e.stopPropagation()}
           >
@@ -181,7 +187,7 @@ export function ContentViewPage({ contentType, items, onBack }: ContentViewPageP
             >
               <X className="w-8 h-8" />
             </button>
-            
+
             <div className="relative" style={{ paddingBottom: '56.25%', backgroundColor: '#000' }}>
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-full h-full" key={fullscreenVideo.key}>
@@ -196,9 +202,9 @@ export function ContentViewPage({ contentType, items, onBack }: ContentViewPageP
                     referrerPolicy="strict-origin-when-cross-origin"
                   />
                   <div className="text-center mt-2 text-gray-400 text-sm">
-                    If the video doesn't load, try <a 
-                      href={`https://www.youtube.com/watch?v=${fullscreenVideo.id}`} 
-                      target="_blank" 
+                    If the video doesn't load, try <a
+                      href={`https://www.youtube.com/watch?v=${fullscreenVideo.id}`}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-400 hover:underline"
                       onClick={e => e.stopPropagation()}
@@ -209,7 +215,7 @@ export function ContentViewPage({ contentType, items, onBack }: ContentViewPageP
                 </div>
               </div>
             </div>
-            
+
             <div className="mt-4 px-2">
               <h2 className="text-xl font-semibold text-white">{fullscreenVideo.title}</h2>
             </div>

@@ -37,7 +37,7 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedContent, setSelectedContent] = useState<PublicContentItem | null>(null);
-  const [fullscreenVideo, setFullscreenVideo] = useState<{url: string, title: string, id: string | null, key?: number} | null>(null);
+  const [fullscreenVideo, setFullscreenVideo] = useState<{ url: string, title: string, id: string | null, key?: number } | null>(null);
 
   const closeFullscreenVideo = useCallback(() => {
     setFullscreenVideo(null);
@@ -57,15 +57,15 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
   // Fetch all public content
   useEffect(() => {
     let isMounted = true;
-    
+
     const fetchContent = async () => {
       try {
         setLoading(true);
         setError(null);
         const response = await contentService.getPublicContent();
-        
+
         if (!isMounted) return;
-        
+
         const data = response?.data || response;
         setContent({
           videos: data.videos || [],
@@ -92,11 +92,11 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
     if (router.isReady && router.query.contentId && router.query.category) {
       const contentId = router.query.contentId as string;
       const category = router.query.category as string;
-      
+
       // Find the content in the fetched data
       const findAndDisplayContent = () => {
         let targetContent: PublicContentItem | null = null;
-        
+
         switch (category.toLowerCase()) {
           case 'video':
             targetContent = content.videos.find(item => item.id === contentId) || null;
@@ -114,13 +114,13 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
             targetContent = content.quotes.find(item => item.id === contentId) || null;
             break;
         }
-        
+
         if (targetContent) {
           // Just track the content visit, don't auto-navigate to category view
           handleContentSelect(targetContent);
         }
       };
-      
+
       if (content.videos.length > 0 || content.podcasts.length > 0) {
         findAndDisplayContent();
       }
@@ -172,23 +172,29 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
   const handleContentSelect = async (content: PublicContentItem) => {
     // Track content visit
     try {
+      const type = content.category ? content.category.toLowerCase() : 'video';
+      console.log(`[Content Tracking] Selecting content: ID=${content.id}, Category=${content.category}, Type=${type}`);
+
       const token = localStorage.getItem('accessToken');
       console.log('LearningHub - Token from localStorage:', token ? 'Token exists' : 'No token found');
       console.log('LearningHub - Tracking content visit for content ID:', content.id);
-      
+
       if (token) {
         const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
         console.log('LearningHub - Sending POST request to:', `${API_URL}/learning-progress`);
-        
+
         const response = await fetch(`${API_URL}/learning-progress`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({ contentId: content.id })
+          body: JSON.stringify({
+            contentId: content.id,
+            type: type
+          })
         });
-        
+
         console.log('LearningHub - API response status:', response.status);
         if (response.ok) {
           const data = await response.json();
@@ -224,7 +230,7 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
   const renderMediaContent = (content: PublicContentItem) => {
     if (content.category === 'Video' || content.category === 'Podcast') {
       if (!content.media_url) return null;
-      
+
       const videoId = getYoutubeId(content.media_url);
       if (videoId) {
         return (
@@ -252,7 +258,7 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
       }
       return <div className="text-red-500">Invalid video URL</div>;
     }
-    
+
     if (content.category === 'Blog') {
       return (
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -262,17 +268,17 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
               <h3 className="text-xl font-semibold text-gray-800">{content.title}</h3>
             </div>
             {content.content && (
-              <div className="prose max-w-none text-gray-600" dangerouslySetInnerHTML={{ 
-                __html: content.content.length > 200 
-                  ? `${content.content.substring(0, 200)}...` 
-                  : content.content 
+              <div className="prose max-w-none text-gray-600" dangerouslySetInnerHTML={{
+                __html: content.content.length > 200
+                  ? `${content.content.substring(0, 200)}...`
+                  : content.content
               }} />
             )}
           </div>
         </div>
       );
     }
-    
+
     if (content.category === 'Quote') {
       return (
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 h-full">
@@ -292,7 +298,7 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
         </div>
       );
     }
-    
+
     if (content.category === 'Image') {
       return (
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -319,7 +325,7 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
         </div>
       );
     }
-    
+
     return null;
   };
 
@@ -345,7 +351,7 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
             <p className="font-medium">Error loading content</p>
             <p className="text-sm mt-1">{error}</p>
           </div>
-          <Button 
+          <Button
             onClick={() => window.location.reload()}
             className="bg-blue-600 hover:bg-blue-700"
           >
@@ -362,6 +368,7 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
         contentType={contentType}
         items={getContentItems()}
         onBack={handleBackToHub}
+        onItemClick={handleContentSelect}
       />
     );
   }
@@ -369,11 +376,11 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
   // Fullscreen Video Modal
   if (fullscreenVideo && fullscreenVideo.id) {
     return (
-      <div 
+      <div
         className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4"
         onClick={closeFullscreenVideo}
       >
-        <div 
+        <div
           className="relative w-full max-w-4xl"
           onClick={e => e.stopPropagation()}
         >
@@ -384,7 +391,7 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
           >
             <X className="w-8 h-8" />
           </button>
-          
+
           <div className="relative" style={{ paddingBottom: '56.25%', backgroundColor: '#000' }}>
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-full h-full" key={fullscreenVideo.key}>
@@ -399,9 +406,9 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
                   referrerPolicy="strict-origin-when-cross-origin"
                 />
                 <div className="text-center mt-2 text-gray-400 text-sm">
-                  If the video doesn't load, try <a 
-                    href={`https://www.youtube.com/watch?v=${fullscreenVideo.id}`} 
-                    target="_blank" 
+                  If the video doesn't load, try <a
+                    href={`https://www.youtube.com/watch?v=${fullscreenVideo.id}`}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-400 hover:underline"
                     onClick={e => e.stopPropagation()}
@@ -412,7 +419,7 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
               </div>
             </div>
           </div>
-          
+
           <div className="mt-4 px-2">
             <h2 className="text-xl font-semibold text-white">{fullscreenVideo.title}</h2>
           </div>
@@ -428,10 +435,10 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
         <div className="w-full">
           {currentView === "hub" ? (
             <>
-          <div className="mb-12">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Learning Hub</h1>
-            <p className="text-gray-600">Discover educational resources to support your journey</p>
-          </div>
+              <div className="mb-12">
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">Learning Hub</h1>
+                <p className="text-gray-600">Discover educational resources to support your journey</p>
+              </div>
 
               <div className="space-y-16 mb-16">
                 {/* Videos Section */}
@@ -489,7 +496,7 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
                   />
                 )} */}
 
-                
+
               </div>
             </>
           ) : (
@@ -497,6 +504,7 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
               contentType={contentType}
               items={getContentItems()}
               onBack={handleBackToHub}
+              onItemClick={handleContentSelect}
             />
           )}
         </div>

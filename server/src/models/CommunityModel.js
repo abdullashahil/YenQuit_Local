@@ -109,8 +109,7 @@ class CommunityModel {
         u.email,
         u.role,
         u.created_at,
-        u.full_name,
-        u.avatar_url
+        u.full_name
       FROM community_members cm
       JOIN users u ON cm.user_id = u.id
       WHERE cm.community_id = $1

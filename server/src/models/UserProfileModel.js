@@ -7,7 +7,6 @@ class UserProfileModel {
       SELECT 
         id,
         full_name,
-        avatar_url,
         phone,
         bio,
         age,
@@ -20,7 +19,7 @@ class UserProfileModel {
       FROM users 
       WHERE id = $1
     `;
-    
+
     try {
       const result = await query(sql, [userId]);
       return result.rows[0] || null;
@@ -32,27 +31,25 @@ class UserProfileModel {
 
   // Create or update user profile (now updates users table directly)
   static async upsert(userId, profileData) {
-    const { full_name, avatar_url, phone, bio, age, gender, tobacco_type, fagerstrom_score, addiction_level, join_date } = profileData;
-    
+    const { full_name, phone, bio, age, gender, tobacco_type, fagerstrom_score, addiction_level, join_date } = profileData;
+
     const sql = `
       UPDATE users 
       SET 
         full_name = COALESCE($2, full_name),
-        avatar_url = COALESCE($3, avatar_url),
-        phone = COALESCE($4, phone),
-        bio = COALESCE($5, bio),
-        age = COALESCE($6, age),
-        gender = COALESCE($7, gender),
-        tobacco_type = COALESCE($8, tobacco_type),
-        fagerstrom_score = COALESCE($9, fagerstrom_score),
-        addiction_level = COALESCE($10, addiction_level),
-        join_date = COALESCE($11, join_date),
+        phone = COALESCE($3, phone),
+        bio = COALESCE($4, bio),
+        age = COALESCE($5, age),
+        gender = COALESCE($6, gender),
+        tobacco_type = COALESCE($7, tobacco_type),
+        fagerstrom_score = COALESCE($8, fagerstrom_score),
+        addiction_level = COALESCE($9, addiction_level),
+        join_date = COALESCE($10, join_date),
         updated_at = CURRENT_TIMESTAMP
       WHERE id = $1
       RETURNING 
         id,
         full_name,
-        avatar_url,
         phone,
         bio,
         age,
@@ -63,9 +60,9 @@ class UserProfileModel {
         join_date,
         updated_at
     `;
-    
+
     try {
-      const result = await query(sql, [userId, full_name, avatar_url, phone, bio, age, gender, tobacco_type, fagerstrom_score, addiction_level, join_date]);
+      const result = await query(sql, [userId, full_name, phone, bio, age, gender, tobacco_type, fagerstrom_score, addiction_level, join_date]);
       return result.rows[0];
     } catch (error) {
       console.error('Error upserting user profile:', error);
@@ -83,7 +80,6 @@ class UserProfileModel {
         status,
         created_at,
         full_name,
-        avatar_url,
         phone,
         bio,
         age,
@@ -96,7 +92,7 @@ class UserProfileModel {
       FROM users
       WHERE id = $1
     `;
-    
+
     try {
       const result = await query(sql, [userId]);
       return result.rows[0];
