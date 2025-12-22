@@ -96,42 +96,43 @@ next-env.d.ts
 package-lock.json
 client/tsconfig.tsbuildinfo
 
-# # ==============================================================================
-# # SECTION 2: CONTENT & DOCUMENTATION (TOGGLE FOR AI CONTEXT)
-# # Comment these out if you want the AI to read READMEs, docs, or specific schemas.
-# # ==============================================================================
+# ==============================================================================
+# SECTION 2: CONTENT & DOCUMENTATION (TOGGLE FOR AI CONTEXT)
+# Comment these out if you want the AI to read READMEs, docs, or specific schemas.
+# ==============================================================================
 
-# # -- Documentation --
-# **/*.md
-# !README.md
-# /docs/
+# -- Documentation --
+**/*.md
+!README.md
+/docs/
 
-# # -- Database Schemas (Comment out to allow AI to see schema files) --
-# **/*.sql
-# !**/migrations/*.sql
+# -- Database Schemas (Comment out to allow AI to see schema files) --
+**/*.sql
+!**/migrations/*.sql
 
-# # -- Bruno / API Docs --
-# *.bruno.json
-# bruno-export/
+# -- Bruno / API Docs --
+*.bruno.json
+bruno-export/
 
-# server/uploads
-# server/package-lock.json
+server/uploads
+server/package-lock.json
 
 
-# # ==============================================================================
-# # SECTION 3: OTHER / MISC
-# # ==============================================================================
+# ==============================================================================
+# SECTION 3: OTHER / MISC
+# ==============================================================================
 
-# # Test assets
-# test-data/
-# test-avatars/
-# *.test.jpg
-# *.test.png
-# fake-avatar.*
-# oversized.*
-# large-avatar.*
+# Test assets
+test-data/
+// turbo
+test-avatars/
+*.test.jpg
+*.test.png
+fake-avatar.*
+oversized.*
+large-avatar.*
 
-# # Development DBs
-# *.sqlite
-# *.sqlite3
-# *.db
+# Development DBs
+*.sqlite
+*.sqlite3
+*.db
