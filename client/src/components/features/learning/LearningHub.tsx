@@ -99,19 +99,19 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
 
         switch (category.toLowerCase()) {
           case 'video':
-            targetContent = content.videos.find(item => item.id === contentId) || null;
+            targetContent = content.videos.find(item => item.id === Number(contentId)) || null;
             break;
           case 'podcast':
-            targetContent = content.podcasts.find(item => item.id === contentId) || null;
+            targetContent = content.podcasts.find(item => item.id === Number(contentId)) || null;
             break;
           case 'image':
-            targetContent = content.images.find(item => item.id === contentId) || null;
+            targetContent = content.images.find(item => item.id === Number(contentId)) || null;
             break;
           case 'blog':
-            targetContent = content.blogs.find(item => item.id === contentId) || null;
+            targetContent = content.blogs.find(item => item.id === Number(contentId)) || null;
             break;
           case 'quote':
-            targetContent = content.quotes.find(item => item.id === contentId) || null;
+            targetContent = content.quotes.find(item => item.id === Number(contentId)) || null;
             break;
         }
 
@@ -405,19 +405,20 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
                   loading="eager"
                   referrerPolicy="strict-origin-when-cross-origin"
                 />
-                <div className="text-center mt-2 text-gray-400 text-sm">
-                  If the video doesn't load, try <a
-                    href={`https://www.youtube.com/watch?v=${fullscreenVideo.id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-400 hover:underline"
-                    onClick={e => e.stopPropagation()}
-                  >
-                    watching on YouTube
-                  </a>
-                </div>
               </div>
             </div>
+          </div>
+
+          <div className="text-center mt-2 text-gray-400 text-sm">
+            If the video doesn't load, try <a
+              href={`https://www.youtube.com/watch?v=${fullscreenVideo.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:underline"
+              onClick={e => e.stopPropagation()}
+            >
+              watching on YouTube
+            </a>
           </div>
 
           <div className="mt-4 px-2">

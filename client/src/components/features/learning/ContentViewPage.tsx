@@ -201,19 +201,20 @@ export function ContentViewPage({ contentType, items, onBack, onItemClick }: Con
                     loading="eager"
                     referrerPolicy="strict-origin-when-cross-origin"
                   />
-                  <div className="text-center mt-2 text-gray-400 text-sm">
-                    If the video doesn't load, try <a
-                      href={`https://www.youtube.com/watch?v=${fullscreenVideo.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-400 hover:underline"
-                      onClick={e => e.stopPropagation()}
-                    >
-                      watching on YouTube
-                    </a>
-                  </div>
                 </div>
               </div>
+            </div>
+
+            <div className="text-center mt-2 text-gray-400 text-sm">
+              If the video doesn't load, try <a
+                href={`https://www.youtube.com/watch?v=${fullscreenVideo.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-400 hover:underline"
+                onClick={e => e.stopPropagation()}
+              >
+                watching on YouTube
+              </a>
             </div>
 
             <div className="mt-4 px-2">

@@ -3,17 +3,9 @@ import { ReactNode, useState } from "react";
 import { Card, CardContent, CardFooter } from "../../ui/card";
 import { Button } from "../../ui/button";
 import { Dialog, DialogContent } from "../../ui/dialog";
+import { PublicContentItem } from "../../../services/contentService";
 
-export interface ContentItem {
-  id: string;
-  title: string;
-  description?: string;
-  media_url?: string;
-  content?: string;
-  category: string;
-  publish_date?: string;
-  tags?: string[];
-}
+export type ContentItem = PublicContentItem;
 
 interface LearningSectionProps {
   title: string;
@@ -48,7 +40,7 @@ const BlogCard = ({ item, onItemClick }: { item: ContentItem; onItemClick?: (ite
     onItemClick?.(item);
   };
 
-  const getFirstLine = (text?: string) => {
+  const getFirstLine = (text?: string | null) => {
     if (!text) return '';
     const lines = text.split(/\r\n|\r|\n/);
     return lines[0] + (lines.length > 1 ? '...' : '');
