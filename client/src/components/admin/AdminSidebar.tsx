@@ -66,9 +66,11 @@ export function AdminSidebar({ activeTab, setActiveTab, onExitAdmin, onLogout }:
       {/* Admin Header */}
       <div className="p-6 border-b border-white/10">
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-3 rounded-2xl bg-gradient-to-r from-[#20B2AA] to-[#1C9B94] shadow-lg">
-            <Shield className="w-6 h-6 text-white" />
-          </div>
+          <img
+            src="/images/YenQuit_logo.jpg"
+            alt="YenQuit Logo"
+            className="w-20 h-20 object-contain"
+          />
           <div>
             <h2 className="text-xl font-bold text-white">Admin Panel</h2>
             <p className="text-sm text-white/60">YenQuit System Management</p>

@@ -17,10 +17,10 @@ export function NewTrackerModal({ open, onOpenChange, onComplete }: NewTrackerMo
 
   // Get today's date in YYYY-MM-DD format
   const today = new Date().toISOString().split('T')[0];
-  
+
   // Get minimum date (today)
   const minDate = today;
-  
+
   // Get maximum date (1 year from today)
   const maxDate = new Date();
   maxDate.setFullYear(maxDate.getFullYear() + 1);
@@ -37,12 +37,12 @@ export function NewTrackerModal({ open, onOpenChange, onComplete }: NewTrackerMo
       setError(null);
 
       console.log('🗓️ Creating new tracker with quit date:', selectedDate);
-      
+
       // Update the quit date in the assist plan
       await quitTrackerService.updateQuitDate(selectedDate);
-      
+
       console.log('✅ New tracker created successfully');
-      
+
       onComplete();
       onOpenChange(false);
     } catch (err: any) {
@@ -80,18 +80,18 @@ export function NewTrackerModal({ open, onOpenChange, onComplete }: NewTrackerMo
         </div>
 
         {/* Content */}
-          <div className="p-6">
-            <div className="text-center mb-6">
-              <div className="p-3 rounded-2xl mb-4 mx-auto w-fit" style={{ backgroundColor: "#20B2AA20" }}>
-                <Calendar className="w-6 h-6" style={{ color: "#20B2AA" }} />
-              </div>
-              <h3 className="text-lg font-semibold mb-2" style={{ color: "#1C3B5E" }}>
-                Choose Your New Quit Date
-              </h3>
-              <p className="text-sm" style={{ color: "#333333" }}>
-                Select a future date to begin your new quit tracking journey
-              </p>
+        <div className="p-6">
+          <div className="text-center mb-6">
+            <div className="p-3 rounded-2xl mb-4 mx-auto w-fit" style={{ backgroundColor: "#20B2AA20" }}>
+              <Calendar className="w-6 h-6" style={{ color: "#20B2AA" }} />
             </div>
+            <h3 className="text-lg font-semibold mb-2" style={{ color: "#1C3B5E" }}>
+              Choose Your New Quit Date
+            </h3>
+            <p className="text-sm" style={{ color: "#333333" }}>
+              Select a future date to begin your new quit tracking journey
+            </p>
+          </div>
 
           {/* Date Picker */}
           <div className="space-y-4">

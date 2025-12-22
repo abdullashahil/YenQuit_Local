@@ -79,7 +79,7 @@ interface ChatAreaProps {
 export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) {
   // Determine YenAI mode
   const isYenAI = String(community?.id) === "yenai-chat"
-  const { incrementUnreadCount, markAsRead } = useNotifications()
+  const { incrementUnreadCount, markAsRead, setActiveCommunityId } = useNotifications()
 
   // Helper to get current user info
   const getCurrentUser = () => {
@@ -255,7 +255,7 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
 
       // Additional defensive check - don't fetch if user is not a member
       if (!isYenAI && !c.user_role) {
-        console.log('DEBUG: Blocking message fetch for non-member')
+
         return
       }
 
@@ -410,23 +410,23 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
 
     // Additional defensive check - don't run effects for non-members
     if (!isYenAI && !community.user_role) {
-      console.log('DEBUG [Effect]: Blocking useEffect for non-member')
+
       socketInitializedRef.current = false
       return
     }
 
     if (isYenAI) {
-      console.log('DEBUG [Effect]: Loading YenAI history')
+
       fetchYenaiHistory()
       return
     }
 
-    console.log('DEBUG [Effect]: Loading messages for community:', community.id)
+
     fetchMessages()
 
     // Prevent double initialization in React Strict Mode
     if (socketInitializedRef.current) {
-      console.log('DEBUG [Effect]: Socket already initialized for this community, skipping')
+
       return
     }
 
@@ -450,6 +450,7 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
 
     // Clear badge immediately in notification context
     markAsRead(Number(community.id))
+    setActiveCommunityId(Number(community.id))
 
     // Mark messages as read on server when opening chat
     const markAsReadOnServer = async () => {

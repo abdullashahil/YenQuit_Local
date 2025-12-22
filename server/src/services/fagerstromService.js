@@ -53,12 +53,20 @@ export async function createFagerstromQuestion({ question_text, options, tobacco
   if (!question_text || !Array.isArray(options) || options.length === 0) {
     throw new Error('question_text and non-empty options array are required');
   }
+
+  // Validate/Format options
+  const formattedOptions = options.map(opt => {
+    if (typeof opt === 'string') return { text: opt, score: 0 };
+    if (typeof opt === 'object' && opt.text) return { text: opt.text, score: parseInt(opt.score) || 0 };
+    throw new Error('Invalid option format: must be string or object with text property');
+  });
+
   const category = tobacco_category || 'smoked';
   const res = await query(
     `INSERT INTO assessment_questions (category, question_text, options, metadata) 
      VALUES ('fagerstrom', $1, $2, $3) 
      RETURNING id, question_text, options, is_active, created_at, updated_at, metadata`,
-    [question_text, JSON.stringify(options), JSON.stringify({ tobacco_category: category })]
+    [question_text, JSON.stringify(formattedOptions), JSON.stringify({ tobacco_category: category })]
   );
   return mapQuestion(res.rows[0]);
 }
@@ -74,13 +82,26 @@ export async function updateFagerstromQuestion(id, { question_text, options, is_
   if (question_text !== undefined) { fields.push(`question_text = $${idx++}`); values.push(question_text); }
   if (options !== undefined) {
     if (!Array.isArray(options) || options.length === 0) throw new Error('options must be a non-empty array');
-    fields.push(`options = $${idx++}`); values.push(JSON.stringify(options));
+
+    // Validate/Format options
+    const formattedOptions = options.map(opt => {
+      if (typeof opt === 'string') return { text: opt, score: 0 };
+      if (typeof opt === 'object' && opt.text) return { text: opt.text, score: parseInt(opt.score) || 0 };
+      throw new Error('Invalid option format: must be string or object with text property');
+    });
+
+    fields.push(`options = $${idx++}`); values.push(JSON.stringify(formattedOptions));
   }
   if (is_active !== undefined) { fields.push(`is_active = $${idx++}`); values.push(is_active); }
 
   let newMetadata = { tobacco_category: current.tobacco_category };
   if (tobacco_category !== undefined) {
     newMetadata.tobacco_category = tobacco_category;
+  }
+
+  // Ensure metadata is updated if changed or if we need to set it (when other fields change but metadata relies on current)
+  // Actually, we only update metadata if tobacco_category changes.
+  if (tobacco_category !== undefined) {
     fields.push(`metadata = $${idx++}`);
     values.push(JSON.stringify(newMetadata));
   }
@@ -137,9 +158,9 @@ export async function getFagerstromUserAnswers(userId) {
   // normalize response_data (handle both string and JSON formats)
   return res.rows.map(r => ({
     ...r,
-    answer_text: typeof r.answer_text === 'string' ? 
-      (r.answer_text.startsWith('"') || r.answer_text.startsWith('[') || r.answer_text.startsWith('{') ? 
-        JSON.parse(r.answer_text) : r.answer_text) : 
+    answer_text: typeof r.answer_text === 'string' ?
+      (r.answer_text.startsWith('"') || r.answer_text.startsWith('[') || r.answer_text.startsWith('{') ?
+        JSON.parse(r.answer_text) : r.answer_text) :
       r.answer_text
   }));
 }

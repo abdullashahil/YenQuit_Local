@@ -48,7 +48,7 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
     const loadData = async () => {
       try {
         setLoading(true);
-        
+
         // Load coping strategies and notification templates
         const [strategiesData, templatesData, currentPlan, userNotifs] = await Promise.all([
           getCopingStrategies(),
@@ -56,16 +56,16 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
           getUserAssistPlan(),
           getUserNotifications()
         ]);
-        
+
         setCopingStrategies(strategiesData);
         setNotificationTemplates(templatesData);
         setUserNotifications(userNotifs);
-        
+
         // Check if user has already completed the assist step
         if (currentPlan && currentPlan.quit_date) {
           setIsCompleted(true);
         }
-        
+
         // Initialize notifications state from templates and user preferences
         const notifState: Record<string, { enabled: boolean; time: string }> = {};
         templatesData.forEach(template => {
@@ -77,7 +77,7 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
           };
         });
         setNotifications(notifState);
-        
+
         // Load current plan data if exists
         if (currentPlan) {
           if (currentPlan.quit_date) {
@@ -96,7 +96,7 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
         setLoading(false);
       }
     };
-    
+
     loadData();
   }, []);
 
@@ -106,11 +106,11 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
       const timer = setTimeout(() => {
         setRedirectCountdown(redirectCountdown - 1);
       }, 1000);
-      
+
       if (redirectCountdown === 1) {
         router.push('/app');
       }
-      
+
       return () => clearTimeout(timer);
     }
   }, [showSuccessModal, redirectCountdown, router]);
@@ -140,19 +140,19 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
   const handleNext = async () => {
     try {
       setSaving(true);
-      
+
       // Save assist plan
       await createOrUpdateUserAssistPlan({
         quitDate: quitDate ? quitDate.toISOString().split('T')[0] : undefined,
         triggers: triggers || undefined,
         selectedStrategyIds: selectedStrategies
       });
-      
+
       // Save notifications
       const notificationData = Object.entries(notifications).map(([key, config]) => {
         const template = notificationTemplates.find(t => t.key === key);
         let timeValue = null;
-        
+
         if (config.enabled && config.time && config.time.trim()) {
           // Validate time format (HH:MM)
           const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
@@ -162,23 +162,23 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
             console.warn(`Invalid time format for ${key}: ${config.time}`);
           }
         }
-        
+
         return {
           template_id: template?.id || 0,
           enabled: config.enabled,
           time: timeValue
         };
       }).filter(n => n.template_id > 0);
-      
+
       console.log('Sending notification data:', notificationData);
-      
+
       if (notificationData.length > 0) {
         await upsertUserNotifications({ notifications: notificationData });
       }
-      
+
       // Mark as completed
       setIsCompleted(true);
-      
+
       // Update onboarding progress
       onNext({
         quitDate,
@@ -186,7 +186,7 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
         triggers,
         notifications
       });
-      
+
       // Show success modal instead of immediate navigation
       setShowSuccessModal(true);
       setRedirectCountdown(5);
@@ -231,17 +231,17 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
             steps={['ASK', 'ADVISE', 'ASSESS', 'ASSIST', 'ARRANGE']}
             currentStep={3}
           />
-          
+
           <div className="max-w-2xl mx-auto">
             <div className="bg-white rounded-3xl shadow-lg p-8 border border-gray-100 brand-card mt-6">
               <CheckCircle2 className="h-16 w-16 text-[#20B2AA] mx-auto mb-6" />
-              
+
               <h1 className="brand-heading mb-4">Assistance Plan Completed!</h1>
-              
+
               <p className="brand-text mb-8 text-lg">
                 You've already completed your personalized quit plan. Your quit date, coping strategies, and notifications have been set up successfully.
               </p>
-              
+
               <div className="space-y-4">
                 <Button
                   onClick={() => router.push('/app')}
@@ -253,7 +253,7 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
                 >
                   Go to Dashboard
                 </Button>
-                
+
                 <Button
                   onClick={() => window.location.href = '/5a/arrange'}
                   variant="outline"
@@ -404,61 +404,61 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
             </div>
           </div>
 
-        {/* Identify Triggers */}
-        <div className="mb-8">
-          <Label className="brand-text block mb-3">
-            Identify Your Triggers
-          </Label>
-          <Textarea
-            value={triggers}
-            onChange={(e) => setTriggers(e.target.value)}
-            placeholder="What situations, emotions, or activities trigger your tobacco use? (e.g., stress at work, after meals, social gatherings)"
-            className={`min-h-32 rounded-xl border brand-border ${isCompleted ? 'opacity-60 cursor-not-allowed' : ''}`}
-            disabled={isCompleted}
-          />
-        </div>
+          {/* Identify Triggers */}
+          <div className="mb-8">
+            <Label className="brand-text block mb-3">
+              Identify Your Triggers
+            </Label>
+            <Textarea
+              value={triggers}
+              onChange={(e) => setTriggers(e.target.value)}
+              placeholder="What situations, emotions, or activities trigger your tobacco use? (e.g., stress at work, after meals, social gatherings)"
+              className={`min-h-32 rounded-xl border brand-border ${isCompleted ? 'opacity-60 cursor-not-allowed' : ''}`}
+              disabled={isCompleted}
+            />
+          </div>
 
-        {/* Support Connection */}
-        <div className="mb-8 bg-[#20B2AA]/10 rounded-2xl p-6 border-l-4 border-[#20B2AA]">
-          <h3 className="brand-heading mb-2">Need Professional Support?</h3>
-          <p className="brand-text mb-4 text-sm">
-            Connect with a trained counselor who can provide personalized guidance and support throughout your journey.
-          </p>
-          <Button
-            variant="outline"
-            className="rounded-2xl md:rounded-3xl p-6 md:p-8 lg:p-10 brand-btn-outline-accent hover:opacity-90"
-            onClick={handleComplete}
-            disabled={saving}
-          >
-            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            Connect with a Counselor
-          </Button>
-        </div>
+          {/* Support Connection */}
+          <div className="mb-8 bg-[#20B2AA]/10 rounded-2xl p-6 border-l-4 border-[#20B2AA]">
+            <h3 className="brand-heading mb-2">Need Professional Support?</h3>
+            <p className="brand-text mb-4 text-sm">
+              Connect with a trained counselor who can provide personalized guidance and support throughout your journey.
+            </p>
+            <Button
+              variant="outline"
+              className="rounded-2xl md:rounded-3xl p-6 md:p-8 lg:p-10 brand-btn-outline-accent hover:opacity-90"
+              onClick={handleComplete}
+              disabled={saving}
+            >
+              {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Connect with a Counselor
+            </Button>
+          </div>
 
-        {/* Dynamic Notification Scheduler */}
-        <div className="mb-8">
-          <h2 className="text-[#1C3B5E] mb-4">Set Up Your Reminders</h2>
-          
-          <div className="space-y-4">
-            {notificationTemplates.map((template) => (
-              <div key={template.id} className="bg-gray-50 rounded-xl p-6">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex-1">
-                    <Label className="text-[#1C3B5E] font-medium">{template.title}</Label>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {template.key === 'daily_motivation' && 'Start your day with encouragement'}
-                      {template.key === 'progress_checkin' && 'Reflect on your day and log progress'}
-                      {template.key === 'weekly_tip' && 'Expert advice delivered weekly'}
-                    </p>
+          {/* Dynamic Notification Scheduler */}
+          <div className="mb-8">
+            <h2 className="text-[#1C3B5E] mb-4">Set Up Your Reminders</h2>
+
+            <div className="space-y-4">
+              {notificationTemplates.map((template) => (
+                <div key={template.id} className="bg-gray-50 rounded-xl p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex-1">
+                      <Label className="text-[#1C3B5E] font-medium">{template.title}</Label>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {template.key === 'daily_motivation' && 'Start your day with encouragement'}
+                        {template.key === 'progress_checkin' && 'Reflect on your day and log progress'}
+                        {template.key === 'weekly_tip' && 'Expert advice delivered weekly'}
+                      </p>
+                    </div>
+                    <Switch
+                      checked={notifications[template.key]?.enabled || false}
+                      onCheckedChange={() => handleToggle(template.key)}
+                      className={`h-6 w-11 data-[state=checked]:bg-[#20B2AA] data-[state=unchecked]:bg-gray-300 transition-colors duration-200 ${isCompleted ? 'opacity-60 cursor-not-allowed' : ''}`}
+                      disabled={isCompleted}
+                    />
                   </div>
-                  <Switch
-                    checked={notifications[template.key]?.enabled || false}
-                    onCheckedChange={() => handleToggle(template.key)}
-                    className={`h-6 w-11 data-[state=checked]:bg-[#20B2AA] data-[state=unchecked]:bg-gray-300 transition-colors duration-200 ${isCompleted ? 'opacity-60 cursor-not-allowed' : ''}`}
-                    disabled={isCompleted}
-                  />
-                </div>
-                <div className={`mt-4 pl-1 overflow-hidden transition-all duration-300 ease-in-out ${notifications[template.key]?.enabled ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
+                  <div className={`mt-4 pl-1 overflow-hidden transition-all duration-300 ease-in-out ${notifications[template.key]?.enabled ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
                     <div className="flex items-center space-x-3">
                       <div className="w-32">
                         <Label className="text-sm font-medium text-gray-700">Time</Label>
@@ -478,7 +478,7 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
                     </div>
                   </div>
                 </div>
-                ))}
+              ))}
             </div>
           </div>
 
@@ -530,29 +530,29 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
             >
               <X className="w-6 h-6" />
             </button>
-            
+
             <div className="text-center">
               <div className="w-16 h-16 bg-[#20B2AA] rounded-full flex items-center justify-center mx-auto mb-4">
                 <CheckCircle2 className="text-white" size={32} />
               </div>
-              
+
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Plan Complete!</h2>
-              
+
               <p className="text-lg text-gray-700 mb-4">
                 You are tobacco-free starting{' '}
                 <strong>{quitDate ? format(quitDate, 'MMMM d yyyy') : 'your chosen date'}</strong>
               </p>
-              
+
               <p className="text-gray-600 mb-6">
                 Your personalized quit plan is ready! You can now access your dashboard and start your journey.
               </p>
-              
+
               <div className="bg-gray-50 rounded-2xl p-4 mb-6">
                 <p className="text-sm text-gray-600 mb-2">Redirecting to dashboard in...</p>
                 <div className="text-3xl font-bold text-[#20B2AA]">{redirectCountdown}</div>
                 <p className="text-xs text-gray-500 mt-1">seconds</p>
               </div>
-              
+
               <div className="space-y-3">
                 <Button
                   onClick={() => router.push('/app')}

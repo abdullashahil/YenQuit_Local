@@ -3,10 +3,11 @@
 import { useState, useEffect, useMemo } from "react"
 import { Plus, Search, ChevronDown, Sparkles, Bell } from "lucide-react"
 import axios from "axios"
-import CommunityCard from "./community-card" // default export from your CommunityCard file
+import CommunityCard from "./community-card"
 import InviteUsersModal from "./InviteUsersModal"
 import PendingInvitesModal from "./PendingInvitesModal"
 import { useNotifications } from "@/contexts/NotificationContext"
+import socketService from "@/services/socketService"
 
 interface Community {
   id: string
@@ -46,7 +47,7 @@ export default function CommunityList({ selectedCommunity, onSelectCommunity }: 
   const [showPendingInvites, setShowPendingInvites] = useState(false)
   const [pendingInvites, setPendingInvites] = useState<any[]>([])
   const [pendingCount, setPendingCount] = useState(0)
-  const { unreadCounts, markAsRead, setUnreadCount } = useNotifications()
+  const { unreadCounts, markAsRead, setUnreadCount, incrementUnreadCount } = useNotifications()
 
   // Fetch communities from backend
   const fetchCommunities = async () => {
@@ -110,6 +111,8 @@ export default function CommunityList({ selectedCommunity, onSelectCommunity }: 
     fetchPendingInvites()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+
 
   // Map server community shape to UICommunity used by CommunityCard
   const uiCommunities: Community[] = useMemo(() => {
@@ -202,7 +205,10 @@ export default function CommunityList({ selectedCommunity, onSelectCommunity }: 
 
     // Mark messages as read when selecting a community
     if (id !== "yenai-chat") {
-      markAsRead(id)
+      const communityIdNum = parseInt(id, 10)
+      if (!isNaN(communityIdNum)) {
+        markAsRead(communityIdNum)
+      }
     }
 
     onSelectCommunity(id, community)

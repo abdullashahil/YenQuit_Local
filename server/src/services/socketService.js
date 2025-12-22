@@ -46,6 +46,10 @@ class SocketService {
           }
 
           socket.userId = userId;
+
+          // Join individual user room for global notifications
+          socket.join(`user_${userId}`);
+
           socket.emit('authenticated', { success: true });
 
         } catch (error) {
@@ -169,8 +173,20 @@ class SocketService {
           // Increment unread count for all members except sender
           await CommunityModel.incrementUnreadCount(communityId, userId);
 
-          // Broadcast to all members in community
+          // Broadcast to all members currently in the community room
           this.io.to(`community_${communityId}`).emit('new_message', fullMessage);
+
+          // Get all community members to notify those not currently in the room
+          const members = await CommunityModel.getMembers(communityId);
+
+          // Broadcast to each member's individual socket room
+          members.forEach(member => {
+            // Don't send back to the sender as their client handles it locally
+            // and they are already in the community room if they sent the message
+            if (String(member.user_id) !== String(userId)) {
+              this.io.to(`user_${member.user_id}`).emit('new_message', fullMessage);
+            }
+          });
 
         } catch (error) {
           console.error('Error sending message:', error);

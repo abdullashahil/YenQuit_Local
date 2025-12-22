@@ -135,7 +135,7 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
     loadData();
   }, []);
 
-  const handleFagerstromAnswer = (questionId: number, value: string) => {
+  const handleFagerstromAnswer = (questionId: string, value: string) => {
     if (submitted) return;
     setFagerstromAnswers(prev => ({ ...prev, [questionId]: value }));
   };
@@ -312,7 +312,7 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
                     </div>
                     <Slider
                       value={[assessAnswers[`assess_${q.id}`] as number || 5]}
-                      onValueChange={(val) => handleAssessAnswer(q.id.toString(), val[0])}
+                      onValueChange={(val) => handleAssessAnswer(q.id, val[0])}
                       min={1}
                       max={10}
                       step={1}
@@ -337,39 +337,47 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
                   // Radio options if options array provided
                   <RadioGroup
                     value={String(assessAnswers[`assess_${q.id}`] || '')}
-                    onValueChange={(value) => handleAssessAnswer(q.id.toString(), value)}
+                    onValueChange={(value) => handleAssessAnswer(q.id, value)}
                     className="space-y-1"
                   >
-                    {q.options.map((option) => (
-                      <div
-                        key={option}
-                        className="flex items-center p-4 rounded-xl transition-all duration-200"
-                        style={{
-                          backgroundColor: typeof assessAnswers[`assess_${q.id}`] === 'string' && assessAnswers[`assess_${q.id}`] === option ? 'rgba(32, 178, 170, 0.08)' : 'transparent',
-                          border: `2px solid ${typeof assessAnswers[`assess_${q.id}`] === 'string' && assessAnswers[`assess_${q.id}`] === option ? '#20B2AA' : 'transparent'}`,
-                          cursor: submitted ? 'not-allowed' : 'pointer'
-                        }}
-                        onClick={() => !submitted && handleAssessAnswer(q.id.toString(), option)}
-                      >
-                        <RadioGroupItem
-                          value={option}
-                          id={`assess-${q.id}-${option}`}
-                          className="w-5 h-5"
+                    {q.options?.map((option, optIndex) => {
+                      // Safety check: handle both string and object options
+                      const optionText = (typeof option === 'object' && option !== null)
+                        ? ((option as any).text || String(option))
+                        : String(option ?? '');
+                      const optionKey = `assess-${q.id}-${optIndex}`;
+
+                      return (
+                        <div
+                          key={optionKey}
+                          className="flex items-center p-4 rounded-xl transition-all duration-200"
                           style={{
-                            borderColor: '#20B2AA',
-                            color: '#20B2AA'
+                            backgroundColor: typeof assessAnswers[`assess_${q.id}`] === 'string' && assessAnswers[`assess_${q.id}`] === optionText ? 'rgba(32, 178, 170, 0.08)' : 'transparent',
+                            border: `2px solid ${typeof assessAnswers[`assess_${q.id}`] === 'string' && assessAnswers[`assess_${q.id}`] === optionText ? '#20B2AA' : 'transparent'}`,
+                            cursor: submitted ? 'not-allowed' : 'pointer'
                           }}
-                          disabled={submitted}
-                        />
-                        <Label
-                          htmlFor={`assess-${q.id}-${option}`}
-                          className="ml-4 cursor-pointer flex-1"
-                          style={{ color: '#333333', cursor: submitted ? 'not-allowed' : 'pointer' }}
+                          onClick={() => !submitted && handleAssessAnswer(q.id, optionText)}
                         >
-                          {option}
-                        </Label>
-                      </div>
-                    ))}
+                          <RadioGroupItem
+                            value={optionText}
+                            id={optionKey}
+                            className="w-5 h-5"
+                            style={{
+                              borderColor: '#20B2AA',
+                              color: '#20B2AA'
+                            }}
+                            disabled={submitted}
+                          />
+                          <Label
+                            htmlFor={optionKey}
+                            className="ml-4 cursor-pointer flex-1"
+                            style={{ color: '#333333', cursor: submitted ? 'not-allowed' : 'pointer' }}
+                          >
+                            {optionText}
+                          </Label>
+                        </div>
+                      );
+                    })}
                   </RadioGroup>
                 )}
               </div>
@@ -403,36 +411,44 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
                   className="space-y-1"
                   disabled={submitted}
                 >
-                  {q.options.map((option) => (
-                    <div
-                      key={option}
-                      className="flex items-center p-4 rounded-xl transition-all duration-200"
-                      style={{
-                        backgroundColor: fagerstromAnswers[`q${q.id}`] === option ? 'rgba(32, 178, 170, 0.08)' : 'transparent',
-                        border: `2px solid ${fagerstromAnswers[`q${q.id}`] === option ? '#20B2AA' : 'transparent'}`,
-                        cursor: submitted ? 'not-allowed' : 'pointer'
-                      }}
-                      onClick={() => !submitted && handleFagerstromAnswer(`q${q.id}`, option)}
-                    >
-                      <RadioGroupItem
-                        value={option}
-                        id={`fagerstrom-${q.id}-${option}`}
-                        className="w-5 h-5"
+                  {q.options?.map((option, optIndex) => {
+                    // Safety check: handle both string and object options
+                    const optionText = (typeof option === 'object' && option !== null)
+                      ? ((option as any).text || String(option))
+                      : String(option ?? '');
+                    const optionKey = `fagerstrom-${q.id}-${optIndex}`;
+
+                    return (
+                      <div
+                        key={optionKey}
+                        className="flex items-center p-4 rounded-xl transition-all duration-200"
                         style={{
-                          borderColor: '#20B2AA',
-                          color: '#20B2AA'
+                          backgroundColor: fagerstromAnswers[`q${q.id}`] === optionText ? 'rgba(32, 178, 170, 0.08)' : 'transparent',
+                          border: `2px solid ${fagerstromAnswers[`q${q.id}`] === optionText ? '#20B2AA' : 'transparent'}`,
+                          cursor: submitted ? 'not-allowed' : 'pointer'
                         }}
-                        disabled={submitted}
-                      />
-                      <Label
-                        htmlFor={`fagerstrom-${q.id}-${option}`}
-                        className="ml-4 cursor-pointer flex-1"
-                        style={{ color: '#333333', cursor: submitted ? 'not-allowed' : 'pointer' }}
+                        onClick={() => !submitted && handleFagerstromAnswer(`q${q.id}`, optionText)}
                       >
-                        {option}
-                      </Label>
-                    </div>
-                  ))}
+                        <RadioGroupItem
+                          value={optionText}
+                          id={optionKey}
+                          className="w-5 h-5"
+                          style={{
+                            borderColor: '#20B2AA',
+                            color: '#20B2AA'
+                          }}
+                          disabled={submitted}
+                        />
+                        <Label
+                          htmlFor={optionKey}
+                          className="ml-4 cursor-pointer flex-1"
+                          style={{ color: '#333333', cursor: submitted ? 'not-allowed' : 'pointer' }}
+                        >
+                          {optionText}
+                        </Label>
+                      </div>
+                    );
+                  })}
                 </RadioGroup>
               </div>
             ))}

@@ -7,12 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { Loader2, Plus, Edit, Trash2, Save, X, MessageCircle, ClipboardCheck, Users, Activity } from 'lucide-react';
+import { Loader2, Plus, Edit, Trash2, Save, X, MessageCircle, ClipboardCheck, Users, Activity, Eye, EyeOff } from 'lucide-react';
+import { ConfirmDialog, AlertDialog } from '../ui/confirm-dialog';
 import {
   getCopingStrategies,
   createCopingStrategy,
   updateCopingStrategy,
   softDeleteCopingStrategy,
+  hardDeleteCopingStrategy,
   CopingStrategy
 } from '../../services/assistService';
 import {
@@ -23,6 +25,7 @@ import {
   createAssessmentQuestion,
   updateAssessmentQuestion,
   softDeleteAssessmentQuestion,
+  deleteAssessmentQuestion,
   AssessmentQuestion,
   CreateAssessmentQuestionRequest,
   UpdateAssessmentQuestionRequest
@@ -50,8 +53,8 @@ export function FiveAManagement({ activeTab, setActiveTab }: FiveAManagementProp
 
   const [formData, setFormData] = useState({
     question_text: '',
-    options: [''],
-    step: 'ask' as 'ask' | 'assess' | 'assist',
+    options: [{ text: '', score: 0 }],
+    step: 'ask' as 'ask' | 'advise' | 'assess' | 'assist' | 'arrange',
     tobacco_category: 'smoked' as 'smoked' | 'smokeless',
     question_type: 'multiple_choice' as 'multiple_choice' | 'checkboxes' | 'short_text' | 'long_text',
     display_order: 1,
@@ -62,6 +65,10 @@ export function FiveAManagement({ activeTab, setActiveTab }: FiveAManagementProp
     name: '',
     description: ''
   });
+
+  // Dialog states
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; id: number | null; type: 'question' | 'strategy' }>({ open: false, id: null, type: 'question' });
+  const [alertDialog, setAlertDialog] = useState<{ open: boolean; title: string; message: string; variant: 'danger' | 'warning' | 'info' | 'success' }>({ open: false, title: '', message: '', variant: 'info' });
 
   // Load all questions on mount
   useEffect(() => {
@@ -136,24 +143,32 @@ export function FiveAManagement({ activeTab, setActiveTab }: FiveAManagementProp
 
   const handleCreateQuestion = async () => {
     if (!formData.question_text.trim()) {
-      alert('Question text is required');
+      setAlertDialog({ open: true, title: 'Validation Error', message: 'Question text is required', variant: 'warning' });
       return;
     }
 
     try {
       setSaving(true);
 
+      const cleanedOptions = formData.options
+        .filter(o => o.text.trim())
+        .map(o => ({ text: o.text.trim(), score: parseInt(o.score as any) || 0 }));
+
       const requestData: any = {
         question_text: formData.question_text.trim(),
-        options: formData.options.filter(o => o.trim()),
         question_type: formData.question_type,
         display_order: formData.display_order,
-        tobacco_category: formData.tobacco_category
+        tobacco_category: formData.tobacco_category,
+        category: formData.category  // Add category field
       };
 
-      // Add step only for 5A questions
+      // For 5A questions: send string array and add step
       if (formData.category === 'fivea') {
         requestData.step = formData.step;
+        requestData.options = cleanedOptions.map(o => o.text);
+      } else {
+        // For Fagerstrom: send object array with scores
+        requestData.options = cleanedOptions;
       }
 
       await createAssessmentQuestion(requestData);
@@ -163,7 +178,7 @@ export function FiveAManagement({ activeTab, setActiveTab }: FiveAManagementProp
       await loadAllQuestions();
     } catch (error) {
       console.error('Error creating question:', error);
-      alert('Failed to create question. Please try again.');
+      setAlertDialog({ open: true, title: 'Error', message: `Failed to create question. ${error instanceof Error ? error.message : 'Please try again.'}`, variant: 'danger' });
     } finally {
       setSaving(false);
     }
@@ -178,17 +193,24 @@ export function FiveAManagement({ activeTab, setActiveTab }: FiveAManagementProp
     try {
       setSaving(true);
 
+      const cleanedOptions = formData.options
+        .filter(o => o.text.trim())
+        .map(o => ({ text: o.text.trim(), score: parseInt(o.score as any) || 0 }));
+
       const requestData: any = {
         question_text: formData.question_text.trim(),
-        options: formData.options.filter(o => o.trim()),
         question_type: formData.question_type,
         display_order: formData.display_order,
         tobacco_category: formData.tobacco_category
       };
 
-      // Add step only for 5A questions
+      // For 5A questions: send string array and add step
       if (formData.category === 'fivea') {
         requestData.step = formData.step;
+        requestData.options = cleanedOptions.map(o => o.text);
+      } else {
+        // For Fagerstrom: send object array with scores
+        requestData.options = cleanedOptions;
       }
 
       await updateAssessmentQuestion(id, requestData);
@@ -204,42 +226,70 @@ export function FiveAManagement({ activeTab, setActiveTab }: FiveAManagementProp
     }
   };
 
-  const handleDeleteQuestion = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this question? This action cannot be undone.')) {
-      return;
-    }
-
+  const handleToggleQuestionStatus = async (id: number, currentStatus: boolean) => {
     try {
-      await softDeleteAssessmentQuestion(id);
+      await updateAssessmentQuestion(id, { is_active: !currentStatus });
       await loadAllQuestions();
     } catch (error) {
+      console.error('Error toggling question status:', error);
+      setAlertDialog({ open: true, title: 'Error', message: `Failed to toggle question status. ${error instanceof Error ? error.message : 'Please try again.'}`, variant: 'danger' });
+    }
+  };
+
+  const handleDeleteQuestion = async (id: number) => {
+    setDeleteDialog({ open: true, id, type: 'question' });
+  };
+
+  const confirmDeleteQuestion = async () => {
+
+    const id = deleteDialog.id;
+    if (!id) return;
+
+    try {
+      await deleteAssessmentQuestion(id);
+      await loadAllQuestions();
+      setDeleteDialog({ open: false, id: null, type: 'question' });
+    } catch (error) {
       console.error('Error deleting question:', error);
-      alert('Failed to delete question. Please try again.');
+      setAlertDialog({ open: true, title: 'Error', message: `Failed to delete question. ${error instanceof Error ? error.message : 'Please try again.'}`, variant: 'danger' });
     }
   };
 
   const handleEditQuestion = (question: AssessmentQuestion) => {
-    console.log('Editing question:', question);
-    console.log('Question type from DB:', question.question_type);
-
     setEditing(question.id);
+
+    // Normalize options to {text, score} format
+    let normalizedOptions: { text: string, score: number }[] = [];
+
+    if (question.options && Array.isArray(question.options)) {
+      normalizedOptions = question.options.map((opt: any) => {
+        if (typeof opt === 'string') return { text: opt, score: 0 };
+        return { text: opt.text || '', score: opt.score || 0 };
+      });
+    } else {
+      normalizedOptions = [{ text: '', score: 0 }];
+    }
+
+    if (normalizedOptions.length === 0) normalizedOptions = [{ text: '', score: 0 }];
+
     setFormData({
       question_text: question.question_text,
-      options: question.options || [''],
+      options: normalizedOptions,
       step: question.metadata.step || 'ask',
       tobacco_category: question.metadata.tobacco_category,
       question_type: question.question_type || 'short_text',
       display_order: question.display_order || 1,
       category: currentTab === 'fagerstrom' ? 'fagerstrom' : 'fivea'
     });
+
     setShowCreateForm(false);
   };
 
   const resetForm = () => {
     setFormData({
       question_text: '',
-      options: [''],
-      step: currentTab === 'fagerstrom' ? 'ask' : currentTab as 'ask' | 'assess' | 'assist',
+      options: [{ text: '', score: 0 }],
+      step: currentTab === 'fagerstrom' ? 'ask' : currentTab as 'ask' | 'advise' | 'assess' | 'assist' | 'arrange',
       tobacco_category: tobaccoFilter,
       question_type: 'multiple_choice',
       display_order: 1,
@@ -250,13 +300,13 @@ export function FiveAManagement({ activeTab, setActiveTab }: FiveAManagementProp
   const addOption = () => {
     setFormData({
       ...formData,
-      options: [...formData.options, '']
+      options: [...formData.options, { text: '', score: 0 }]
     });
   };
 
-  const updateOption = (index: number, value: string) => {
+  const updateOption = (index: number, field: 'text' | 'score', value: string | number) => {
     const newOptions = [...formData.options];
-    newOptions[index] = value;
+    newOptions[index] = { ...newOptions[index], [field]: value };
     setFormData({
       ...formData,
       options: newOptions
@@ -269,6 +319,7 @@ export function FiveAManagement({ activeTab, setActiveTab }: FiveAManagementProp
       options: formData.options.filter((_, i) => i !== index)
     });
   };
+
 
   // Strategy handlers
   const handleCreateStrategy = async () => {
@@ -319,17 +370,32 @@ export function FiveAManagement({ activeTab, setActiveTab }: FiveAManagementProp
     }
   };
 
-  const handleDeleteStrategy = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this strategy?')) {
-      return;
-    }
-
+  const handleToggleStrategyStatus = async (id: number, currentStatus: boolean) => {
     try {
-      await softDeleteCopingStrategy(id);
+      await updateCopingStrategy(id, { is_active: !currentStatus });
       await loadStrategies();
     } catch (error) {
+      console.error('Error toggling strategy status:', error);
+      setAlertDialog({ open: true, title: 'Error', message: `Failed to toggle strategy status. ${error instanceof Error ? error.message : 'Please try again.'}`, variant: 'danger' });
+    }
+  };
+
+  const handleDeleteStrategy = async (id: number) => {
+    setDeleteDialog({ open: true, id, type: 'strategy' });
+  };
+
+  const confirmDeleteStrategy = async () => {
+
+    const id = deleteDialog.id;
+    if (!id) return;
+
+    try {
+      await hardDeleteCopingStrategy(id);
+      await loadStrategies();
+      setDeleteDialog({ open: false, id: null, type: 'strategy' });
+    } catch (error) {
       console.error('Error deleting strategy:', error);
-      alert('Failed to delete strategy. Please try again.');
+      setAlertDialog({ open: true, title: 'Error', message: `Failed to delete strategy. ${error instanceof Error ? error.message : 'Please try again.'}`, variant: 'danger' });
     }
   };
 
@@ -411,12 +477,19 @@ export function FiveAManagement({ activeTab, setActiveTab }: FiveAManagementProp
             handleCreateQuestion={handleCreateQuestion}
             handleUpdateQuestion={handleUpdateQuestion}
             handleEditQuestion={handleEditQuestion}
+            handleToggleQuestionStatus={handleToggleQuestionStatus}
             handleDeleteQuestion={handleDeleteQuestion}
             setEditing={setEditing}
             resetForm={resetForm}
             addOption={addOption}
             updateOption={updateOption}
             removeOption={removeOption}
+            deleteDialog={deleteDialog}
+            setDeleteDialog={setDeleteDialog}
+            alertDialog={alertDialog}
+            setAlertDialog={setAlertDialog}
+            confirmDeleteQuestion={confirmDeleteQuestion}
+            confirmDeleteStrategy={confirmDeleteStrategy}
           />
         </TabsContent>
 
@@ -438,12 +511,19 @@ export function FiveAManagement({ activeTab, setActiveTab }: FiveAManagementProp
             handleCreateQuestion={handleCreateQuestion}
             handleUpdateQuestion={handleUpdateQuestion}
             handleEditQuestion={handleEditQuestion}
+            handleToggleQuestionStatus={handleToggleQuestionStatus}
             handleDeleteQuestion={handleDeleteQuestion}
             setEditing={setEditing}
             resetForm={resetForm}
             addOption={addOption}
             updateOption={updateOption}
             removeOption={removeOption}
+            deleteDialog={deleteDialog}
+            setDeleteDialog={setDeleteDialog}
+            alertDialog={alertDialog}
+            setAlertDialog={setAlertDialog}
+            confirmDeleteQuestion={confirmDeleteQuestion}
+            confirmDeleteStrategy={confirmDeleteStrategy}
           />
         </TabsContent>
 
@@ -465,12 +545,19 @@ export function FiveAManagement({ activeTab, setActiveTab }: FiveAManagementProp
             handleCreateQuestion={handleCreateQuestion}
             handleUpdateQuestion={handleUpdateQuestion}
             handleEditQuestion={handleEditQuestion}
+            handleToggleQuestionStatus={handleToggleQuestionStatus}
             handleDeleteQuestion={handleDeleteQuestion}
             setEditing={setEditing}
             resetForm={resetForm}
             addOption={addOption}
             updateOption={updateOption}
             removeOption={removeOption}
+            deleteDialog={deleteDialog}
+            setDeleteDialog={setDeleteDialog}
+            alertDialog={alertDialog}
+            setAlertDialog={setAlertDialog}
+            confirmDeleteQuestion={confirmDeleteQuestion}
+            confirmDeleteStrategy={confirmDeleteStrategy}
           />
         </TabsContent>
 
@@ -483,7 +570,7 @@ export function FiveAManagement({ activeTab, setActiveTab }: FiveAManagementProp
             </div>
             <Button
               onClick={() => setShowCreateStrategyForm(!showCreateStrategyForm)}
-              className="h-10 rounded-xl flex items-center gap-2 px-4 bg-[#20B2AA] hover:bg-[#1C9B94]"
+              className="h-10 rounded-xl flex items-center gap-2 px-4 bg-[#20B2AA] hover:bg-[#1C9B94] text-white"
             >
               <Plus className="w-4 h-4" />
               Add Strategy
@@ -618,6 +705,17 @@ export function FiveAManagement({ activeTab, setActiveTab }: FiveAManagementProp
                           <Button
                             variant="outline"
                             size="sm"
+                            onClick={() => handleToggleStrategyStatus(strategy.id, strategy.is_active)}
+                            className={strategy.is_active
+                              ? "hover:bg-orange-50 hover:text-orange-600 hover:border-orange-600"
+                              : "hover:bg-green-50 hover:text-green-600 hover:border-green-600"}
+                            title={strategy.is_active ? "Deactivate strategy" : "Activate strategy"}
+                          >
+                            {strategy.is_active ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => handleEditStrategy(strategy)}
                             className="hover:bg-[#20B2AA]/10 hover:text-[#20B2AA] hover:border-[#20B2AA]"
                           >
@@ -662,12 +760,19 @@ interface QuestionTabContentProps {
   handleCreateQuestion: () => void;
   handleUpdateQuestion: (id: number) => void;
   handleEditQuestion: (question: AssessmentQuestion) => void;
+  handleToggleQuestionStatus: (id: number, currentStatus: boolean) => void;
   handleDeleteQuestion: (id: number) => void;
   setEditing: (value: number | null) => void;
   resetForm: () => void;
   addOption: () => void;
-  updateOption: (index: number, value: string) => void;
+  updateOption: (index: number, field: 'text' | 'score', value: string | number) => void;
   removeOption: (index: number) => void;
+  deleteDialog: { open: boolean; id: number | null; type: 'question' | 'strategy' };
+  setDeleteDialog: React.Dispatch<React.SetStateAction<{ open: boolean; id: number | null; type: 'question' | 'strategy' }>>;
+  alertDialog: { open: boolean; title: string; message: string; variant: 'danger' | 'warning' | 'info' | 'success' };
+  setAlertDialog: React.Dispatch<React.SetStateAction<{ open: boolean; title: string; message: string; variant: 'danger' | 'warning' | 'info' | 'success' }>>;
+  confirmDeleteQuestion: () => Promise<void>;
+  confirmDeleteStrategy: () => Promise<void>;
 }
 
 function QuestionTabContent({
@@ -686,12 +791,19 @@ function QuestionTabContent({
   handleCreateQuestion,
   handleUpdateQuestion,
   handleEditQuestion,
+  handleToggleQuestionStatus,
   handleDeleteQuestion,
   setEditing,
   resetForm,
   addOption,
   updateOption,
-  removeOption
+  removeOption,
+  deleteDialog,
+  setDeleteDialog,
+  alertDialog,
+  setAlertDialog,
+  confirmDeleteQuestion,
+  confirmDeleteStrategy
 }: QuestionTabContentProps) {
   return (
     <>
@@ -719,8 +831,13 @@ function QuestionTabContent({
           )}
         </div>
         <Button
-          onClick={() => setShowCreateForm(!showCreateForm)}
-          className="h-10 rounded-xl flex items-center gap-2 px-4 bg-[#20B2AA] hover:bg-[#1C9B94]"
+          onClick={() => {
+            if (!showCreateForm) {
+              resetForm(); // Reset form to sync tobacco_category with current filter
+            }
+            setShowCreateForm(!showCreateForm);
+          }}
+          className="h-10 rounded-xl flex items-center gap-2 px-4 bg-[#20B2AA] hover:bg-[#1C9B94] text-white"
         >
           <Plus className="w-4 h-4" />
           Add Question
@@ -784,22 +901,38 @@ function QuestionTabContent({
 
               {(formData.question_type === 'multiple_choice' || formData.question_type === 'checkboxes') && (
                 <div>
-                  <Label>Options *</Label>
+                  <div className="flex justify-between">
+                    <Label>Options *</Label>
+                    {formData.category === 'fagerstrom' && <span className="text-xs text-gray-500">Score</span>}
+                  </div>
                   <div className="space-y-2 mt-1">
-                    {formData.options.map((option: string, index: number) => (
+                    {formData.options.map((option: any, index: number) => (
                       <div key={index} className="flex items-center gap-2">
-                        <Input
-                          value={option}
-                          onChange={(e) => updateOption(index, e.target.value)}
-                          placeholder={`Option ${index + 1}`}
-                        />
+                        <div className="flex-1">
+                          <Input
+                            value={option.text !== undefined ? option.text : option} // Handle both object and string for safety during transition
+                            onChange={(e) => updateOption(index, 'text', e.target.value)}
+                            placeholder={`Option ${index + 1}`}
+                          />
+                        </div>
+                        {formData.category === 'fagerstrom' && (
+                          <div className="w-24">
+                            <Input
+                              type="number"
+                              value={option.score !== undefined ? option.score : 0}
+                              onChange={(e) => updateOption(index, 'score', parseInt(e.target.value) || 0)}
+                              placeholder="Score"
+                              min="0"
+                            />
+                          </div>
+                        )}
                         {formData.options.length > 1 && (
                           <Button
                             type="button"
                             variant="outline"
-                            size="sm"
+                            size="icon"
                             onClick={() => removeOption(index)}
-                            className="hover:bg-red-50 hover:text-red-600 hover:border-red-600"
+                            className="hover:bg-red-50 hover:text-red-600 hover:border-red-600 h-10 w-10 shrink-0"
                           >
                             <X className="w-4 h-4" />
                           </Button>
@@ -824,7 +957,7 @@ function QuestionTabContent({
                 <Button
                   onClick={editing ? () => handleUpdateQuestion(editing) : handleCreateQuestion}
                   disabled={saving}
-                  className="bg-[#20B2AA] hover:bg-[#1C9B94]"
+                  className="bg-[#20B2AA] hover:bg-[#1C9B94] text-white"
                 >
                   {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                   {editing ? 'Update Question' : 'Create Question'}
@@ -876,25 +1009,54 @@ function QuestionTabContent({
                           Order: {question.display_order}
                         </Badge>
                         {!question.is_active && <Badge variant="destructive">Inactive</Badge>}
+                        {/* Only show category badge if we are not in a specific tab, or just for clarity */}
+                        {question.category === 'fagerstrom' && <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Fagerström</Badge>}
                       </div>
                       <h4 className="font-medium text-gray-900 mb-3 text-lg">{question.question_text}</h4>
 
-                      {question.options && question.options.length > 0 && (
+                      {question.options && Array.isArray(question.options) && question.options.length > 0 && (
                         <div className="space-y-2 mt-3">
                           <p className="text-sm font-medium text-gray-700">Options:</p>
-                          <div className="grid grid-cols-2 gap-2">
-                            {question.options.map((option, index) => (
-                              <div key={index} className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
-                                <span className="font-medium text-[#20B2AA]">{index + 1}.</span>
-                                <span>{option}</span>
-                              </div>
-                            ))}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {question.options.map((option: any, index) => {
+                              // Safety check: ensure option is valid
+                              if (!option) return null;
+
+                              const isObject = typeof option === 'object' && option !== null;
+                              const text = isObject ? (option.text || String(option)) : String(option);
+                              const score = isObject && option.score !== undefined ? option.score : null;
+
+                              return (
+                                <div key={`option-${question.id}-${index}`} className="flex justify-between items-center text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg border border-gray-100">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium text-[#20B2AA]">{index + 1}.</span>
+                                    <span>{text}</span>
+                                  </div>
+                                  {score !== null && score !== undefined && (
+                                    <Badge variant="secondary" className="bg-gray-200 text-gray-700 h-6">
+                                      {score} pts
+                                    </Badge>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       )}
                     </div>
 
                     <div className="flex items-center gap-2 ml-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleToggleQuestionStatus(question.id, question.is_active)}
+                        className={question.is_active
+                          ? "hover:bg-orange-50 hover:text-orange-600 hover:border-orange-600"
+                          : "hover:bg-green-50 hover:text-green-600 hover:border-green-600"}
+                        title={question.is_active ? "Deactivate question" : "Activate question"}
+                      >
+                        {question.is_active ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
@@ -919,6 +1081,27 @@ function QuestionTabContent({
           ))}
         </div>
       )}
+
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}
+        title="Confirm Deletion"
+        description={`Are you sure you want to PERMANENTLY DELETE this ${deleteDialog.type}? This action cannot be undone and the ${deleteDialog.type} will be completely removed from the database.`}
+        confirmText="Delete Permanently"
+        cancelText="Cancel"
+        onConfirm={deleteDialog.type === 'question' ? confirmDeleteQuestion : confirmDeleteStrategy}
+        variant="danger"
+      />
+
+      {/* Alert Dialog */}
+      <AlertDialog
+        open={alertDialog.open}
+        onOpenChange={(open) => setAlertDialog({ ...alertDialog, open })}
+        title={alertDialog.title}
+        description={alertDialog.message}
+        variant={alertDialog.variant}
+      />
     </>
   );
 }

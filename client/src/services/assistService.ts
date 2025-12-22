@@ -161,6 +161,14 @@ export const softDeleteCopingStrategy = async (id: number) => {
   return response.data;
 };
 
+// Hard delete a coping strategy (permanent deletion)
+export const hardDeleteCopingStrategy = async (id: number) => {
+  const response = await apiRequest(`/assist/admin/assist/strategies/${id}?hard=true`, {
+    method: 'DELETE',
+  });
+  return response.data;
+};
+
 export const createNotificationTemplate = async (data: { key: string; title: string; default_time?: string }): Promise<NotificationTemplate> => {
   const response = await apiRequest('/assist/admin/assist/notification-templates', {
     method: 'POST',

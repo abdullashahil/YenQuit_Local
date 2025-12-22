@@ -49,7 +49,7 @@ export async function getAssessmentQuestions({ category, step, tobacco_category,
             sql += ` AND is_active = true`;
         }
 
-        sql += ` ORDER BY display_order ASC, created_at ASC`;
+        sql += ` ORDER BY is_active DESC, display_order ASC, created_at ASC`;
 
         const result = await query(sql, params);
         return result.rows;
@@ -88,10 +88,10 @@ export async function getAssessmentQuestionById(id) {
 }
 
 // Create a new assessment question
-export async function createAssessmentQuestion({ question_text, question_type, options, step, tobacco_category, display_order }) {
+export async function createAssessmentQuestion({ question_text, question_type, options, step, tobacco_category, display_order, category }) {
     try {
-        // Determine category based on whether step is provided
-        const category = step ? 'fivea' : 'fagerstrom';
+        // Use category from request, or determine based on step if not provided (for backward compatibility)
+        const questionCategory = category || (step ? 'fivea' : 'fagerstrom');
 
         // Build metadata object
         const metadata = {
@@ -119,7 +119,7 @@ export async function createAssessmentQuestion({ question_text, question_type, o
         metadata,
         created_at,
         updated_at`,
-            [category, question_text, question_type, JSON.stringify(options || []), display_order || 1, JSON.stringify(metadata)]
+            [questionCategory, question_text, question_type, JSON.stringify(options || []), display_order || 1, JSON.stringify(metadata)]
         );
 
         return result.rows[0];
@@ -161,6 +161,13 @@ export async function updateAssessmentQuestion(id, updateData) {
         if (updateData.display_order !== undefined) {
             updates.push(`display_order = $${paramIndex}`);
             params.push(updateData.display_order);
+            paramIndex++;
+        }
+
+        // Handle is_active field for toggle functionality
+        if (updateData.is_active !== undefined) {
+            updates.push(`is_active = $${paramIndex}`);
+            params.push(updateData.is_active);
             paramIndex++;
         }
 

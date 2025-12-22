@@ -24,15 +24,15 @@ export const getRelevanceOptions = async (req, res) => {
   }
 };
 
-// Save user relevance selections
-export const saveUserRelevanceSelections = async (req, res) => {
+// Save user 5R selections (Relevance, Risks, Rewards, Roadblocks)
+export const saveUser5RSelections = async (req, res) => {
   try {
-    const { userId, selectedOptions } = req.body;
+    const { userId, step, selections } = req.body;
 
-    if (!userId || !selectedOptions || !Array.isArray(selectedOptions)) {
+    if (!userId || !step || !selections) {
       return res.status(400).json({
         success: false,
-        message: 'userId and selectedOptions array are required'
+        message: 'userId, step, and selections are required'
       });
     }
 
@@ -42,35 +42,23 @@ export const saveUserRelevanceSelections = async (req, res) => {
     try {
       await client.query('BEGIN');
 
-      // Delete existing selections for this user
-      await client.query(
-        'DELETE FROM user_relevance_selections WHERE user_id = $1',
-        [userId]
-      );
-
-      // Insert new selections
-      for (const optionId of selectedOptions) {
-        await client.query(
-          'INSERT INTO user_relevance_selections (user_id, relevance_option_id) VALUES ($1, $2)',
-          [userId, optionId]
-        );
-      }
-
-      // Update or create 5R progress
+      // Update or create 5R progress with JSONB merge
+      // selections || jsonb_build_object($2, $3::jsonb) merges the new step data into the existing JSONB
       await client.query(`
-        INSERT INTO user_5r_progress (user_id, current_step, updated_at)
-        VALUES ($1, 'relevance', CURRENT_TIMESTAMP)
+        INSERT INTO user_5r_progress (user_id, current_step, selections, updated_at)
+        VALUES ($1, $2::VARCHAR, jsonb_build_object($2::VARCHAR, $3::jsonb), CURRENT_TIMESTAMP)
         ON CONFLICT (user_id) 
         DO UPDATE SET 
-          current_step = 'relevance',
+          current_step = $2::VARCHAR,
+          selections = COALESCE(user_5r_progress.selections, '{}'::jsonb) || jsonb_build_object($2::VARCHAR, $3::jsonb),
           updated_at = CURRENT_TIMESTAMP
-      `, [userId]);
+      `, [userId, step, JSON.stringify(selections)]);
 
       await client.query('COMMIT');
 
       res.json({
         success: true,
-        message: 'Relevance selections saved successfully'
+        message: `${step} selections saved successfully`
       });
     } catch (error) {
       await client.query('ROLLBACK');
@@ -79,38 +67,59 @@ export const saveUserRelevanceSelections = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error('Error saving relevance selections:', error);
+    console.error('Error saving 5R selections:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to save relevance selections'
+      message: 'Failed to save 5R selections'
     });
   }
 };
 
-// Get user relevance selections
-export const getUserRelevanceSelections = async (req, res) => {
+// Get user 5R selections for a specific step
+export const getUser5RSelections = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const { userId, step } = req.params;
 
-    const query = `
-      SELECT ro.id, ro.metadata->>'option_key' as option_key, ro.title as label, ro.description, ro.icon_name
-      FROM app_resources ro
-      INNER JOIN user_relevance_selections urs ON ro.id = urs.relevance_option_id
-      WHERE urs.user_id = $1 AND ro.type = 'relevance_option' AND ro.is_active = true
-      ORDER BY ro.id
-    `;
+    // Get selections from the progress table
+    const progressRes = await pool.query(
+      'SELECT selections->>($2::VARCHAR) as step_selections FROM user_5r_progress WHERE user_id = $1',
+      [userId, step]
+    );
 
-    const result = await pool.query(query, [userId]);
+    if (progressRes.rows.length === 0 || !progressRes.rows[0].step_selections) {
+      return res.json({
+        success: true,
+        data: []
+      });
+    }
+
+    const selectionIds = JSON.parse(progressRes.rows[0].step_selections);
+
+    if (!Array.isArray(selectionIds) || selectionIds.length === 0) {
+      return res.json({
+        success: true,
+        data: []
+      });
+    }
+
+    // Map IDs to full resource data from app_resources
+    // Note: If you stored roadblocks as objects (id, title), you can adjust this logic
+    const resourcesRes = await pool.query(
+      `SELECT id, metadata->>'option_key' as option_key, title as label, description, icon_name, metadata->>'resolution' as resolution
+       FROM app_resources 
+       WHERE id = ANY($1::int[])`,
+      [selectionIds]
+    );
 
     res.json({
       success: true,
-      data: result.rows
+      data: resourcesRes.rows
     });
   } catch (error) {
-    console.error('Error fetching user relevance selections:', error);
+    console.error('Error fetching user 5R selections:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch user relevance selections'
+      message: 'Failed to fetch user 5R selections'
     });
   }
 };

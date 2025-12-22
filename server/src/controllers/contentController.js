@@ -52,7 +52,7 @@ class ContentController {
         console.log('media_url trimmed:', media_url?.trim());
         console.log('req.file:', req.file);
         console.log('req.file exists:', !!req.file);
-        
+
         if ((!media_url || media_url.trim() === '') && !req.file) {
           console.log('Image validation FAILED - no URL and no file');
           return res.status(400).json({

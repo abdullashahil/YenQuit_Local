@@ -68,14 +68,14 @@ export function FiveR_Relevance({ onNext, userId }: FiveR_RelevanceProps) {
           const user = localStorage.getItem('user');
           return user ? JSON.parse(user).id : null;
         })();
-        
+
         const options = await fiverService.getRelevanceOptions();
         setRelevanceOptions(options);
-        
+
         // If userId is provided, load existing selections
         if (currentUserId) {
-          const existingSelections = await fiverService.getUserRelevanceSelections(currentUserId);
-          setSelected(existingSelections.map(option => option.id));
+          const existingSelections = await fiverService.getUser5RSelections(currentUserId, 'relevance');
+          setSelected(existingSelections.map((option: any) => option.id));
         }
       } catch (error) {
         console.error('Error loading relevance options:', error);
@@ -95,7 +95,7 @@ export function FiveR_Relevance({ onNext, userId }: FiveR_RelevanceProps) {
 
   const handleNext = async () => {
     if (selected.length === 0) return;
-    
+
     setSaving(true);
     try {
       // Get userId from localStorage if not provided as prop
@@ -103,15 +103,16 @@ export function FiveR_Relevance({ onNext, userId }: FiveR_RelevanceProps) {
         const user = localStorage.getItem('user');
         return user ? JSON.parse(user).id : null;
       })();
-      
+
       // Save selections to database if userId is provided
       if (currentUserId) {
-        await fiverService.saveUserRelevanceSelections({
+        await fiverService.saveUser5RSelections({
           userId: currentUserId,
-          selectedOptions: selected
+          step: 'relevance',
+          selections: selected
         });
       }
-      
+
       onNext({ relevance: selected });
     } catch (error) {
       console.error('Error saving selections:', error);
@@ -151,25 +152,23 @@ export function FiveR_Relevance({ onNext, userId }: FiveR_RelevanceProps) {
               {relevanceOptions.map((option) => {
                 const Icon = iconMap[option.icon_name as keyof typeof iconMap] || Heart;
                 const isSelected = selected.includes(option.id);
-                
+
                 return (
                   <button
                     key={option.id}
                     onClick={() => handleToggle(option.id)}
-                    className={`relative p-6 rounded-2xl border-2 transition-all text-left ${
-                      isSelected
+                    className={`relative p-6 rounded-2xl border-2 transition-all text-left ${isSelected
                         ? 'border-[#20B2AA] bg-[#20B2AA]/10'
                         : 'border-gray-200 hover:border-[#20B2AA]/50'
-                    }`}
+                      }`}
                   >
                     {isSelected && (
                       <div className="absolute top-4 right-4 w-6 h-6 bg-[#20B2AA] rounded-full flex items-center justify-center">
                         <Check className="text-white" size={16} />
                       </div>
                     )}
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 ${
-                      isSelected ? 'bg-[#20B2AA]' : 'bg-gray-100'
-                    }`}>
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 ${isSelected ? 'bg-[#20B2AA]' : 'bg-gray-100'
+                      }`}>
                       <Icon className={isSelected ? 'text-white' : 'text-[#333333]'} size={24} />
                     </div>
                     <h3 className="text-[#1C3B5E] mb-1">{option.label}</h3>
@@ -201,7 +200,7 @@ export function FiveR_Relevance({ onNext, userId }: FiveR_RelevanceProps) {
           </div>
         </div>
       </div>
-      
+
       {/* Toast notification */}
       {showToast && (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">

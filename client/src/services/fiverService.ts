@@ -10,9 +10,10 @@ export interface RelevanceOption {
   icon_name: string;
 }
 
-export interface UserRelevanceSelection {
-  userId: number; // UUID as string
-  selectedOptions: number[];
+export interface User5RSelection {
+  userId: number;
+  step: string;
+  selections: any; // Can be number[] for IDs or objects
 }
 
 export interface User5RProgress {
@@ -21,6 +22,7 @@ export interface User5RProgress {
   started_at: string;
   completed_at: string | null;
   updated_at: string;
+  selections: Record<string, any>; // The consolidated JSONB data
 }
 
 class FiverService {
@@ -35,23 +37,23 @@ class FiverService {
     }
   }
 
-  // Save user relevance selections
-  async saveUserRelevanceSelections(selections: UserRelevanceSelection): Promise<void> {
+  // Save user 5R selections (Relevance, Risks, Rewards, Roadblocks)
+  async saveUser5RSelections(data: User5RSelection): Promise<void> {
     try {
-      await axios.post(`${API_BASE_URL}/fiver/relevance-selections`, selections);
+      await axios.post(`${API_BASE_URL}/fiver/selections`, data);
     } catch (error) {
-      console.error('Error saving relevance selections:', error);
+      console.error(`Error saving ${data.step} selections:`, error);
       throw error;
     }
   }
 
-  // Get user relevance selections
-  async getUserRelevanceSelections(userId: number): Promise<RelevanceOption[]> {
+  // Get user 5R selections for a specific step
+  async getUser5RSelections(userId: number, step: string): Promise<any> {
     try {
-      const response = await axios.get(`${API_BASE_URL}/fiver/relevance-selections/${userId}`);
+      const response = await axios.get(`${API_BASE_URL}/fiver/selections/${userId}/${step}`);
       return response.data.data;
     } catch (error) {
-      console.error('Error fetching user relevance selections:', error);
+      console.error(`Error fetching ${step} selections:`, error);
       throw error;
     }
   }
