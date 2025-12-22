@@ -2,6 +2,7 @@ import express from 'express';
 import axios from 'axios';
 import { appendChatMessage, fetchChatHistory } from '../services/chatService.js';
 import { query } from '../db/index.js';
+import { ConfigService } from '../services/configService.js';
 
 const router = express.Router();
 
@@ -205,8 +206,8 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Check for OpenRouter API key
-    const apiKey = process.env.OPENROUTER_API_KEY;
+    // Check for OpenRouter API key from DB or Env
+    const apiKey = await ConfigService.get('OPENROUTER_API_KEY') || process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
       return res.status(500).json({
         error: 'OpenRouter API key not configured'
@@ -257,7 +258,7 @@ router.post('/', async (req, res) => {
         // model: 'meta-llama/llama-3-8b-instruct:free',
         // model: 'google/gemini-2.0-flash-lite-preview-02-05:free',
         // model: 'meta-llama/llama-3.1-8b-instruct:free',
-        model: 'mistralai/devstral-2512:free',
+        model: (await ConfigService.get('AI_MODEL')) || 'mistralai/mistral-7b-instruct:free',
         messages,
         max_tokens: 500,
         temperature: 0.7,

@@ -3,6 +3,7 @@ import { Card } from "../../ui/card";
 import { Sparkles, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import quitTrackerService from "../../../services/quitTrackerService";
 import axios from 'axios';
+import { getRandomInsights } from '../../../utils/aiFallback';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 const TEST_USER_ID = "d5799f0c-f707-415e-b9ea-68816351912c";
@@ -141,23 +142,7 @@ Return a JSON array with 3 objects:
       } catch (parseError) {
         console.error('Failed to parse AI response as JSON:', parseError);
         // Fallback to generic insights
-        insights = [
-          {
-            id: 1,
-            title: "Routine Tip",
-            message: "Start your day with a glass of water and deep breathing."
-          },
-          {
-            id: 2,
-            title: "Trigger Alert",
-            message: "Notice your patterns and prepare for challenging moments."
-          },
-          {
-            id: 3,
-            title: "Progress Advice",
-            message: "Every day without smoking is a victory worth celebrating."
-          }
-        ];
+        insights = getRandomInsights();
       }
 
       return insights.map((insight: any, index: number) => ({
@@ -169,11 +154,7 @@ Return a JSON array with 3 objects:
     } catch (error) {
       console.error('Error generating AI insights:', error);
       // Fallback to generic insights
-      return [
-        { id: 1, title: "Routine Tip", message: "Start your day with a glass of water and deep breathing." },
-        { id: 2, title: "Trigger Alert", message: "Notice your patterns and prepare for challenging moments." },
-        { id: 3, title: "Progress Advice", message: "Every day without smoking is a victory worth celebrating." }
-      ];
+      return getRandomInsights();
     }
   };
 
@@ -197,11 +178,7 @@ Return a JSON array with 3 objects:
     } catch (error) {
       console.error('Failed to fetch insights:', error);
       // Fallback to generic insights
-      const fallbackInsights = [
-        { id: 1, title: "Routine Tip", message: "Start your day with a glass of water and deep breathing." },
-        { id: 2, title: "Trigger Alert", message: "Notice your patterns and prepare for challenging moments." },
-        { id: 3, title: "Progress Advice", message: "Every day without smoking is a victory worth celebrating." }
-      ];
+      const fallbackInsights = getRandomInsights();
       setAdvice(fallbackInsights);
       setCachedInsights(fallbackInsights);
     } finally {

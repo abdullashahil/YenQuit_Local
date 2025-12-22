@@ -18,6 +18,7 @@ import axios from "axios"
 import ReactMarkdown from "react-markdown"
 import socketService, { OnlineUser } from "../../services/socketService"
 import { useNotifications } from "../../contexts/NotificationContext"
+import { getRandomChatFallback } from "../../utils/aiFallback"
 
 // Config for API bases
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
@@ -222,8 +223,9 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
         userId: userId,
       })
 
-      const replyText: string =
-        response.data?.reply || response.data?.message || "Sorry, I could not generate a response."
+      const replyText: string = response.data?.isFallback
+        ? getRandomChatFallback()
+        : (response.data?.reply || response.data?.message || "Sorry, I could not generate a response.");
 
       if (typeof response.data?.summary === "string" && response.data.summary.trim().length > 0) {
         setSummary(response.data.summary.trim())
@@ -240,9 +242,21 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
       }
 
       setYenaiMessages((prev) => [...prev, aiMessage])
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error sending message to YenAI:", err)
-      setError("Unable to reach YenAI right now. Please try again.")
+
+      // Use Dummy Fallback if request fails
+      const fallbackReply = getRandomChatFallback();
+      const fallbackMessage: YenaiMessage = {
+        id: `${Date.now()}-assistant-fallback`,
+        author: "YenAI",
+        avatar: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23333333' width='100' height='100'/%3E%3Ctext x='50' y='50' fontSize='60' fill='white' textAnchor='middle' dy='.3em'%3E%E2%9C%A8%3C/text%3E%3C/svg%3E",
+        content: fallbackReply,
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        isOwn: false,
+      }
+      setYenaiMessages((prev) => [...prev, fallbackMessage])
+      // setError("Unable to reach YenAI right now. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -357,7 +371,7 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
       setMessages((prev) => prev.map((m) => (m.id === message.id ? message : m)))
     }
 
-    const handleMessageDeleted = ({ messageId }: { messageId: number }) => {
+    const handleMessageDeleted = ({ messageId }: { messageId: string }) => {
       setMessages((prev) => prev.filter((m) => m.id !== messageId))
     }
 
@@ -365,24 +379,24 @@ export default function ChatArea({ community, onBack, onClose }: ChatAreaProps) 
       setOnlineUsers(users)
     }
 
-    const handleUserTyping = ({ userId: typingUserId, communityId }: { userId: number; communityId: number }) => {
+    const handleUserTyping = ({ userId: typingUserId }: { userId: string }) => {
       if (typingUserId !== currentUser.id) {
         setTypingUsers((prev) => {
-          const exists = prev.find(u => u.id === String(typingUserId))
+          const exists = prev.find(u => u.id === typingUserId)
           if (!exists) {
             // Get user name from online users or messages
             const typingUser = onlineUsers.find(u => u.user_id === typingUserId) ||
               messages.find(m => m.user_id === typingUserId)
             const userName = typingUser?.full_name || typingUser?.email || 'Someone'
-            return [...prev, { id: String(typingUserId), name: userName }]
+            return [...prev, { id: typingUserId, name: userName }]
           }
           return prev
         })
       }
     }
 
-    const handleUserStopTyping = ({ userId: typingUserId, communityId }: { userId: number; communityId: number }) => {
-      setTypingUsers((prev) => prev.filter((user) => user.id !== String(typingUserId)))
+    const handleUserStopTyping = ({ userId: typingUserId }: { userId: string }) => {
+      setTypingUsers((prev) => prev.filter((user) => user.id !== typingUserId))
     }
 
     // Register listeners immediately

@@ -1,4 +1,4 @@
-import { User, Shield } from "lucide-react";
+import { User, Shield, Settings } from "lucide-react";
 
 interface SettingsTabBarProps {
   activeSection: string;
@@ -9,6 +9,7 @@ export function SettingsTabBar({ activeSection, onSectionChange }: SettingsTabBa
   const tabs = [
     { id: "profile", label: "Profile Settings", icon: User },
     { id: "roles", label: "Role Management", icon: Shield },
+    { id: "configuration", label: "System Configuration", icon: Settings },
   ];
 
   return (
@@ -29,14 +30,14 @@ export function SettingsTabBar({ activeSection, onSectionChange }: SettingsTabBa
               }}
             >
               <div className="flex items-center justify-center gap-3">
-                <Icon 
-                  className="w-5 h-5 transition-all" 
+                <Icon
+                  className="w-5 h-5 transition-all"
                   style={{
                     color: isActive ? "#20B2AA" : "#333333",
                     opacity: isActive ? 1 : 0.6,
                   }}
                 />
-                <span 
+                <span
                   className="text-sm font-medium transition-all whitespace-nowrap"
                   style={{
                     opacity: isActive ? 1 : 0.7,
@@ -45,7 +46,7 @@ export function SettingsTabBar({ activeSection, onSectionChange }: SettingsTabBa
                   {tab.label}
                 </span>
               </div>
-              
+
               {/* Active Indicator */}
               {isActive && (
                 <div
@@ -53,7 +54,7 @@ export function SettingsTabBar({ activeSection, onSectionChange }: SettingsTabBa
                   style={{ backgroundColor: "#20B2AA" }}
                 />
               )}
-              
+
               {/* Hover Effect for Inactive Tabs */}
               {!isActive && (
                 <div

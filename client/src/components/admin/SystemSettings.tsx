@@ -2,6 +2,7 @@ import { AdminSidebar } from "./AdminSidebar";
 import { SettingsTabBar } from "./SettingsTabBar";
 import { ProfileSettings } from "./ProfileSettings";
 import { RoleManagement } from "./RoleManagement";
+import { SystemConfiguration } from "./SystemConfiguration";
 import { useState } from "react";
 
 interface SystemSettingsProps {
@@ -19,6 +20,8 @@ export function SystemSettings({ activeTab, setActiveTab, onExitAdmin }: SystemS
         return <ProfileSettings />;
       case "roles":
         return <RoleManagement />;
+      case "configuration":
+        return <SystemConfiguration />;
       default:
         return <ProfileSettings />;
     }

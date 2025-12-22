@@ -27,6 +27,8 @@ import communityInviteRoutes from './routes/communityInviteRoutes.js';
 import userInviteRoutes from './routes/userInviteRoutes.js';
 import assessmentRoutes from './routes/assessmentRoutes.js';
 import CommunityInviteController from './controllers/communityInviteController.js';
+import configRoutes from './routes/configRoutes.js';
+import { ConfigService } from './services/configService.js';
 import { startChatCleanupJob } from './jobs/chatCleanupJob.js';
 import socketService from './services/socketService.js';
 
@@ -76,6 +78,10 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/community-invites', communityInviteRoutes);
 app.use('/api/user-invites', userInviteRoutes);
+app.use('/api/config', configRoutes);
+
+// Initialize system settings table
+ConfigService.initialize();
 
 // Initialize community invites table
 CommunityInviteController.initialize();
