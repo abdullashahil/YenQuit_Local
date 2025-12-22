@@ -159,7 +159,7 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
           if (timeRegex.test(config.time.trim())) {
             timeValue = config.time.trim();
           } else {
-            console.warn(`Invalid time format for ${key}: ${config.time}`);
+
           }
         }
 
@@ -170,7 +170,7 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
         };
       }).filter(n => n.template_id > 0);
 
-      console.log('Sending notification data:', notificationData);
+
 
       if (notificationData.length > 0) {
         await upsertUserNotifications({ notifications: notificationData });

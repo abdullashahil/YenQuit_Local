@@ -7,7 +7,7 @@ import quitTrackerService from "../../../services/quitTrackerService";
 import userService from "../../../services/userService";
 
 interface DailyLog {
-  id: string;
+  id: string | number;
   log_date: string;
   smoked: boolean;
   cigarettes_count?: number;

@@ -38,7 +38,7 @@ export function FiveA_Ask({ onNext, questions = [], savedAnswers = [], submitted
       try {
         const response = await userService.getProfile();
         setUserOnboardingStep(response.data.onboarding_step || 0);
-        console.log(response, "these are the steps");
+
       } catch (error) {
         console.error('Error fetching user profile:', error);
         setUserOnboardingStep(0);
@@ -81,12 +81,12 @@ export function FiveA_Ask({ onNext, questions = [], savedAnswers = [], submitted
     }
   }, [savedAnswers, questions]);
 
-  const handleAnswer = (questionId: number, value: string) => {
+  const handleAnswer = (questionId: string, value: string) => {
     if (submitted) return; // read-only if already submitted
     setAnswers(prev => ({ ...prev, [questionId]: value }));
   };
 
-  const handleOptionChange = (questionId: number, option: string) => {
+  const handleOptionChange = (questionId: string, option: string) => {
     if (submitted) return;
 
     setSelectedOptions(prev => ({ ...prev, [questionId]: option }));
@@ -100,7 +100,7 @@ export function FiveA_Ask({ onNext, questions = [], savedAnswers = [], submitted
     }
   };
 
-  const handleOtherTextChange = (questionId: number, value: string) => {
+  const handleOtherTextChange = (questionId: string, value: string) => {
     if (submitted) return;
 
     setOtherTexts(prev => ({ ...prev, [questionId]: value }));

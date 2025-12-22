@@ -4,7 +4,7 @@ export const handleAuthError = (error: any) => {
 
   // Check for authentication errors
   if (error.response?.status === 401 || error.response?.status === 403) {
-    console.log('Authentication error detected, redirecting to login');
+    // console.log('Authentication error detected, redirecting to login');
 
     // Clear stored auth data
     if (typeof window !== 'undefined') {

@@ -90,7 +90,7 @@ export function RoleManagement() {
     }
   };
 
-  const handlePromoteUser = async (userId: number) => {
+  const handlePromoteUser = async (userId: string) => {
     try {
       setLoading(true);
       setError("");

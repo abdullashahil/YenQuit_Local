@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Textarea } from '../../components/ui/textarea';
-import { Label } from '../../components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { Badge } from '../../components/ui/badge';
+import { Button } from '../../src/components/ui/button';
+import { Input } from '../../src/components/ui/input';
+import { Textarea } from '../../src/components/ui/textarea';
+import { Label } from '../../src/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '../../src/components/ui/card';
+import { Badge } from '../../src/components/ui/badge';
 import { Loader2, Plus, Edit, Trash2, Save, X } from 'lucide-react';
 import {
   getCopingStrategies,
@@ -12,7 +12,7 @@ import {
   updateCopingStrategy,
   softDeleteCopingStrategy,
   CopingStrategy
-} from '../../services/assistService';
+} from '../../src/services/assistService';
 
 export default function CopingStrategiesPage() {
   const [strategies, setStrategies] = useState<CopingStrategy[]>([]);
@@ -54,11 +54,11 @@ export default function CopingStrategiesPage() {
         name: formData.name.trim(),
         description: formData.description.trim() || null
       });
-      
+
       // Reset form
       setFormData({ name: '', description: '' });
       setShowCreateForm(false);
-      
+
       // Reload strategies
       await loadStrategies();
     } catch (error) {
@@ -81,10 +81,10 @@ export default function CopingStrategiesPage() {
         name: formData.name.trim(),
         description: formData.description.trim() || null
       });
-      
+
       setEditing(null);
       setFormData({ name: '', description: '' });
-      
+
       await loadStrategies();
     } catch (error) {
       console.error('Error updating strategy:', error);
@@ -262,7 +262,7 @@ export default function CopingStrategiesPage() {
                         <p className="text-gray-600 mb-2">{strategy.description}</p>
                       )}
                       <p className="text-sm text-gray-500">
-                        Created: {new Date(strategy.created_at).toLocaleDateString()} | 
+                        Created: {new Date(strategy.created_at).toLocaleDateString()} |
                         Updated: {new Date(strategy.updated_at).toLocaleDateString()}
                       </p>
                     </div>

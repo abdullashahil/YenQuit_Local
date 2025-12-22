@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from '../../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { Badge } from '../../components/ui/badge';
+import { Button } from '../../src/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../src/components/ui/card';
+import { Badge } from '../../src/components/ui/badge';
 import { Loader2, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
-import { getAssistHistory } from '../../services/assistService';
+import { getAssistHistory } from '../../src/services/assistService';
 
 interface AssistHistoryItem {
   id: number;

@@ -197,7 +197,7 @@ router.post('/', async (req, res) => {
   try {
     const { message, history = [], userState = {}, summary, userId, skipStorage = false } = req.body;
 
-    console.log(`[YenAI] Received chat request for user: ${userId}`);
+
 
     // Validate request
     if (!message || typeof message !== 'string') {
@@ -305,10 +305,7 @@ router.post('/', async (req, res) => {
       throw new Error('No response from AI model');
     }
 
-    // DEBUG: Log raw OpenRouter reply before parsing
-    console.log('=== OpenRouter Raw Reply ===');
-    console.log(reply);
-    console.log('=== End Raw Reply ===');
+
 
     // Extract intent and summary from special lines
     const lines = reply.trim().split('\n');

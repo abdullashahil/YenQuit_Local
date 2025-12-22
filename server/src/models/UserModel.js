@@ -131,7 +131,7 @@ class UserModel {
     try {
       await client.query('BEGIN');
 
-      const password_hash = password; // TODO: Implement proper password hashing if not already done in controller
+      const password_hash = password;
 
       // Insert user
       const userQuery = `

@@ -173,15 +173,11 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
     // Track content visit
     try {
       const type = content.category ? content.category.toLowerCase() : 'video';
-      console.log(`[Content Tracking] Selecting content: ID=${content.id}, Category=${content.category}, Type=${type}`);
 
       const token = localStorage.getItem('accessToken');
-      console.log('LearningHub - Token from localStorage:', token ? 'Token exists' : 'No token found');
-      console.log('LearningHub - Tracking content visit for content ID:', content.id);
 
       if (token) {
         const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-        console.log('LearningHub - Sending POST request to:', `${API_URL}/learning-progress`);
 
         const response = await fetch(`${API_URL}/learning-progress`, {
           method: 'POST',
@@ -194,11 +190,8 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
             type: type
           })
         });
-
-        console.log('LearningHub - API response status:', response.status);
         if (response.ok) {
           const data = await response.json();
-          console.log('LearningHub - Content tracked successfully:', data);
         } else {
           console.error('LearningHub - API error:', await response.text());
         }

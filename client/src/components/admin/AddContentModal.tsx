@@ -105,13 +105,7 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
         formData.append('media', selectedFile);
       }
 
-      // Debug: Log FormData contents
-      console.log('FormData contents:');
-      console.log('title:', title.trim());
-      console.log('category:', category);
-      console.log('media_url:', mediaUrl);
-      console.log('selectedFile:', selectedFile ? selectedFile.name : 'No file selected');
-      console.log('selectedFile size:', selectedFile ? selectedFile.size : 'N/A');
+
 
       const url = editContent?.id
         ? `${API_BASE_URL}/content/${editContent.id}`
@@ -147,7 +141,7 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
         onOpenChange(false);
 
         // Show success message (you could use a toast library here)
-        console.log(editContent ? 'Content updated successfully!' : 'Content created successfully!');
+
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to save content');
@@ -191,7 +185,7 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
 
       setSelectedFile(file);
       setError(null);
-      console.log("File selected:", file.name);
+
     }
   };
 

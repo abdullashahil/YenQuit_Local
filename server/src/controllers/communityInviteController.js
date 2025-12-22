@@ -17,7 +17,7 @@ class CommunityInviteController {
           is_active BOOLEAN DEFAULT true
         )
       `);
-      console.log('Community invites table initialized');
+      // console.log('Community invites table initialized');
     } catch (error) {
       console.error('Error initializing community invites table:', error);
     }

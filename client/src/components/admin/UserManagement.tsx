@@ -113,7 +113,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
 
   // Fetch user progress data
   const fetchUserProgress = async (userId: number, joinDate: string | null) => {
-    console.log("🔍 fetchUserProgress called for userId:", userId, "joinDate:", joinDate);
+
     try {
       if (!joinDate) {
         setUserProgress(prev => ({
@@ -132,12 +132,9 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
 
       // Use the new admin endpoint to get specific user progress data
       try {
-        console.log('🔍 Client - Fetching progress for user:', userId);
-        const progressData = await quitTrackerService.getAdminUserProgress(userId);
-        console.log('🔍 Client - Progress data received for user', userId, ':', progressData);
+        const response = await quitTrackerService.getAdminUserProgress(userId);
+        const progressData = response;
         const logs = progressData.logs || [];
-        console.log('🔍 Client - Logs for user', userId, ':', logs);
-        console.log('🔍 Client - Number of logs:', logs.length);
 
         // Calculate engagement: (number of logs / number of days since join) * 100
         const startDate = new Date(joinDate);
@@ -147,11 +144,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
         let engagementPercentage = totalDaysSinceJoin > 0 ? Math.round((numberOfLogs / totalDaysSinceJoin) * 100) : (numberOfLogs > 0 ? 100 : 0);
         engagementPercentage = Math.min(engagementPercentage, 100);
 
-        console.log('🔍 Client - Engagement calculation for user', userId, ':');
-        console.log('🔍 Client - Join date:', joinDate);
-        console.log('🔍 Client - Total days since join:', totalDaysSinceJoin);
-        console.log('🔍 Client - Number of logs:', numberOfLogs);
-        console.log('🔍 Client - Engagement percentage:', engagementPercentage);
+
 
         const progressDataForUser = {
           progressPercentage: engagementPercentage,
@@ -168,7 +161,7 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
         }));
         return;
       } catch (error) {
-        console.log('Could not fetch admin progress data, calculating engagement based on join date only');
+
       }
 
       // Fallback: Calculate engagement based on join date to current date (estimated)
@@ -243,7 +236,6 @@ export function UserManagement({ activeTab, setActiveTab, onExitAdmin, onLogout 
 
         // Fetch progress data for each user
         result.data.forEach((user: any) => {
-          console.log("🔍 User data:", user);
           fetchUserProgress(user.id, user.created_at);
         });
       }
