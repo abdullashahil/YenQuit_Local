@@ -55,7 +55,7 @@ const BlogCard = ({ item, onItemClick }: { item: ContentItem; onItemClick?: (ite
   };
 
   return (
-    <Card 
+    <Card
       className="w-full overflow-hidden hover:shadow-md transition-shadow cursor-pointer bg-white border border-gray-200"
       onClick={handleCardClick}
     >
@@ -80,19 +80,19 @@ const BlogCard = ({ item, onItemClick }: { item: ContentItem; onItemClick?: (ite
   );
 };
 
-export function LearningSection({ 
-  title, 
-  items = [], 
-  type, 
-  onViewMore, 
+export function LearningSection({
+  title,
+  items = [],
+  type,
+  onViewMore,
   onItemClick,
-  children 
+  children
 }: LearningSectionProps) {
   const [showBlogModal, setShowBlogModal] = useState(false);
   const [selectedBlog, setSelectedBlog] = useState<ContentItem | null>(null);
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<ContentItem | null>(null);
-  
+
   if (items.length === 0 && !children) return null;
 
   const renderContent = () => {
@@ -107,8 +107,8 @@ export function LearningSection({
       }
 
       return (
-        <Card 
-          key={item.id} 
+        <Card
+          key={item.id}
           className="w-full overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
           onClick={() => type === 'image' ? handleImageClick(item) : onItemClick?.(item)}
         >
@@ -152,11 +152,13 @@ export function LearningSection({
   };
 
   const handleBlogClick = (item: ContentItem) => {
+    onItemClick?.(item);
     setSelectedBlog(item);
     setShowBlogModal(true);
   };
 
   const handleImageClick = (item: ContentItem) => {
+    onItemClick?.(item);
     setSelectedImage(item);
     setShowImageModal(true);
   };

@@ -409,11 +409,21 @@ export const getContentSeekingsReport = async (req, res, next) => {
       SELECT 
         u.id as user_id,
         COALESCE(u.full_name, u.email) as username,
-        -- Calculate length of JSON array if it is an array
+        -- Calculate length of JSON array if it is an array (Videos/Content clicked)
         CASE 
           WHEN jsonb_typeof(lp.content_ids) = 'array' THEN jsonb_array_length(lp.content_ids)
           ELSE 0 
         END as yt_views,
+        COALESCE(lp.image_view_count, 0) as image_views,
+        COALESCE(lp.text_view_count, 0) as blog_views,
+        COALESCE(lp.ai_interaction_count, 0) as ai_prompts,
+        -- Aggregate Communities
+        (
+          SELECT STRING_AGG(c.name, ', ')
+          FROM community_members cm
+          JOIN communities c ON cm.community_id = c.id
+          WHERE cm.user_id = u.id
+        ) as communities,
         TO_CHAR(lp.updated_at, 'YYYY-MM-DD') as last_activity
       FROM user_learning_progress lp
       JOIN users u ON lp.user_id = u.id

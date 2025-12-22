@@ -30,11 +30,9 @@ class ChatMessageModel {
         u.email,
         u.role,
         u.full_name,
-        u.avatar_url,
         reply_message.content as reply_content,
         reply_user.email as reply_author_email,
-        reply_user.full_name as reply_author_name,
-        reply_user.avatar_url as reply_author_avatar
+        reply_user.full_name as reply_author_name
       FROM chat_messages cm
       JOIN users u ON cm.user_id = u.id
       LEFT JOIN chat_messages reply_message ON cm.reply_to = reply_message.id
@@ -61,11 +59,9 @@ class ChatMessageModel {
         u.email,
         u.role,
         u.full_name,
-        u.avatar_url,
         reply_message.content as reply_content,
         reply_user.email as reply_author_email,
-        reply_user.full_name as reply_author_name,
-        reply_user.avatar_url as reply_author_avatar
+        reply_user.full_name as reply_author_name
       FROM chat_messages cm
       JOIN users u ON cm.user_id = u.id
       LEFT JOIN chat_messages reply_message ON cm.reply_to = reply_message.id
@@ -163,8 +159,7 @@ class ChatMessageModel {
         mr.*,
         u.email,
         u.role,
-        u.full_name,
-        u.avatar_url
+        u.full_name
       FROM message_reactions mr
       JOIN users u ON mr.user_id = u.id
       WHERE mr.message_id = $1
@@ -187,8 +182,7 @@ class ChatMessageModel {
         cm.*,
         u.email,
         u.role,
-        u.full_name,
-        u.avatar_url
+        u.full_name
       FROM chat_messages cm
       JOIN users u ON cm.user_id = u.id
       WHERE cm.id = $1

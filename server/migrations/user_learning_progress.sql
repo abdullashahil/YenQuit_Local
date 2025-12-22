@@ -6,6 +6,9 @@ CREATE TABLE IF NOT EXISTS public.user_learning_progress
 (
     id integer NOT NULL DEFAULT nextval('user_learning_progress_id_seq'::regclass),
     content_ids jsonb,
+    image_view_count integer DEFAULT 0,
+    text_view_count integer DEFAULT 0,
+    ai_interaction_count integer DEFAULT 0,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     user_id integer,
