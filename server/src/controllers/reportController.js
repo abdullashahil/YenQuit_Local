@@ -12,11 +12,10 @@ export const getUserDetailsReport = async (req, res, next) => {
         u.id, u.email, u.role, 
         u.onboarding_step, u.onboarding_completed, u.fagerstrom_score, 
         u.created_at, u.updated_at,
-        u.full_name, u.first_name, u.last_name, u.age, u.gender, 
-        u.phone, u.bio, u.avatar_url,
-        u.tobacco_type, u.addiction_level, 
-        u.quit_date, u.join_date, u.last_login,
-        u.status,
+        u.full_name, u.age, u.gender, 
+        u.phone,
+        u.tobacco_type, 
+        u.quit_date, u.join_date,
         u.profile_metadata
       FROM users u
       ORDER BY u.id ASC

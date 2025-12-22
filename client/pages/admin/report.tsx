@@ -82,7 +82,38 @@ export default function ReportsPage() {
       }
 
       const result = await response.json();
-      setData(Array.isArray(result) ? result : []);
+
+      let finalData = Array.isArray(result) ? result : [];
+
+      if (type === "user_details") {
+        const targetOrder = [
+          "id", "full_name", "email", "tobacco_type", "age", "gender", "phone",
+          "place", "setting", "role", "onboarding_completed", "join_date",
+          "quit_date", "fagerstrom_score", "smokerType", "isStudent",
+          "yearOfStudy", "streamOfStudy", "systemicHealthIssue"
+        ];
+
+        finalData = finalData.map(user => {
+          const normalized: any = {};
+          const userMeta = user.profile_metadata || {};
+          const formatVal = (val: any) => (val === null || val === undefined) ? "null" : val;
+
+          targetOrder.forEach(key => {
+            let val;
+            if (key in user) {
+              val = user[key];
+            } else if (key in userMeta) {
+              val = userMeta[key];
+            } else {
+              val = null;
+            }
+            normalized[key] = formatVal(val);
+          });
+          return normalized;
+        });
+      }
+
+      setData(finalData);
     } catch (error) {
       console.error("Error fetching report:", error);
       setData([]);
@@ -94,7 +125,7 @@ export default function ReportsPage() {
   const handleExport = () => {
     if (!data.length) return;
 
-    const headers = Object.keys(data[0]).join(",");
+    const headers = Object.keys(data[0]).map(k => k.replace(/_/g, " ").toUpperCase()).join(",");
     const csvContent = "data:text/csv;charset=utf-8,"
       + headers + "\n"
       + data.map(row => Object.values(row).map(val => `"${val}"`).join(",")).join("\n");
@@ -177,7 +208,7 @@ export default function ReportsPage() {
                   ) : data.length > 0 ? (
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-sm text-gray-600">
-                        <thead className="bg-gradient-to-r from-blue-50 to-cyan-50 text-xs uppercase font-semibold text-[#1C3B5E]">
+                        <thead className="bg-gradient-to-r from-blue-50 to-cyan-50 text-xs uppercase font-bold text-[#1C3B5E]">
                           <tr>
                             {Object.keys(data[0]).map((key) => (
                               <th key={key} className="px-6 py-4 whitespace-nowrap tracking-wider">{key.replace(/_/g, " ")}</th>

@@ -37,8 +37,8 @@ export async function getProfile(req, res, next) {
       age: user.age,
       gender: user.gender,
       country: user.country,
-      bio: user.bio,
-      avatar_url: user.avatar_url,
+      country: user.country,
+
       created_at: user.created_at,
       join_date: user.join_date,
       onboarding_step: user.onboarding_step,
@@ -53,7 +53,7 @@ export async function getProfile(req, res, next) {
 
 export async function updateProfile(req, res, next) {
   try {
-    const allowedFields = ['full_name', 'phone', 'age', 'gender', 'country', 'bio'];
+    const allowedFields = ['full_name', 'phone', 'age', 'gender', 'country'];
     const updateData = {};
 
     allowedFields.forEach(field => {
@@ -129,16 +129,12 @@ export async function createUser(req, res, next) {
       email,
       password,
       role = 'user',
-      status = 'active',
       name,
-      avatar_url,
-      bio,
       phone,
       age,
       gender,
       tobacco_type,
       fagerstrom_score,
-      addiction_level,
       join_date
     } = req.body;
 
@@ -167,16 +163,12 @@ export async function createUser(req, res, next) {
       email,
       password_hash: passwordHash,
       role,
-      status,
       name,
-      avatar_url,
-      bio,
       phone,
       age,
       gender,
       tobacco_type,
       fagerstrom_score,
-      addiction_level,
       join_date
     });
 
@@ -197,8 +189,7 @@ export async function getAllUsers(req, res, next) {
       page = 1,
       limit = 10,
       search = '',
-      role = '',
-      status = ''
+      role = ''
     } = req.query;
 
     const pageNum = parseInt(page);
@@ -208,8 +199,7 @@ export async function getAllUsers(req, res, next) {
       pageNum,
       limitNum,
       search,
-      role,
-      status
+      role
     );
 
     res.json({

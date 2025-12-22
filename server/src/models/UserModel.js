@@ -16,7 +16,7 @@ class UserModel {
   }
 
   // Get all users with pagination, search, and filters
-  static async findAll(page = 1, limit = 10, search = '', role = '', status = '') {
+  static async findAll(page = 1, limit = 10, search = '', role = '') {
     const offset = (page - 1) * limit;
 
     let whereConditions = [];
@@ -40,12 +40,6 @@ class UserModel {
       paramIndex++;
     }
 
-    if (status && status !== 'all') {
-      whereConditions.push(`u.status = $${paramIndex}`);
-      params.push(status);
-      paramIndex++;
-    }
-
     const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
     // Main query
@@ -54,12 +48,9 @@ class UserModel {
         u.id,
         u.email,
         u.role,
-        u.status,
         u.created_at,
         u.updated_at,
         u.full_name,
-        u.avatar_url,
-        u.bio,
         u.phone,
         u.age
       FROM users u
@@ -128,14 +119,10 @@ class UserModel {
       email,
       password,
       role = 'user',
-      status = 'active',
       name,
-      avatar_url,
-      bio,
       phone,
       age,
       fagerstrom_score,
-      addiction_level,
       join_date
     } = userData;
 
@@ -149,13 +136,13 @@ class UserModel {
       // Insert user
       const userQuery = `
         INSERT INTO users (
-            email, password_hash, role, status, full_name, avatar_url, bio, phone, age, fagerstrom_score, addiction_level, join_date
+            email, password_hash, role, full_name, phone, age, fagerstrom_score, join_date
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING *
       `;
       const userResult = await client.query(userQuery, [
-        email, password_hash, role, status, name, avatar_url, bio, phone, age, fagerstrom_score, addiction_level, join_date
+        email, password_hash, role, name, phone, age, fagerstrom_score, join_date
       ]);
       const user = userResult.rows[0];
 
@@ -183,15 +170,11 @@ class UserModel {
       const mappings = {
         email: 'email',
         role: 'role',
-        status: 'status',
         full_name: 'full_name',
         name: 'full_name', // alias
-        avatar_url: 'avatar_url',
-        bio: 'bio',
         phone: 'phone',
         age: 'age',
         fagerstrom_score: 'fagerstrom_score',
-        addiction_level: 'addiction_level',
         join_date: 'join_date',
         gender: 'gender',
         tobacco_type: 'tobacco_type'
@@ -240,8 +223,6 @@ class UserModel {
       pool.query('SELECT COUNT(*) as total FROM users'),
       // Users by role
       pool.query('SELECT role, COUNT(*) as count FROM users GROUP BY role'),
-      // Users by status
-      pool.query('SELECT status, COUNT(*) as count FROM users GROUP BY status'),
       // Recent registrations
       pool.query(`
         SELECT COUNT(*) as recent 
@@ -251,12 +232,11 @@ class UserModel {
     ];
 
     try {
-      const [totalResult, roleResult, statusResult, recentResult] = await Promise.all(queries);
+      const [totalResult, roleResult, recentResult] = await Promise.all(queries);
 
       return {
         total: parseInt(totalResult.rows[0].total),
         byRole: roleResult.rows,
-        byStatus: statusResult.rows,
         recentRegistrations: parseInt(recentResult.rows[0].recent)
       };
     } catch (error) {
@@ -297,7 +277,7 @@ class UserModel {
       UPDATE users 
       SET password_hash = $2, updated_at = NOW() 
       WHERE id = $1 
-      RETURNING id, email, role, status, updated_at
+      RETURNING id, email, role, updated_at
     `;
     try {
       const result = await pool.query(query, [userId, hashedPassword]);
@@ -331,7 +311,7 @@ class UserModel {
       UPDATE users 
       SET role = 'admin', updated_at = NOW() 
       WHERE id = $1 AND role = 'user'
-      RETURNING id, email, role, status, updated_at
+      RETURNING id, email, role, updated_at
     `;
     try {
       const result = await pool.query(query, [userId]);
@@ -348,7 +328,7 @@ class UserModel {
       UPDATE users 
       SET role = 'user', updated_at = NOW() 
       WHERE id = $1 AND role = 'admin'
-      RETURNING id, email, role, status, updated_at
+      RETURNING id, email, role, updated_at
     `;
     try {
       const result = await pool.query(query, [userId]);
