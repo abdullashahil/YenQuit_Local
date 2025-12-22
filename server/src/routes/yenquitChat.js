@@ -6,6 +6,7 @@ import { query } from '../db/index.js';
 const router = express.Router();
 
 // System prompt for the tobacco cessation chatbot
+/*
 const YENQUIT_SYSTEM_PROMPT = `You are YenQuit AI — a warm, human-like, emotionally intelligent tobacco cessation companion for the app YenQuit.
 
 Your core purpose is to support people who are quitting tobacco by offering empathetic, personalized, evidence-based guidance.
@@ -180,6 +181,15 @@ TONE AND STYLE
 At the very end of EVERY response, after following the 5-part structure above, add TWO final lines in this exact order, each on its own line:
 1) "SUMMARY: <very short 1–3 sentence running summary of the key facts, emotional state, quit plan, triggers, and supports so far>"
 2) "INTENT: <one of: start_quit_journey | craving_support | withdrawal_symptoms | motivation_boost | faq | relapse | emergency_distress>"`;
+*/
+
+const YENQUIT_SYSTEM_PROMPT = `You are YenQuit AI, a supportive tobacco cessation companion.
+Your goal is to help users quit smoking using empathy, the 5A's (Ask, Advise, Assess, Assist, Arrange), and CBT strategies.
+Be warm, human-like, and concise (5-10 sentences).
+ALWAYS end with a follow-up question.
+At the end of your response, strictly add these two lines:
+SUMMARY: <brief summary of conversation context>
+INTENT: <one of: start_quit_journey | craving_support | withdrawal_symptoms | motivation_boost | faq | relapse | emergency_distress | random talk>`;
 
 // POST /api/yenquit-chat
 router.post('/', async (req, res) => {
@@ -241,9 +251,15 @@ router.post('/', async (req, res) => {
     const response = await axios.post(
       'https://openrouter.ai/api/v1/chat/completions',
       {
-        model: 'meta-llama/llama-3.2-3b-instruct:free',
+
+        // model: 'google/gemini-flash-1.5',
+        // model: 'google/gemini-2.0-flash-exp:free',
+        // model: 'meta-llama/llama-3-8b-instruct:free',
+        // model: 'google/gemini-2.0-flash-lite-preview-02-05:free',
+        // model: 'meta-llama/llama-3.1-8b-instruct:free',
+        model: 'mistralai/devstral-2512:free',
         messages,
-        max_tokens: 1000,
+        max_tokens: 500,
         temperature: 0.7,
       },
       {
@@ -317,7 +333,7 @@ router.post('/', async (req, res) => {
     if (status && [400, 401, 402, 403, 429, 500, 502, 503, 504].includes(status)) {
       console.log('Falling back to Offline/Demo Mode due to API error:', status);
 
-      const mockReply = "I apologize, but I'm currently having trouble connecting to my AI brain (Service Error " + status + "). \n\nHowever, I'm still here to support you! \n\nINTENT: faq\nSUMMARY: System is in offline mode.";
+      const mockReply = "I apologize, but I'm currently having trouble connecting to my AI brain (Service Error " + status + "). \n\n  \n\nINTENT: faq\nSUMMARY: System is in offline mode.";
 
       // Clean up the mock reply similar to the real one
       const lines = mockReply.split('\n');

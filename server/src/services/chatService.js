@@ -15,13 +15,13 @@ export const fetchChatHistory = async (userId) => {
       AND chat_date >= CURRENT_DATE - INTERVAL '7 days'
     ORDER BY chat_date ASC, created_at ASC
   `;
-  
+
   const result = await query(sql, [userId]);
-  
+
   if (result.rows.length === 0) {
     return [];
   }
-  
+
   // Flatten all messages from all days into a single array
   const allMessages = [];
   for (const row of result.rows) {
@@ -29,7 +29,7 @@ export const fetchChatHistory = async (userId) => {
       allMessages.push(...row.messages);
     }
   }
-  
+
   return allMessages;
 };
 
@@ -42,7 +42,7 @@ export const fetchChatHistory = async (userId) => {
  */
 export const appendChatMessage = async (userId, role, content) => {
   const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-  
+
   // First try to update existing row
   const updateSql = `
     UPDATE user_chat_logs 
@@ -51,20 +51,17 @@ export const appendChatMessage = async (userId, role, content) => {
     WHERE user_id = $2 AND chat_date = $3
     RETURNING id
   `;
-  
+
   const newMessage = JSON.stringify({ role, content, timestamp: new Date().toISOString() });
   const updateResult = await query(updateSql, [newMessage, userId, today]);
-  
+
   // If no row exists for today, create one
   if (updateResult.rows.length === 0) {
     const insertSql = `
       INSERT INTO user_chat_logs (user_id, chat_date, messages)
       VALUES ($1, $2, $3::jsonb)
-      ON CONFLICT (user_id, chat_date) DO UPDATE SET
-        messages = user_chat_logs.messages || EXCLUDED.messages,
-        updated_at = NOW()
     `;
-    
+
     const initialMessages = JSON.stringify([{ role, content, timestamp: new Date().toISOString() }]);
     await query(insertSql, [userId, today, initialMessages]);
   }
@@ -80,7 +77,7 @@ export const cleanupOldChatMessages = async () => {
     WHERE chat_date < CURRENT_DATE - INTERVAL '7 days'
     RETURNING id
   `;
-  
+
   const result = await query(sql);
   return result.rows.length;
 };
@@ -100,7 +97,7 @@ export const getChatStats = async (userId) => {
     FROM user_chat_logs 
     WHERE user_id = $1
   `;
-  
+
   const result = await query(sql, [userId]);
   return result.rows[0] || {
     total_days: 0,

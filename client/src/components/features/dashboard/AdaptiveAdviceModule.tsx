@@ -25,20 +25,20 @@ export function AdaptiveAdviceModule() {
   // Helper functions for localStorage caching
   const getCachedInsights = (): Insight[] | null => {
     if (typeof window === 'undefined') return null;
-    
+
     try {
       const cached = localStorage.getItem(CACHE_KEY);
       if (!cached) return null;
-      
+
       const { data, timestamp } = JSON.parse(cached);
       const now = Date.now();
-      
+
       // Check if cache is still valid (within 6 hours)
       if (now - timestamp < CACHE_DURATION) {
         setLastRefresh(timestamp);
         return data;
       }
-      
+
       // Cache expired, remove it
       localStorage.removeItem(CACHE_KEY);
       return null;
@@ -51,7 +51,7 @@ export function AdaptiveAdviceModule() {
 
   const setCachedInsights = (insights: Insight[]): void => {
     if (typeof window === 'undefined') return;
-    
+
     try {
       const cacheData = {
         data: insights,
@@ -66,7 +66,7 @@ export function AdaptiveAdviceModule() {
 
   const clearCache = (): void => {
     if (typeof window === 'undefined') return;
-    
+
     localStorage.removeItem(CACHE_KEY);
     setLastRefresh(null);
   };
@@ -107,14 +107,14 @@ OUTPUT RULES:
 - Avoid repeating the same structure across insights.
 
 Insight Types (in this exact order):
-1. Morning Routine Tip — give a small morning habit or mindset tip tailored to the user's state.
+1. Routine Tip — give a small habit or mindset tip tailored to the user's state.
 2. Trigger Alert — based on craving logs, moods, triggers, or time patterns.
 3. Progress Advice — reflect progress since quit date and give one practical next step.
 
 Formatting:
 Return a JSON array with 3 objects:
 [
-  { "title": "Morning Routine Tip", "message": "..." },
+  { "title": "Routine Tip", "message": "..." },
   { "title": "Trigger Alert", "message": "..." },
   { "title": "Progress Advice", "message": "..." }
 ]`;
@@ -128,49 +128,49 @@ Return a JSON array with 3 objects:
 
       // Parse AI response as JSON
       const aiResponse = response.data?.reply || response.data?.message;
-let insights;
+      let insights;
 
-try {
-  // Try to find a JSON array in the response using regex
-  const jsonMatch = aiResponse.match(/\[[\s\S]*\]/);
-  if (jsonMatch) {
-    insights = JSON.parse(jsonMatch[0]);
-  } else {
-    throw new Error('No JSON array found in response');
-  }
-} catch (parseError) {
-  console.error('Failed to parse AI response as JSON:', parseError);
-  // Fallback to generic insights
-  insights = [
-    { 
-      id: 1,
-      title: "Morning Routine Tip", 
-      message: "Start your day with a glass of water and deep breathing." 
-    },
-    { 
-      id: 2,
-      title: "Trigger Alert", 
-      message: "Notice your patterns and prepare for challenging moments." 
-    },
-    { 
-      id: 3,
-      title: "Progress Advice", 
-      message: "Every day without smoking is a victory worth celebrating." 
-    }
-  ];
-}
+      try {
+        // Try to find a JSON array in the response using regex
+        const jsonMatch = aiResponse.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          insights = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error('No JSON array found in response');
+        }
+      } catch (parseError) {
+        console.error('Failed to parse AI response as JSON:', parseError);
+        // Fallback to generic insights
+        insights = [
+          {
+            id: 1,
+            title: "Routine Tip",
+            message: "Start your day with a glass of water and deep breathing."
+          },
+          {
+            id: 2,
+            title: "Trigger Alert",
+            message: "Notice your patterns and prepare for challenging moments."
+          },
+          {
+            id: 3,
+            title: "Progress Advice",
+            message: "Every day without smoking is a victory worth celebrating."
+          }
+        ];
+      }
 
-return insights.map((insight: any, index: number) => ({
-  id: insight.id || index + 1,
-  title: insight.title || "Insight",
-  message: insight.message || insight
-}));
+      return insights.map((insight: any, index: number) => ({
+        id: insight.id || index + 1,
+        title: insight.title || "Insight",
+        message: insight.message || insight
+      }));
 
     } catch (error) {
       console.error('Error generating AI insights:', error);
       // Fallback to generic insights
       return [
-        { id: 1, title: "Morning Routine Tip", message: "Start your day with a glass of water and deep breathing." },
+        { id: 1, title: "Routine Tip", message: "Start your day with a glass of water and deep breathing." },
         { id: 2, title: "Trigger Alert", message: "Notice your patterns and prepare for challenging moments." },
         { id: 3, title: "Progress Advice", message: "Every day without smoking is a victory worth celebrating." }
       ];
@@ -198,7 +198,7 @@ return insights.map((insight: any, index: number) => ({
       console.error('Failed to fetch insights:', error);
       // Fallback to generic insights
       const fallbackInsights = [
-        { id: 1, title: "Morning Routine Tip", message: "Start your day with a glass of water and deep breathing." },
+        { id: 1, title: "Routine Tip", message: "Start your day with a glass of water and deep breathing." },
         { id: 2, title: "Trigger Alert", message: "Notice your patterns and prepare for challenging moments." },
         { id: 3, title: "Progress Advice", message: "Every day without smoking is a victory worth celebrating." }
       ];
