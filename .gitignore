@@ -104,6 +104,7 @@ client/tsconfig.tsbuildinfo
 # -- Documentation --
 **/*.md
 !README.md
+!HOST.md
 /docs/
 
 # -- Database Schemas (Comment out to allow AI to see schema files) --
