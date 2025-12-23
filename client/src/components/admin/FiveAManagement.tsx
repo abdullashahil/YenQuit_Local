@@ -7,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { Loader2, Plus, Edit, Trash2, Save, X, MessageCircle, ClipboardCheck, Users, Activity, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Plus, Edit, Trash2, Save, X, MessageCircle, ClipboardCheck, Users, Activity, Eye, EyeOff, Phone } from 'lucide-react';
 import { ConfirmDialog, AlertDialog } from '../ui/confirm-dialog';
+import { helplineService, Helpline } from '../../services/helplineService';
 import {
   getCopingStrategies,
   createCopingStrategy,
@@ -49,7 +50,10 @@ export function FiveAManagement({ activeTab, setActiveTab }: FiveAManagementProp
   const [editingStrategy, setEditingStrategy] = useState<number | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showCreateStrategyForm, setShowCreateStrategyForm] = useState(false);
-  const [currentTab, setCurrentTab] = useState<'ask' | 'assess' | 'assist' | 'fagerstrom'>('ask');
+  const [showCreateHelplineForm, setShowCreateHelplineForm] = useState(false);
+  const [currentTab, setCurrentTab] = useState<'ask' | 'assess' | 'assist' | 'fagerstrom' | 'arrange'>('ask');
+  const [helplines, setHelplines] = useState<Helpline[]>([]);
+  const [editingHelpline, setEditingHelpline] = useState<number | null>(null);
 
   const [formData, setFormData] = useState({
     question_text: '',
@@ -66,13 +70,21 @@ export function FiveAManagement({ activeTab, setActiveTab }: FiveAManagementProp
     description: ''
   });
 
+  const [helplineFormData, setHelplineFormData] = useState({
+    title: '',
+    description: '',
+    phone_number: '',
+    display_order: 0
+  });
+
   // Dialog states
-  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; id: number | null; type: 'question' | 'strategy' }>({ open: false, id: null, type: 'question' });
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; id: number | null; type: 'question' | 'strategy' | 'helpline' }>({ open: false, id: null, type: 'question' });
   const [alertDialog, setAlertDialog] = useState<{ open: boolean; title: string; message: string; variant: 'danger' | 'warning' | 'info' | 'success' }>({ open: false, title: '', message: '', variant: 'info' });
 
   // Load all questions on mount
   useEffect(() => {
     loadAllQuestions();
+    loadHelplines();
   }, []);
 
   // Filter questions when tab or tobacco filter changes
@@ -124,6 +136,15 @@ export function FiveAManagement({ activeTab, setActiveTab }: FiveAManagementProp
         q => q.metadata.step === currentTab && q.metadata.tobacco_category === tobaccoFilter
       );
       setQuestions(filtered);
+    }
+  };
+
+  const loadHelplines = async () => {
+    try {
+      const response = await helplineService.getHelplines();
+      setHelplines(response.data.data);
+    } catch (error) {
+      console.error('Error loading helplines:', error);
     }
   };
 
@@ -407,6 +428,75 @@ export function FiveAManagement({ activeTab, setActiveTab }: FiveAManagementProp
     });
   };
 
+  const handleCreateHelpline = async () => {
+    if (!helplineFormData.title.trim() || !helplineFormData.phone_number.trim()) {
+      setAlertDialog({ open: true, title: 'Validation Error', message: 'Title and Phone Number are required', variant: 'warning' });
+      return;
+    }
+
+    try {
+      setSaving(true);
+      await helplineService.createHelpline(helplineFormData);
+      setShowCreateHelplineForm(false);
+      setHelplineFormData({ title: '', description: '', phone_number: '', display_order: 0 });
+      await loadHelplines();
+      setAlertDialog({ open: true, title: 'Success', message: 'Helpline created successfully', variant: 'success' });
+    } catch (error) {
+      console.error('Error creating helpline:', error);
+      setAlertDialog({ open: true, title: 'Error', message: 'Failed to create helpline', variant: 'danger' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateHelpline = async (id: number) => {
+    if (!helplineFormData.title.trim() || !helplineFormData.phone_number.trim()) {
+      setAlertDialog({ open: true, title: 'Validation Error', message: 'Title and Phone Number are required', variant: 'warning' });
+      return;
+    }
+
+    try {
+      setSaving(true);
+      await helplineService.updateHelpline(id, helplineFormData);
+      setEditingHelpline(null);
+      await loadHelplines();
+      setAlertDialog({ open: true, title: 'Success', message: 'Helpline updated successfully', variant: 'success' });
+    } catch (error) {
+      console.error('Error updating helpline:', error);
+      setAlertDialog({ open: true, title: 'Error', message: 'Failed to update helpline', variant: 'danger' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleToggleHelplineStatus = async (helpline: Helpline) => {
+    try {
+      await helplineService.updateHelpline(helpline.id, { is_active: !helpline.is_active });
+      await loadHelplines();
+    } catch (error) {
+      console.error('Error toggling helpline status:', error);
+    }
+  };
+
+  const handleDeleteHelpline = (id: number) => {
+    setDeleteDialog({ open: true, id, type: 'helpline' });
+  };
+
+  const confirmDeleteHelpline = async () => {
+    const id = deleteDialog.id;
+    if (!id) return;
+
+    try {
+      await helplineService.deleteHelpline(id);
+      await loadHelplines();
+      setDeleteDialog({ open: false, id: null, type: 'helpline' });
+      setAlertDialog({ open: true, title: 'Success', message: 'Helpline deleted successfully', variant: 'success' });
+    } catch (error) {
+      console.error('Error deleting helpline:', error);
+      setAlertDialog({ open: true, title: 'Error', message: 'Failed to delete helpline', variant: 'danger' });
+    }
+  };
+
   const handleTabChange = (value: string) => {
     setCurrentTab(value as any);
     setEditing(null);
@@ -440,7 +530,7 @@ export function FiveAManagement({ activeTab, setActiveTab }: FiveAManagementProp
       </div>
 
       <Tabs value={currentTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full grid-cols-4 bg-gray-100">
+        <TabsList className="grid w-full grid-cols-5 bg-gray-100">
           <TabsTrigger value="ask" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-[#20B2AA]">
             <MessageCircle className="w-4 h-4" />
             ASK
@@ -456,6 +546,10 @@ export function FiveAManagement({ activeTab, setActiveTab }: FiveAManagementProp
           <TabsTrigger value="assist" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-[#20B2AA]">
             <Users className="w-4 h-4" />
             ASSIST
+          </TabsTrigger>
+          <TabsTrigger value="arrange" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-[#20B2AA]">
+            <Phone className="w-4 h-4" />
+            ARRANGE
           </TabsTrigger>
         </TabsList>
 
@@ -490,6 +584,7 @@ export function FiveAManagement({ activeTab, setActiveTab }: FiveAManagementProp
             setAlertDialog={setAlertDialog}
             confirmDeleteQuestion={confirmDeleteQuestion}
             confirmDeleteStrategy={confirmDeleteStrategy}
+            confirmDeleteHelpline={confirmDeleteHelpline}
           />
         </TabsContent>
 
@@ -524,6 +619,7 @@ export function FiveAManagement({ activeTab, setActiveTab }: FiveAManagementProp
             setAlertDialog={setAlertDialog}
             confirmDeleteQuestion={confirmDeleteQuestion}
             confirmDeleteStrategy={confirmDeleteStrategy}
+            confirmDeleteHelpline={confirmDeleteHelpline}
           />
         </TabsContent>
 
@@ -558,6 +654,7 @@ export function FiveAManagement({ activeTab, setActiveTab }: FiveAManagementProp
             setAlertDialog={setAlertDialog}
             confirmDeleteQuestion={confirmDeleteQuestion}
             confirmDeleteStrategy={confirmDeleteStrategy}
+            confirmDeleteHelpline={confirmDeleteHelpline}
           />
         </TabsContent>
 
@@ -738,6 +835,163 @@ export function FiveAManagement({ activeTab, setActiveTab }: FiveAManagementProp
             </div>
           )}
         </TabsContent>
+
+        {/* ARRANGE Tab */}
+        <TabsContent value="arrange" className="space-y-4 mt-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Phone className="w-5 h-5 text-[#20B2AA]" />
+              <h3 className="text-xl font-semibold">ARRANGE Helplines</h3>
+            </div>
+            <Button
+              onClick={() => {
+                setShowCreateHelplineForm(!showCreateHelplineForm);
+                setEditingHelpline(null);
+                setHelplineFormData({ title: '', description: '', phone_number: '', display_order: 0 });
+              }}
+              className="h-10 rounded-xl flex items-center gap-2 px-4 bg-[#20B2AA] hover:bg-[#1C9B94] text-white"
+            >
+              <Plus className="w-4 h-4" />
+              Add Helpline
+            </Button>
+          </div>
+
+          {(showCreateHelplineForm || editingHelpline !== null) && (
+            <Card className="border-[#20B2AA] shadow-lg">
+              <CardHeader className="bg-gradient-to-r from-[#20B2AA]/10 to-transparent">
+                <CardTitle className="flex items-center gap-2 text-[#1C3B5E]">
+                  <Phone className="w-5 h-5 text-[#20B2AA]" />
+                  {editingHelpline ? 'Edit Helpline' : 'Create New Helpline'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="helpline-title">Title *</Label>
+                      <Input
+                        id="helpline-title"
+                        value={helplineFormData.title}
+                        onChange={(e) => setHelplineFormData({ ...helplineFormData, title: e.target.value })}
+                        placeholder="e.g., Yenepoya Helpline"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="helpline-number">Phone Number *</Label>
+                      <Input
+                        id="helpline-number"
+                        value={helplineFormData.phone_number}
+                        onChange={(e) => setHelplineFormData({ ...helplineFormData, phone_number: e.target.value })}
+                        placeholder="e.g., +91 12345 67890"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="helpline-description">Description</Label>
+                    <Textarea
+                      id="helpline-description"
+                      value={helplineFormData.description}
+                      onChange={(e) => setHelplineFormData({ ...helplineFormData, description: e.target.value })}
+                      placeholder="Brief description of the helpline..."
+                      rows={2}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="helpline-order">Display Order</Label>
+                    <Input
+                      id="helpline-order"
+                      type="number"
+                      value={helplineFormData.display_order}
+                      onChange={(e) => setHelplineFormData({ ...helplineFormData, display_order: parseInt(e.target.value) || 0 })}
+                    />
+                  </div>
+                  <div className="flex space-x-2 pt-2">
+                    <Button
+                      onClick={editingHelpline ? () => handleUpdateHelpline(editingHelpline) : handleCreateHelpline}
+                      disabled={saving}
+                      className="bg-[#20B2AA] hover:bg-[#1C9B94] text-white"
+                    >
+                      {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                      {editingHelpline ? 'Update Helpline' : 'Create Helpline'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setShowCreateHelplineForm(false);
+                        setEditingHelpline(null);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <div className="grid gap-4">
+            {helplines.length === 0 ? (
+              <Card className="border-dashed border-2 border-gray-300">
+                <CardContent className="py-12 text-center">
+                  <Phone className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">No helplines found</p>
+                </CardContent>
+              </Card>
+            ) : (
+              helplines.map((helpline) => (
+                <Card key={helpline.id} className={`${!helpline.is_active ? 'opacity-60' : ''} shadow-sm border-l-4 border-l-[#20B2AA]`}>
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-lg">{helpline.title}</span>
+                        {!helpline.is_active && <Badge variant="destructive">Inactive</Badge>}
+                        <Badge variant="outline" className="text-xs">Order: {helpline.display_order}</Badge>
+                      </div>
+                      <div className="text-[#20B2AA] font-medium flex items-center gap-1 mb-1">
+                        <Phone size={14} /> {helpline.phone_number}
+                      </div>
+                      <p className="text-gray-600 text-sm">{helpline.description}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleToggleHelplineStatus(helpline)}
+                        title={helpline.is_active ? "Deactivate" : "Activate"}
+                      >
+                        {helpline.is_active ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditingHelpline(helpline.id);
+                          setHelplineFormData({
+                            title: helpline.title,
+                            description: helpline.description,
+                            phone_number: helpline.phone_number,
+                            display_order: helpline.display_order
+                          });
+                          setShowCreateHelplineForm(false);
+                        }}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteHelpline(helpline.id)}
+                        className="hover:bg-red-50 hover:text-red-600 hover:border-red-600"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </TabsContent>
       </Tabs>
     </div>
   );
@@ -767,12 +1021,13 @@ interface QuestionTabContentProps {
   addOption: () => void;
   updateOption: (index: number, field: 'text' | 'score', value: string | number) => void;
   removeOption: (index: number) => void;
-  deleteDialog: { open: boolean; id: number | null; type: 'question' | 'strategy' };
-  setDeleteDialog: React.Dispatch<React.SetStateAction<{ open: boolean; id: number | null; type: 'question' | 'strategy' }>>;
+  deleteDialog: { open: boolean; id: number | null; type: 'question' | 'strategy' | 'helpline' };
+  setDeleteDialog: React.Dispatch<React.SetStateAction<{ open: boolean; id: number | null; type: 'question' | 'strategy' | 'helpline' }>>;
   alertDialog: { open: boolean; title: string; message: string; variant: 'danger' | 'warning' | 'info' | 'success' };
   setAlertDialog: React.Dispatch<React.SetStateAction<{ open: boolean; title: string; message: string; variant: 'danger' | 'warning' | 'info' | 'success' }>>;
   confirmDeleteQuestion: () => Promise<void>;
   confirmDeleteStrategy: () => Promise<void>;
+  confirmDeleteHelpline: () => Promise<void>;
 }
 
 function QuestionTabContent({
@@ -803,7 +1058,8 @@ function QuestionTabContent({
   alertDialog,
   setAlertDialog,
   confirmDeleteQuestion,
-  confirmDeleteStrategy
+  confirmDeleteStrategy,
+  confirmDeleteHelpline
 }: QuestionTabContentProps) {
   return (
     <>
@@ -1090,7 +1346,13 @@ function QuestionTabContent({
         description={`Are you sure you want to PERMANENTLY DELETE this ${deleteDialog.type}? This action cannot be undone and the ${deleteDialog.type} will be completely removed from the database.`}
         confirmText="Delete Permanently"
         cancelText="Cancel"
-        onConfirm={deleteDialog.type === 'question' ? confirmDeleteQuestion : confirmDeleteStrategy}
+        onConfirm={
+          deleteDialog.type === 'question'
+            ? confirmDeleteQuestion
+            : deleteDialog.type === 'strategy'
+              ? confirmDeleteStrategy
+              : confirmDeleteHelpline
+        }
         variant="danger"
       />
 
