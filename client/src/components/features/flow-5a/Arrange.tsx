@@ -2,26 +2,37 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../../ui/button';
 import { OnboardingProgressBar } from '../flow-shared/OnboardingProgressBar';
 import { BackToHomeButton } from '../../shared/BackToHomeButton';
-import { Phone, MessageSquare, AlertTriangle } from 'lucide-react';
+import { Phone, AlertTriangle } from 'lucide-react';
 import { FiveA_ArrangeProps } from '../../../types/fiveAFlow';
 import { userService } from '../../../services/userService';
+import { helplineService, Helpline } from '../../../services/helplineService';
+import { Skeleton } from '../../ui/skeleton';
 
 export function FiveA_Arrange({ onComplete, quitDate }: FiveA_ArrangeProps) {
   const [userOnboardingStep, setUserOnboardingStep] = useState<number | null>(null);
+  const [helplines, setHelplines] = useState<Helpline[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Fetch user profile to get onboarding_step
   useEffect(() => {
-    const fetchUserProfile = async () => {
+    const fetchData = async () => {
+      setLoading(true);
       try {
-        const response = await userService.getProfile();
-        setUserOnboardingStep(response.data.onboarding_step || 0);
+        // Fetch user profile to get onboarding_step
+        const profileResponse = await userService.getProfile();
+        setUserOnboardingStep(profileResponse.data.onboarding_step || 0);
+
+        // Fetch helplines
+        const helplineResponse = await helplineService.getHelplines();
+        setHelplines(helplineResponse.data.data.filter(h => h.is_active));
       } catch (error) {
-        console.error('Error fetching user profile:', error);
+        console.error('Error fetching data for Arrange step:', error);
         setUserOnboardingStep(0);
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchUserProfile();
+    fetchData();
   }, []);
 
   const handleCall = (number: string) => {
@@ -48,70 +59,69 @@ export function FiveA_Arrange({ onComplete, quitDate }: FiveA_ArrangeProps) {
             Get immediate support from our helplines
           </p>
 
-          {/* Yenepoya Helpline */}
-          <div className="mb-6 bg-gradient-to-r from-[#20B2AA]/5 to-[#20B2AA]/10 rounded-2xl p-6 border border-[#20B2AA]/30">
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-4 text-center md:text-left">
-              <div className="w-16 h-16 md:w-12 md:h-12 bg-[#20B2AA] rounded-full flex items-center justify-center flex-shrink-0">
-                <Phone className="text-white" size={24} />
-              </div>
-              <div className="flex-1 w-full">
-                <h3 className="text-[#1C3B5E] text-lg font-semibold mb-2">Yenepoya Helpline</h3>
-                <p className="text-[#333333] text-sm mb-4">
-                  Speak directly with our trained counselors for personalized support and guidance on your quit journey.
-                </p>
-                <div className="flex justify-center md:justify-start">
-                  <Button
-                    onClick={() => handleCall('+911234567890')}
-                    className="rounded-2xl bg-[#20B2AA] hover:bg-[#20B2AA]/90 text-white px-6 py-5"
-                  >
-                    <Phone className="mr-2 h-4 w-4" /> Call Now: +91 12345 67890
-                  </Button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {loading ? (
+              // Loading Skeletons
+              [1, 2].map((i) => (
+                <div key={i} className="h-48 border border-gray-100 rounded-2xl p-6 bg-gray-50/50">
+                  <Skeleton className="w-12 h-12 rounded-full mb-4" />
+                  <Skeleton className="h-6 w-3/4 mb-2" />
+                  <Skeleton className="h-4 w-full mb-4" />
+                  <Skeleton className="h-10 w-32 rounded-xl" />
                 </div>
-              </div>
-            </div>
-          </div>
+              ))
+            ) : helplines.length > 0 ? (
+              helplines.map((helpline) => (
+                <div
+                  key={helpline.id}
+                  className="bg-gradient-to-br from-[#20B2AA]/5 to-[#20B2AA]/10 rounded-2xl p-5 border border-[#20B2AA]/20 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col items-start h-full"
+                >
+                  <div className="flex items-center gap-3 mb-4 w-full">
+                    <div className="w-10 h-10 bg-[#20B2AA] rounded-full flex items-center justify-center shrink-0 shadow-sm shadow-[#20B2AA]/20">
+                      <Phone className="text-white" size={18} />
+                    </div>
+                    <h3 className="text-[#1C3B5E] text-base font-bold leading-tight">{helpline.title}</h3>
+                  </div>
 
-          {/* National Helpline */}
-          <div className="mb-8 bg-gradient-to-r from-[#1C3B5E]/5 to-[#1C3B5E]/10 rounded-2xl p-6 border border-[#1C3B5E]/30">
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-4 text-center md:text-left">
-              <div className="w-16 h-16 md:w-12 md:h-12 bg-[#1C3B5E] rounded-full flex items-center justify-center flex-shrink-0">
-                <MessageSquare className="text-white" size={24} />
-              </div>
-              <div className="flex-1 w-full">
-                <h3 className="text-[#1C3B5E] text-lg font-semibold mb-2">National Tobacco Cessation Helpline</h3>
-                <p className="text-[#333333] text-sm mb-4">
-                  Available 24/7 for confidential support and advice from national tobacco cessation experts.
-                </p>
-                <div className="flex justify-center md:justify-start">
-                  <Button
-                    onClick={() => handleCall('1800-11-2356')}
-                    variant="outline"
-                    className="rounded-2xl border-[#1C3B5E] text-[#1C3B5E] hover:bg-[#1C3B5E]/10 px-6 py-5"
-                  >
-                    <Phone className="mr-2 h-4 w-4" /> Call Now: 1800-11-2356
-                  </Button>
+                  <p className="text-[#333333] text-sm mb-5 flex-1 leading-relaxed">
+                    {helpline.description}
+                  </p>
+
+                  <div className="w-full mt-auto">
+                    <Button
+                      onClick={() => handleCall(helpline.phone_number)}
+                      className="w-full sm:w-auto rounded-xl bg-[#20B2AA] hover:bg-[#1E9E96] text-white px-5 py-2.5 h-auto text-sm font-medium shadow-md shadow-[#20B2AA]/10 transition-all active:scale-95 flex items-center justify-center gap-2"
+                    >
+                      <Phone size={14} />
+                      Call: {helpline.phone_number}
+                    </Button>
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="col-span-1 md:col-span-2 text-center py-12 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                <p className="text-gray-500">No helplines available at the moment.</p>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Important Note */}
-          <div className="mb-8 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+          <div className="mb-8 bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-r-2xl">
             <div className="flex">
               <div className="flex-shrink-0">
-                <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                <AlertTriangle className="h-6 w-6 text-yellow-600" />
               </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-yellow-800">Why Connecting is Important</h3>
-                <div className="mt-2 text-sm text-yellow-700">
-                  <p className="mb-2">
-                    <strong>Professional Guidance:</strong> Our counselors are trained to help you navigate the challenges of quitting and provide personalized strategies.
-                  </p>
-                  <p className="mb-2">
-                    <strong>Immediate Support:</strong> Cravings and withdrawal symptoms can be tough to handle alone. We're here to help you through the difficult moments.
+              <div className="ml-4">
+                <h3 className="text-lg font-semibold text-yellow-800">Why Connecting is Important</h3>
+                <div className="mt-3 text-sm text-yellow-700 space-y-3">
+                  <p>
+                    <strong className="text-yellow-900">Professional Guidance:</strong> Our counselors are trained to help you navigate the challenges of quitting and provide personalized strategies.
                   </p>
                   <p>
-                    <strong>Higher Success Rate:</strong> Studies show that individuals who seek professional support are up to 4 times more likely to quit successfully.
+                    <strong className="text-yellow-900">Immediate Support:</strong> Cravings and withdrawal symptoms can be tough to handle alone. We're here to help you through the difficult moments.
+                  </p>
+                  <p>
+                    <strong className="text-yellow-900">Higher Success Rate:</strong> Studies show that individuals who seek professional support are up to 4 times more likely to quit successfully.
                   </p>
                 </div>
               </div>
@@ -121,7 +131,7 @@ export function FiveA_Arrange({ onComplete, quitDate }: FiveA_ArrangeProps) {
           <div className="mt-8 flex justify-end">
             <Button
               onClick={() => onComplete()}
-              className="px-8 py-6 rounded-2xl bg-[#1C3B5E] hover:bg-[#1C3B5E]/90 text-white"
+              className="px-8 py-6 rounded-2xl bg-[#1C3B5E] hover:bg-[#1C3B5E]/90 text-white shadow-xl shadow-[#1C3B5E]/20 transition-all active:scale-95"
             >
               Go to Dashboard
             </Button>
