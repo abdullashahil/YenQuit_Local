@@ -24,7 +24,7 @@ export async function getUserAssistPlan(req, res, next) {
 
 export async function createOrUpdateUserAssistPlan(req, res, next) {
   try {
-
+    const userId = req.user.userId;
 
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });

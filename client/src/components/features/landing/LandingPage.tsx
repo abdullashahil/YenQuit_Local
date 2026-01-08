@@ -193,12 +193,19 @@ export function LandingPage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             {/* Logo */}
-            <h1
-              className="text-2xl md:text-3xl font-extrabold tracking-wide cursor-pointer transition-transform hover:scale-105"
+            <div
+              className="flex items-center gap-3 cursor-pointer transition-transform hover:scale-105"
               onClick={() => scrollToSection("hero")}
             >
-              YEN<span className="text-[#FFC107]">QUIT</span>
-            </h1>
+              <img
+                src="/images/YenQuit_logo.jpg"
+                alt="YenuQuit Logo"
+                className="w-10 h-10 md:w-12 md:h-12 object-contain rounded-full shadow-sm"
+              />
+              <h1 className="text-2xl md:text-3xl font-extrabold tracking-wide">
+                YEN<span className="text-[#FFC107]">QUIT</span>
+              </h1>
+            </div>
 
             {/* Hamburger Menu for Mobile */}
             <button
@@ -550,10 +557,17 @@ export function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 md:gap-12 items-start">
             {/* Logo and description */}
             <div className="md:col-span-2 lg:col-span-2">
-              <h1 className="text-2xl sm:text-3xl font-extrabold mb-4">
-                <span className="text-[#1C3B5E]">YEN</span>
-                <span className="text-[#F5B82E]">QUIT</span>
-              </h1>
+              <div className="flex items-center gap-3 mb-4">
+                <img
+                  src="/images/YenQuit_logo.jpg"
+                  alt="YenQuit Logo"
+                  className="w-12 h-12 object-contain rounded-full bg-white p-1"
+                />
+                <h1 className="text-2xl sm:text-3xl font-extrabold">
+                  <span className="text-[#1C3B5E]">YEN</span>
+                  <span className="text-[#F5B82E]">QUIT</span>
+                </h1>
+              </div>
               <p className="text-gray-600 mb-6 leading-relaxed text-sm sm:text-base">
                 Your trusted companion in the journey to a smoke-free life. We provide evidence-based tools,
                 community support, and personalized guidance to help you quit smoking for good.

@@ -31,7 +31,7 @@ export function Sidebar({ activeTab, setActiveTab, onLogout }: SidebarProps) {
         <img
           src="/images/YenQuit_logo.jpg"
           alt="YenQuit Logo"
-          className="w-24 h-24 object-contain"
+          className="w-24 h-24 object-contain rounded-full shadow-lg bg-white/10 p-2"
         />
         <h1 className="text-2xl font-bold text-white">YEN<span className="text-[#FFC107]">QUIT</span></h1>
       </div>
