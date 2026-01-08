@@ -153,34 +153,37 @@ export function FagerstromTest({
                                 onValueChange={(value) => handleFagerstromAnswer(`q${q.id}`, value)}
                                 className="space-y-1"
                             >
-                                {q.options.map((option) => (
-                                    <div
-                                        key={option}
-                                        className="flex items-center p-4 rounded-xl transition-all duration-200 cursor-pointer"
-                                        style={{
-                                            backgroundColor: fagerstromAnswers[`q${q.id}`] === option ? 'rgba(32, 178, 170, 0.08)' : 'transparent',
-                                            border: `2px solid ${fagerstromAnswers[`q${q.id}`] === option ? '#20B2AA' : 'transparent'}`,
-                                        }}
-                                        onClick={() => handleFagerstromAnswer(`q${q.id}`, option)}
-                                    >
-                                        <RadioGroupItem
-                                            value={option}
-                                            id={`fagerstrom-${q.id}-${option}`}
-                                            className="w-5 h-5"
+                                {q.options.map((option) => {
+                                    const optionText = typeof option === 'string' ? option : option.text;
+                                    return (
+                                        <div
+                                            key={optionText}
+                                            className="flex items-center p-4 rounded-xl transition-all duration-200 cursor-pointer"
                                             style={{
-                                                borderColor: '#20B2AA',
-                                                color: '#20B2AA'
+                                                backgroundColor: fagerstromAnswers[`q${q.id}`] === optionText ? 'rgba(32, 178, 170, 0.08)' : 'transparent',
+                                                border: `2px solid ${fagerstromAnswers[`q${q.id}`] === optionText ? '#20B2AA' : 'transparent'}`,
                                             }}
-                                        />
-                                        <Label
-                                            htmlFor={`fagerstrom-${q.id}-${option}`}
-                                            className="ml-4 cursor-pointer flex-1"
-                                            style={{ color: '#333333' }}
+                                            onClick={() => handleFagerstromAnswer(`q${q.id}`, optionText)}
                                         >
-                                            {option}
-                                        </Label>
-                                    </div>
-                                ))}
+                                            <RadioGroupItem
+                                                value={optionText}
+                                                id={`fagerstrom-${q.id}-${optionText}`}
+                                                className="w-5 h-5"
+                                                style={{
+                                                    borderColor: '#20B2AA',
+                                                    color: '#20B2AA'
+                                                }}
+                                            />
+                                            <Label
+                                                htmlFor={`fagerstrom-${q.id}-${optionText}`}
+                                                className="ml-4 cursor-pointer flex-1"
+                                                style={{ color: '#333333' }}
+                                            >
+                                                {optionText}
+                                            </Label>
+                                        </div>
+                                    );
+                                })}
                             </RadioGroup>
                         </div>
                     ))}
