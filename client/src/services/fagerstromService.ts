@@ -3,7 +3,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 export interface FagerstromQuestion {
   id: number;
   question_text: string;
-  options: string[];
+  options: (string | { text: string; score?: number })[];
   is_active: boolean;
   created_at: string;
   updated_at: string;
