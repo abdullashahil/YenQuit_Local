@@ -58,7 +58,10 @@ export default function FagerstromAdminPage() {
 
   function startEdit(q: FagerstromQuestion) {
     setEditing(q);
-    setForm({ question_text: q.question_text, options: q.options });
+    const normalizedOptions = q.options.map((opt: any) =>
+      typeof opt === 'string' ? opt : opt.text
+    );
+    setForm({ question_text: q.question_text, options: normalizedOptions });
   }
 
   function addOption() {
@@ -130,7 +133,11 @@ export default function FagerstromAdminPage() {
               <div style={{ flex: 1 }}>
                 <p style={{ fontWeight: 'bold' }}>{q.question_text}</p>
                 <ul style={{ margin: '8 0', paddingLeft: 20 }}>
-                  {q.options.map((opt, i) => <li key={i}>{opt}</li>)}
+                  {q.options.map((opt, i) => {
+                    const text = typeof opt === 'string' ? opt : opt.text;
+                    const score = typeof opt === 'object' && opt.score !== undefined ? ` (${opt.score})` : '';
+                    return <li key={i}>{text}{score}</li>
+                  })}
                 </ul>
                 <small style={{ color: q.is_active ? 'green' : 'red' }}>{q.is_active ? 'Active' : 'Inactive'}</small>
               </div>
