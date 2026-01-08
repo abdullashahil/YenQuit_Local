@@ -69,7 +69,7 @@ export function AdminSidebar({ activeTab, setActiveTab, onExitAdmin, onLogout }:
           <img
             src="/images/YenQuit_logo.jpg"
             alt="YenQuit Logo"
-            className="w-20 h-20 object-contain"
+            className="w-20 h-20 object-contain rounded-full shadow-lg bg-white/10 p-2"
           />
           <div>
             <h2 className="text-xl font-bold text-white">Admin Panel</h2>

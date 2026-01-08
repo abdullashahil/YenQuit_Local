@@ -11,7 +11,9 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <AppProvider>
       <Head>
+        <title>YenQuit - Your Journey to Freedom</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" href="/images/YenQuit_logo.jpg" />
       </Head>
       <NotificationProvider>
         <Component {...pageProps} />

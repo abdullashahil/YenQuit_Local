@@ -434,7 +434,17 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
         className="hidden lg:flex lg:w-1/2 lg:fixed lg:left-0 lg:top-0 lg:h-screen flex-col justify-center items-center p-12 bg-[#1C3B5E]"
       >
         <div className="text-center max-w-md">
-          <h1 className="text-5xl mb-6 text-white">
+          <div className="flex flex-col items-center mb-8">
+            <img
+              src="/images/YenQuit_logo.jpg"
+              alt="YenQuit Logo"
+              className="w-24 h-24 object-contain rounded-full shadow-2xl bg-white/10 p-2 mb-4"
+            />
+            <h1 className="text-2xl font-bold text-white tracking-wider">
+              YEN<span className="text-[#FFC107]">QUIT</span>
+            </h1>
+          </div>
+          <h1 className="text-5xl mb-6 text-white leading-tight">
             Quitting Journey
           </h1>
           <div className="mt-12 relative">
@@ -585,19 +595,19 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
                             <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                               <div
                                 className={`h-full transition-all duration-300 ${passwordStrength === 'weak'
-                                    ? 'w-1/3 bg-red-500'
-                                    : passwordStrength === 'medium'
-                                      ? 'w-2/3 bg-yellow-500'
-                                      : 'w-full bg-green-500'
+                                  ? 'w-1/3 bg-red-500'
+                                  : passwordStrength === 'medium'
+                                    ? 'w-2/3 bg-yellow-500'
+                                    : 'w-full bg-green-500'
                                   }`}
                               />
                             </div>
                             <span
                               className={`text-xs font-medium ${passwordStrength === 'weak'
-                                  ? 'text-red-600'
-                                  : passwordStrength === 'medium'
-                                    ? 'text-yellow-600'
-                                    : 'text-green-600'
+                                ? 'text-red-600'
+                                : passwordStrength === 'medium'
+                                  ? 'text-yellow-600'
+                                  : 'text-green-600'
                                 }`}
                             >
                               {passwordStrength === 'weak'
