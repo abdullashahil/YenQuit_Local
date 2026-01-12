@@ -47,3 +47,17 @@ export const contentService = {
 };
 
 export default contentService;
+
+export const getMediaUrl = (url?: string | null) => {
+  if (!url) return '';
+  if (url.startsWith('http') || url.startsWith('blob:') || url.startsWith('data:')) return url;
+
+  // Create base URL from API_BASE_URL (removing /api suffix if present)
+  // API_BASE_URL is like 'http://localhost:5000/api'
+  const baseUrl = API_BASE_URL.replace(/\/api\/?$/, '');
+
+  // Ensure url starts with /
+  const path = url.startsWith('/') ? url : `/${url}`;
+
+  return `${baseUrl}${path}`;
+};

@@ -2,6 +2,8 @@ import { Card } from "../../ui/card";
 import { Heart } from "lucide-react";
 import { ImageWithFallback } from "../../images/ImageWithFallback";
 
+import { getMediaUrl } from "../../../services/contentService";
+
 interface ImageCardProps {
   image: string;
   caption: string;
@@ -14,17 +16,17 @@ export function ImageCard({ image, caption, category }: ImageCardProps) {
       {/* Image */}
       <div className="relative aspect-square overflow-hidden">
         <ImageWithFallback
-          src={image}
+          src={getMediaUrl(image)}
           alt={caption}
           className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
         />
-        
+
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
         {/* Category Badge */}
         {category && (
-          <div 
+          <div
             className="absolute top-3 left-3 px-3 py-1.5 rounded-xl text-xs"
             style={{ backgroundColor: "#20B2AA", color: "white" }}
           >
@@ -33,7 +35,7 @@ export function ImageCard({ image, caption, category }: ImageCardProps) {
         )}
 
         {/* Heart Icon */}
-        <button 
+        <button
           className="absolute top-3 right-3 p-2.5 rounded-xl bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all"
         >
           <Heart className="w-4 h-4 text-white" />
