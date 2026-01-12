@@ -1,9 +1,10 @@
 import { ChevronRight, Play, Headphones, BookOpen, Quote, Image as ImageIcon, X } from "lucide-react";
+import { Linkify } from "../../shared/Linkify";
 import { ReactNode, useState } from "react";
 import { Card, CardContent, CardFooter } from "../../ui/card";
 import { Button } from "../../ui/button";
 import { Dialog, DialogContent } from "../../ui/dialog";
-import { PublicContentItem } from "../../../services/contentService";
+import { PublicContentItem, getMediaUrl } from "../../../services/contentService";
 
 export type ContentItem = PublicContentItem;
 
@@ -55,7 +56,7 @@ const BlogCard = ({ item, onItemClick }: { item: ContentItem; onItemClick?: (ite
         {item.media_url && (
           <div className="aspect-video bg-gray-100 flex items-center justify-center">
             <img
-              src={item.media_url}
+              src={getMediaUrl(item.media_url || "")}
               alt={item.title}
               className="w-full h-full object-cover"
             />
@@ -122,7 +123,7 @@ export function LearningSection({
                   </div>
                 ) : (
                   <img
-                    src={item.media_url}
+                    src={getMediaUrl(item.media_url || "")}
                     alt={item.title}
                     className="w-full h-full object-contain"
                   />
@@ -208,7 +209,7 @@ export function LearningSection({
                 {selectedBlog.media_url && (
                   <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden max-h-96">
                     <img
-                      src={selectedBlog.media_url}
+                      src={getMediaUrl(selectedBlog.media_url)}
                       alt={selectedBlog.title}
                       className="w-full h-full object-contain"
                     />
@@ -226,7 +227,7 @@ export function LearningSection({
                 {selectedBlog.content && (
                   <div className="prose prose-gray max-w-none">
                     <div className="whitespace-pre-wrap text-gray-800 leading-relaxed">
-                      {selectedBlog.content}
+                      <Linkify text={selectedBlog.content} />
                     </div>
                   </div>
                 )}
@@ -257,7 +258,7 @@ export function LearningSection({
               <div className="relative w-full h-full flex flex-col">
                 <div className="flex-1 flex items-center justify-center bg-black">
                   <img
-                    src={selectedImage.media_url}
+                    src={getMediaUrl(selectedImage.media_url)}
                     alt={selectedImage.title}
                     className="max-w-full max-h-full object-contain"
                   />

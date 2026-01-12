@@ -35,6 +35,7 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<'category' | 'details'>('category');
+  const [imageSourceType, setImageSourceType] = useState<'upload' | 'url'>('upload');
 
   // Reset step when modal opens/closes
   useEffect(() => {
@@ -42,8 +43,14 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
       if (editContent?.category) {
         setCategory(editContent.category);
         setStep('details');
+        if (editContent.category === 'Image' && editContent.media_url) {
+          setImageSourceType('url');
+        } else {
+          setImageSourceType('upload');
+        }
       } else {
         setStep('category');
+        setImageSourceType('upload');
       }
     }
   }, [open, editContent]);
@@ -131,6 +138,7 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
           setTags("");
           setSelectedFile(null);
           setStep('category');
+          setImageSourceType('upload');
         }
 
         // Call success callback if provided
@@ -164,6 +172,7 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
     setMediaUrl("");
     setTags("");
     setSelectedFile(null);
+    setImageSourceType('upload');
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -352,8 +361,9 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
                               <input
                                 type="radio"
                                 name="imageSource"
-                                checked={!mediaUrl}
+                                checked={imageSourceType === 'upload'}
                                 onChange={() => {
+                                  setImageSourceType('upload');
                                   setMediaUrl("");
                                   setSelectedFile(null);
                                 }}
@@ -365,8 +375,9 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
                               <input
                                 type="radio"
                                 name="imageSource"
-                                checked={mediaUrl && !selectedFile}
+                                checked={imageSourceType === 'url'}
                                 onChange={() => {
+                                  setImageSourceType('url');
                                   setSelectedFile(null);
                                 }}
                                 className="text-[#20B2AA]"
@@ -375,7 +386,7 @@ export function AddContentModal({ open, onOpenChange, editContent, onContentSave
                             </label>
                           </div>
 
-                          {!mediaUrl ? (
+                          {imageSourceType === 'upload' ? (
                             <div className="space-y-3">
                               <div className="border-2 border-dashed border-gray-300 rounded-2xl p-6 text-center hover:border-[#20B2AA] transition-colors">
                                 <input

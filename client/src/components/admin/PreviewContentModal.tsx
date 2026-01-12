@@ -1,6 +1,9 @@
 import { Dialog, DialogContent } from "../ui/dialog";
 import { X, Calendar, Tag } from "lucide-react";
 import { Card } from "../ui/card";
+import { Linkify } from "../shared/Linkify";
+
+import { getMediaUrl } from "../../services/contentService";
 
 interface PreviewContentModalProps {
   open: boolean;
@@ -14,7 +17,7 @@ export function PreviewContentModal({ open, onOpenChange, content }: PreviewCont
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className=" p-0 rounded-3xl border-0 overflow-hidden shadow-2xl">
-        
+
         {/* Preview Content */}
         <div className="p-8 overflow-y-auto flex-1" style={{ backgroundColor: "#f8f8f8" }}>
           <Card className="rounded-3xl border-0 shadow-lg overflow-hidden">
@@ -59,8 +62,8 @@ export function PreviewContentModal({ open, onOpenChange, content }: PreviewCont
             {content.media_url && (
               <div className="w-full">
                 {content.category === 'Image' ? (
-                  <img 
-                    src={content.media_url} 
+                  <img
+                    src={getMediaUrl(content.media_url)}
                     alt={content.title || "Content image"}
                     className="w-full h-auto max-h-96 object-cover"
                   />
@@ -70,9 +73,9 @@ export function PreviewContentModal({ open, onOpenChange, content }: PreviewCont
                       <p className="text-sm text-gray-600 mb-2">
                         {content.category === 'Video' ? 'Video URL:' : 'Podcast URL:'}
                       </p>
-                      <a 
-                        href={content.media_url} 
-                        target="_blank" 
+                      <a
+                        href={content.media_url}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 hover:text-blue-800 underline break-all text-lg"
                       >
@@ -99,7 +102,7 @@ export function PreviewContentModal({ open, onOpenChange, content }: PreviewCont
                 <div className="prose max-w-none" style={{ color: "#333333" }}>
                   {content.content.split('\n').map((paragraph: string, index: number) => (
                     <p key={index} className="mb-4">
-                      {paragraph}
+                      <Linkify text={paragraph} />
                     </p>
                   ))}
                 </div>

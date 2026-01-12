@@ -82,7 +82,7 @@ class ContentController {
       // Handle media URL (from file upload or external URL)
       let finalMediaUrl = media_url;
       if (req.file) {
-        finalMediaUrl = getFileUrl(req.file.filename);
+        finalMediaUrl = `/uploads/content/${req.file.filename}`;
       } else if (media_url && media_url.trim() === '') {
         finalMediaUrl = null; // Don't save empty strings
       }
@@ -277,7 +277,7 @@ class ContentController {
           const oldFilename = existingContent.media_url.split('/').pop();
           deleteFile(oldFilename);
         }
-        finalMediaUrl = getFileUrl(req.file.filename);
+        finalMediaUrl = `/uploads/content/${req.file.filename}`;
       } else if (media_url !== undefined && media_url.trim() === '') {
         finalMediaUrl = null; // Don't save empty strings
       }
