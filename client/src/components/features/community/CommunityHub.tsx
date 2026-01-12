@@ -74,14 +74,14 @@ export function CommunityHub() {
     <div className="flex h-screen bg-white overflow-hidden">
       {/* Community List */}
       {showList && (
-        <div className={`${isMobile ? "w-full" : "w-1/3"} border-r border-gray-200 flex flex-col`}>
+        <div className={`${isMobile ? "w-full" : "w-[350px] lg:w-[450px] flex-shrink-0"} border-r border-gray-200 flex flex-col`}>
           <CommunityList selectedCommunity={selectedCommunityId} onSelectCommunity={handleSelectCommunity} />
         </div>
       )}
 
       {/* Chat Area */}
       {showChat && (
-        <div className={`${isMobile ? "w-full" : "w-2/3"} flex flex-col`}>
+        <div className="flex-1 flex flex-col min-w-0">
           <ChatArea
             community={selectedCommunity}
             onBack={isMobile ? () => {

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { Plus, Search, ChevronDown, Sparkles, Bell } from "lucide-react"
+import { Plus, Search, Sparkles, Bell } from "lucide-react"
 import axios from "axios"
 import CommunityCard from "./community-card"
 import InviteUsersModal from "./InviteUsersModal"
@@ -38,7 +38,6 @@ export default function CommunityList({ selectedCommunity, onSelectCommunity }: 
   const [communitiesRaw, setCommunitiesRaw] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
-  const [showPublic, setShowPublic] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [newCommunityId, setNewCommunityId] = useState<string | null>(null)
@@ -146,12 +145,11 @@ export default function CommunityList({ selectedCommunity, onSelectCommunity }: 
         const dateB = new Date(b.last_message_time || b.updated_at || b.created_at || 0).getTime()
         return dateB - dateA
       })
-      .slice(0, 3)
   }, [uiCommunities])
 
   // public communities filtered by search
   const publicCommunities = useMemo(() => {
-    return uiCommunities.filter((c) => !c.is_private && matchesSearch(c, searchQuery))
+    return uiCommunities.filter((c) => !c.is_private && !c.user_role && matchesSearch(c, searchQuery))
   }, [uiCommunities, searchQuery])
 
   // filtered list for the main list (search)
@@ -249,7 +247,7 @@ export default function CommunityList({ selectedCommunity, onSelectCommunity }: 
       {/* Header */}
       <div className="p-4 md:p-6 border-b border-gray-200">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl md:text-3xl font-semibold text-[#1C3B5E]">Communities</h1>
+          <h1 className="text-xl md:text-2xl lg:text-3xl font-semibold text-[#1C3B5E] transition-all">Communities</h1>
           <div className="flex items-center gap-2">
             {/* Notification Bell */}
             <button
@@ -267,10 +265,10 @@ export default function CommunityList({ selectedCommunity, onSelectCommunity }: 
             {/* Create Button */}
             <button
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-[#2D9B8F] text-white rounded-lg hover:bg-[#248080] transition-colors"
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-[#2D9B8F] text-white rounded-lg hover:bg-[#248080] transition-colors whitespace-nowrap overflow-hidden"
             >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Create</span>
+              <Plus className="w-4 h-4 flex-shrink-0" />
+              <span className="text-sm font-medium">Create</span>
             </button>
           </div>
         </div>
@@ -307,12 +305,12 @@ export default function CommunityList({ selectedCommunity, onSelectCommunity }: 
           </button>
         </div>
 
-        {/* Recent Conversations */}
+        {/* My Communities */}
         <div className="p-4 md:p-6 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-[#1C3B5E] mb-4">Recent Conversations</h2>
+          <h2 className="text-lg font-semibold text-[#1C3B5E] mb-4">My Communities</h2>
           <div className="space-y-2">
             {recentConversations.length === 0 ? (
-              <div className="text-sm text-gray-500">No recent conversations</div>
+              <div className="text-sm text-gray-500">You haven't joined any communities yet</div>
             ) : (
               recentConversations.map((c) => (
                 <CommunityCard
@@ -347,50 +345,39 @@ export default function CommunityList({ selectedCommunity, onSelectCommunity }: 
         <div className="p-4 md:p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-[#1C3B5E]">Discover Communities</h2>
-            <button
-              onClick={() => setShowPublic((s) => !s)}
-              className="p-1 hover:bg-gray-100 rounded transition-colors"
-              aria-label="Toggle public communities"
-            >
-              <ChevronDown
-                className={`w-5 h-5 text-gray-600 transition-transform ${showPublic ? "" : "-rotate-90"}`}
-              />
-            </button>
           </div>
 
-          {showPublic && (
-            <div className="space-y-2">
-              {publicCommunities.length === 0 ? (
-                <div className="text-sm text-gray-500">No public communities found</div>
-              ) : (
-                publicCommunities.map((c) => (
-                  <CommunityCard
-                    key={c.id}
-                    community={{
-                      id: c.id,
-                      name: c.name,
-                      description: c.description,
-                      avatar_url: c.avatar_url,
-                      member_count: c.member_count,
-                      online_count: c.online_count,
-                      message_count: c.message_count,
-                      user_role: c.user_role,
-                      is_private: c.is_private,
-                      created_at: c.created_at,
-                      updated_at: c.updated_at,
-                      lastMessage: c.last_message,
-                      lastMessageTime: tryFormatTime(c.last_message_time || c.updated_at || c.created_at),
-                      unreadCount: unreadCounts[c.id] ?? 0,
-                      avatar: c.avatar_url ?? c.avatar
-                    }}
-                    isSelected={selectedCommunity === c.id}
-                    onSelect={() => handleSelect(c.id)}
-                    onJoin={handleJoinCommunity}
-                  />
-                ))
-              )}
-            </div>
-          )}
+          <div className="space-y-2">
+            {publicCommunities.length === 0 ? (
+              <div className="text-sm text-gray-500">No public communities found</div>
+            ) : (
+              publicCommunities.map((c) => (
+                <CommunityCard
+                  key={c.id}
+                  community={{
+                    id: c.id,
+                    name: c.name,
+                    description: c.description,
+                    avatar_url: c.avatar_url,
+                    member_count: c.member_count,
+                    online_count: c.online_count,
+                    message_count: c.message_count,
+                    user_role: c.user_role,
+                    is_private: c.is_private,
+                    created_at: c.created_at,
+                    updated_at: c.updated_at,
+                    lastMessage: c.last_message,
+                    lastMessageTime: tryFormatTime(c.last_message_time || c.updated_at || c.created_at),
+                    unreadCount: unreadCounts[c.id] ?? 0,
+                    avatar: c.avatar_url ?? c.avatar
+                  }}
+                  isSelected={selectedCommunity === c.id}
+                  onSelect={() => handleSelect(c.id)}
+                  onJoin={handleJoinCommunity}
+                />
+              ))
+            )}
+          </div>
         </div>
       </div>
 
