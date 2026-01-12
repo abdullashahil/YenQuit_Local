@@ -199,7 +199,7 @@ export function LandingPage() {
             >
               <img
                 src="/images/YenQuit_logo.jpg"
-                alt="YenuQuit Logo"
+                alt="YenQuit Logo"
                 className="w-10 h-10 md:w-12 md:h-12 object-contain rounded-full shadow-sm"
               />
               <h1 className="text-2xl md:text-3xl font-extrabold tracking-wide">

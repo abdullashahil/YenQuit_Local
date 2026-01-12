@@ -13,7 +13,8 @@ export default function App({ Component, pageProps }: AppProps) {
       <Head>
         <title>YenQuit - Your Journey to Freedom</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/images/YenQuit_logo.jpg" />
+        <link rel="icon" type="image/jpeg" href="/images/YenQuit_logo.jpg" />
+        <link rel="apple-touch-icon" href="/images/YenQuit_logo.jpg" />
       </Head>
       <NotificationProvider>
         <Component {...pageProps} />
