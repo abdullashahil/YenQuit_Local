@@ -44,21 +44,55 @@ export const InitialOnboarding: React.FC<InitialOnboardingProps> = ({ onComplete
   });
 
   const [step, setStep] = useState<1 | 2>(1);
+  const [phoneError, setPhoneError] = useState('');
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const prefillName = sessionStorage.getItem('signupFullName') || '';
       const prefillEmail = sessionStorage.getItem('signupEmail') || '';
+      const prefillPhone = sessionStorage.getItem('signupPhone') || '';
+
+      // Fallback to localStorage if sessionStorage is empty (e.g. for existing users requiring onboarding)
+      let localName = '';
+      let localEmail = '';
+      let localPhone = '';
+
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          const user = JSON.parse(storedUser);
+          localName = user.full_name || '';
+          localEmail = user.email || '';
+          localPhone = user.phone || '';
+        } catch (e) {
+          console.error("Error parsing user from localStorage", e);
+        }
+      }
+
       setFormData(prev => ({
         ...prev,
-        name: prev.name || prefillName,
-        email: prev.email || prefillEmail,
+        name: prev.name || prefillName || localName,
+        email: prev.email || prefillEmail || localEmail,
+        contactNumber: prev.contactNumber || prefillPhone || localPhone,
       }));
     }
   }, []);
 
   const handleInputChange = (field: keyof OnboardingData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    if (field === 'contactNumber') {
+      const cleaned = value.replace(/\D/g, '').slice(0, 10);
+      setFormData(prev => ({ ...prev, [field]: cleaned }));
+
+      if (cleaned.length > 0 && cleaned.length < 10) {
+        setPhoneError("Phone number must be exactly 10 digits");
+      } else if (cleaned.length === 10 && !/^[6-9]\d{9}$/.test(cleaned)) {
+        setPhoneError("Invalid Indian number (starts with 6-9)");
+      } else {
+        setPhoneError("");
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value }));
+    }
   };
 
   const handlePathwaySelection = (pathway: '5As' | '5Rs') => {
@@ -91,7 +125,7 @@ export const InitialOnboarding: React.FC<InitialOnboardingProps> = ({ onComplete
     const basicFields = ['name', 'age', 'gender', 'isStudent', 'email', 'contactNumber', 'place', 'setting', 'tobaccoType', 'systemicHealthIssue'];
     const basicFieldsFilled = basicFields.every(field => formData[field as keyof OnboardingData]?.trim());
 
-    if (!basicFieldsFilled) return false;
+    if (!basicFieldsFilled || formData.contactNumber.length !== 10 || phoneError) return false;
 
     // Check student fields if applicable
     if (formData.isStudent === 'yes') {
@@ -110,6 +144,7 @@ export const InitialOnboarding: React.FC<InitialOnboardingProps> = ({ onComplete
   const isBasicInfoComplete = () => {
     const basic = ['name', 'age', 'gender', 'isStudent', 'email', 'contactNumber', 'place', 'setting'];
     if (!basic.every(field => formData[field as keyof OnboardingData]?.trim())) return false;
+    if (formData.contactNumber.length !== 10 || phoneError) return false;
     if (formData.isStudent === 'yes') {
       if (!formData.yearOfStudy?.trim() || !formData.streamOfStudy?.trim()) return false;
     }
@@ -287,10 +322,11 @@ export const InitialOnboarding: React.FC<InitialOnboardingProps> = ({ onComplete
                   type="tel"
                   value={formData.contactNumber}
                   onChange={(e) => handleInputChange('contactNumber', e.target.value)}
-                  className="mt-2 rounded-xl border-2 placeholder:text-gray-400"
-                  style={{ borderColor: '#E0E0E0' }}
+                  className={`mt-2 rounded-xl border-2 placeholder:text-gray-400 ${phoneError ? 'border-red-500' : ''}`}
+                  style={{ borderColor: phoneError ? '#EF4444' : '#E0E0E0' }}
                   placeholder="8989898989"
                 />
+                {phoneError && <p className="text-red-500 text-xs mt-1 ml-1 font-medium">{phoneError}</p>}
               </div>
             </div>
 
