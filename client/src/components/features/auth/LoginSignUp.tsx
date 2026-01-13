@@ -122,7 +122,8 @@ export function LoginSignUp({ onLogin, onSignUp, onBackToLanding }: LoginSignUpP
         // For new Google users, start onboarding
         if (typeof window !== 'undefined') {
           sessionStorage.setItem('signupEmail', data.user.email);
-          sessionStorage.setItem('signupFullName', data.user.profile?.full_name || '');
+          sessionStorage.setItem('signupFullName', data.user.full_name || '');
+          sessionStorage.setItem('signupPhone', data.user.phone || '');
           sessionStorage.setItem('googleSignup', 'true');
         }
         setStage('onboarding');
