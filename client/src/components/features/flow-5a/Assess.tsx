@@ -336,7 +336,7 @@ export function FiveA_Assess({ onNext }: FiveA_AssessProps) {
             <Button
               onClick={handleInterpretationContinue}
               className="w-full py-6 text-lg rounded-xl shadow-xl shadow-teal-200 transition-transform hover:scale-[1.02]"
-              style={{ backgroundColor: '#20B2AA' }}
+              style={{ backgroundColor: '#20B2AA', color: '#FFFFFF' }}
             >
               Save Report & Continue
             </Button>
