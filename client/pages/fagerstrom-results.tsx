@@ -144,6 +144,13 @@ export default function FagerstromResultsPage() {
                         </button>
 
                         <button
+                            onClick={() => router.push('/fagerstrom-history')}
+                            className="px-8 py-3 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg bg-white text-teal-600 border-2 border-teal-500 hover:bg-teal-50"
+                        >
+                            View History
+                        </button>
+
+                        <button
                             onClick={handleDownload}
                             className="px-8 py-3 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
                             style={{

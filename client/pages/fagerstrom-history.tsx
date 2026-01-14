@@ -218,7 +218,7 @@ export default function FagerstromHistoryPage() {
                                             <div className="text-right">
                                                 <p className="text-xs mb-1" style={{ color: '#999999' }}>Change</p>
                                                 {session.score < sessions[index + 1].score ? (
-                                                    <div className="flex items-center gap-1" style={{ color: '#10B981' }}>
+                                                    <div className="flex items-center gap-1" style={{ color: '#EF4444' }}>
                                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                                             <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
                                                         </svg>
@@ -227,7 +227,7 @@ export default function FagerstromHistoryPage() {
                                                         </span>
                                                     </div>
                                                 ) : session.score > sessions[index + 1].score ? (
-                                                    <div className="flex items-center gap-1" style={{ color: '#EF4444' }}>
+                                                    <div className="flex items-center gap-1" style={{ color: '#10B981' }}>
                                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                                             <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                                                         </svg>
