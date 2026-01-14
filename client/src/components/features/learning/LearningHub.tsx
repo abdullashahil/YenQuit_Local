@@ -429,9 +429,43 @@ export function LearningHub({ activeTab, setActiveTab, onLogout }: LearningHubPr
         <div className="w-full">
           {currentView === "hub" ? (
             <>
-              <div className="mb-12">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Learning Hub</h1>
-                <p className="text-gray-600">Discover educational resources to support your journey</p>
+              <div className="mb-12 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Learning Hub</h1>
+                  <p className="text-gray-600">Discover educational resources to support your journey</p>
+                </div>
+                <button
+                  onClick={() => window.location.href = '/games'}
+                  className="px-6 py-3 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-3 group self-start md:self-auto"
+                  style={{
+                    backgroundColor: '#8B5CF6',
+                    color: '#FFFFFF',
+                    fontSize: '1rem',
+                    fontWeight: '600'
+                  }}
+                >
+                  <div className="animate-bounce">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="w-6 h-6"
+                    >
+                      <line x1="6" x2="10" y1="12" y2="12" />
+                      <line x1="8" x2="8" y1="10" y2="14" />
+                      <line x1="15" x2="15.01" y1="13" y2="13" />
+                      <line x1="18" x2="18.01" y1="11" y2="11" />
+                      <rect width="20" height="12" x="2" y="6" rx="2" />
+                    </svg>
+                  </div>
+                  <span>Play</span>
+                </button>
               </div>
 
               <div className="space-y-16 mb-16">
