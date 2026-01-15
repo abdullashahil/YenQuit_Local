@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { Button } from '../../ui/button';
 import { Label } from '../../ui/label';
@@ -42,6 +42,16 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
   const [notificationTemplates, setNotificationTemplates] = useState<NotificationTemplate[]>([]);
   const [userNotifications, setUserNotifications] = useState<UserNotification[]>([]);
   const [notifications, setNotifications] = useState<Record<string, { enabled: boolean; time: string }>>({});
+  const [errors, setErrors] = useState({
+    quitDate: false,
+    strategies: false,
+    triggers: false
+  });
+
+  // Refs for scrolling to errors
+  const quitDateRef = useRef<HTMLDivElement>(null);
+  const strategiesRef = useRef<HTMLDivElement>(null);
+  const triggersRef = useRef<HTMLDivElement>(null);
 
   // Load data on component mount
   useEffect(() => {
@@ -137,49 +147,77 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
     );
   };
 
-  const handleNext = async () => {
-    try {
-      setSaving(true);
+  const validateFields = () => {
+    const newErrors = {
+      quitDate: !quitDate,
+      strategies: selectedStrategies.length === 0,
+      triggers: !triggers || !triggers.trim()
+    };
 
-      // Save assist plan
-      await createOrUpdateUserAssistPlan({
-        quitDate: quitDate ? quitDate.toISOString().split('T')[0] : undefined,
-        triggers: triggers || undefined,
-        selectedStrategyIds: selectedStrategies
-      });
+    setErrors(newErrors);
 
-      // Save notifications
-      const notificationData = Object.entries(notifications).map(([key, config]) => {
-        const template = notificationTemplates.find(t => t.key === key);
-        let timeValue = null;
+    if (newErrors.quitDate) {
+      quitDateRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    }
+    if (newErrors.strategies) {
+      strategiesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    }
+    if (newErrors.triggers) {
+      triggersRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    }
 
-        if (config.enabled && config.time && config.time.trim()) {
-          // Validate time format (HH:MM)
-          const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
-          if (timeRegex.test(config.time.trim())) {
-            timeValue = config.time.trim();
-          } else {
+    return true;
+  };
 
-          }
+  const saveData = async () => {
+    // Save assist plan
+    await createOrUpdateUserAssistPlan({
+      quitDate: quitDate ? quitDate.toISOString().split('T')[0] : undefined,
+      triggers: triggers || undefined,
+      selectedStrategyIds: selectedStrategies
+    });
+
+    // Save notifications
+    const notificationData = Object.entries(notifications).map(([key, config]) => {
+      const template = notificationTemplates.find(t => t.key === key);
+      let timeValue = null;
+
+      if (config.enabled && config.time && config.time.trim()) {
+        const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+        if (timeRegex.test(config.time.trim())) {
+          timeValue = config.time.trim();
         }
-
-        return {
-          template_id: template?.id || 0,
-          enabled: config.enabled,
-          time: timeValue
-        };
-      }).filter(n => n.template_id > 0);
-
-
-
-      if (notificationData.length > 0) {
-        await upsertUserNotifications({ notifications: notificationData });
       }
 
-      // Mark as completed
+      return {
+        template_id: template?.id || 0,
+        enabled: config.enabled,
+        time: timeValue
+      };
+    }).filter(n => n.template_id > 0);
+
+    if (notificationData.length > 0) {
+      await upsertUserNotifications({ notifications: notificationData });
+    }
+  };
+
+  const handleNext = async () => {
+    if (!validateFields()) return;
+
+    try {
+      setSaving(true);
+      await saveData();
+
+      // Mark as completed in backend (this marks onboarding_step = 4)
+      await completeAssistPlan();
+
+      // Mark local state as completed
       setIsCompleted(true);
 
-      // Update onboarding progress
+      // Update onboarding progress in parent context
       onNext({
         quitDate,
         copingStrategies: selectedStrategies,
@@ -187,7 +225,7 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
         notifications
       });
 
-      // Show success modal instead of immediate navigation
+      // Show success modal
       setShowSuccessModal(true);
       setRedirectCountdown(5);
     } catch (error) {
@@ -199,9 +237,16 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
   };
 
   const handleComplete = async () => {
+    if (!validateFields()) return;
+
     try {
       setSaving(true);
+      await saveData();
+
+      // Mark as completed in backend (this marks onboarding_step = 4)
       await completeAssistPlan();
+
+      // Proceed to Arrange step
       onComplete();
     } catch (error) {
       console.error('Error completing assist plan:', error);
@@ -296,7 +341,7 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
           )}
 
           {/* Quit Date Picker */}
-          <div className="mb-8">
+          <div className="mb-8" ref={quitDateRef}>
             <Label className="brand-text block mb-3">
               Set Your Official Quit Date
             </Label>
@@ -304,7 +349,7 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className={`w-full justify-start text-left rounded-xl h-14 border brand-border ${isCompleted ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  className={`w-full justify-start text-left rounded-xl h-14 border ${errors.quitDate ? 'border-red-500' : 'brand-border'} ${isCompleted ? 'opacity-60 cursor-not-allowed' : ''}`}
                   disabled={isCompleted}
                 >
                   <CalendarIcon className="mr-3 h-5 w-5" />
@@ -315,7 +360,10 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
                 <Calendar
                   mode="single"
                   selected={quitDate}
-                  onSelect={setQuitDate}
+                  onSelect={(date) => {
+                    setQuitDate(date);
+                    if (date) setErrors(prev => ({ ...prev, quitDate: false }));
+                  }}
                   disabled={isCompleted}
                   className="rounded-lg border-0"
                   style={{
@@ -374,14 +422,17 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
                 />
               </PopoverContent>
             </Popover>
+            {errors.quitDate && (
+              <p className="text-red-500 text-xs mt-2 font-medium">Please select your official quit date.</p>
+            )}
           </div>
 
           {/* Coping Strategies */}
-          <div className="mb-8">
+          <div className="mb-8" ref={strategiesRef}>
             <Label className="brand-text block mb-3">
               Select Your Preferred Coping Strategies
             </Label>
-            <div className="bg-gray-50 rounded-2xl p-6 grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className={`bg-gray-50 rounded-2xl p-6 grid grid-cols-1 md:grid-cols-2 gap-3 border ${errors.strategies ? 'border-red-500' : 'border-transparent'}`}>
               {copingStrategies.map((strategy) => (
                 <div key={strategy.id} className="flex items-start space-x-2">
                   <Checkbox
@@ -405,17 +456,23 @@ export function FiveA_Assist({ onNext, onComplete }: FiveA_AssistProps) {
           </div>
 
           {/* Identify Triggers */}
-          <div className="mb-8">
+          <div className="mb-8" ref={triggersRef}>
             <Label className="brand-text block mb-3">
               Identify Your Triggers
             </Label>
             <Textarea
               value={triggers}
-              onChange={(e) => setTriggers(e.target.value)}
+              onChange={(e) => {
+                setTriggers(e.target.value);
+                if (e.target.value.trim()) setErrors(prev => ({ ...prev, triggers: false }));
+              }}
               placeholder="What situations, emotions, or activities trigger your tobacco use? (e.g., stress at work, after meals, social gatherings)"
-              className={`min-h-32 rounded-xl border brand-border ${isCompleted ? 'opacity-60 cursor-not-allowed' : ''}`}
+              className={`min-h-32 rounded-xl border ${errors.triggers ? 'border-red-500' : 'brand-border'} ${isCompleted ? 'opacity-60 cursor-not-allowed' : ''}`}
               disabled={isCompleted}
             />
+            {errors.triggers && (
+              <p className="text-red-500 text-xs mt-2 font-medium">Please identify what triggers your tobacco use.</p>
+            )}
           </div>
 
           {/* Support Connection */}

@@ -19,7 +19,15 @@ export function FiveA_Arrange({ onComplete, quitDate }: FiveA_ArrangeProps) {
       try {
         // Fetch user profile to get onboarding_step
         const profileResponse = await userService.getProfile();
-        setUserOnboardingStep(profileResponse.data.onboarding_step || 0);
+        const step = profileResponse.data.onboarding_step || 0;
+        setUserOnboardingStep(step);
+
+        // If user hasn't completed ASSIST (Step 4), redirect them back
+        if (step < 4) {
+          alert('Please complete your personalized quit plan (Step 4: ASSIST) first.');
+          window.location.href = '/5a/assist';
+          return;
+        }
 
         // Fetch helplines
         const helplineResponse = await helplineService.getHelplines();
@@ -130,7 +138,14 @@ export function FiveA_Arrange({ onComplete, quitDate }: FiveA_ArrangeProps) {
 
           <div className="mt-8 flex justify-end">
             <Button
-              onClick={() => onComplete()}
+              onClick={() => {
+                if (userOnboardingStep !== null && userOnboardingStep < 4) {
+                  alert('Please complete your personalized quit plan (Step 4: ASSIST) first.');
+                  window.location.href = '/5a/assist';
+                } else {
+                  onComplete();
+                }
+              }}
               className="px-8 py-6 rounded-2xl bg-[#1C3B5E] hover:bg-[#1C3B5E]/90 text-white shadow-xl shadow-[#1C3B5E]/20 transition-all active:scale-95"
             >
               Go to Dashboard
