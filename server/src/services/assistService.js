@@ -168,14 +168,14 @@ export async function createOrUpdateUserAssistPlan(userId, { quitDate, triggers,
     if (existingPlanRes.rows.length > 0) {
       // Update existing plan
       const updateRes = await client.query(
-        `UPDATE fivea_assist_plans SET quit_date = $1, triggers = $2, updated_at = NOW() WHERE ${userWhereClause} RETURNING id, quit_date, triggers, created_at, updated_at`,
+        `UPDATE fivea_assist_plans SET quit_date = $1::date, triggers = $2, updated_at = NOW() WHERE user_id = $3::integer RETURNING id, quit_date, triggers, created_at, updated_at`,
         [quitDate || null, triggers || null, userId]
       );
       planId = updateRes.rows[0].id;
     } else {
       // Insert new plan
       const insertRes = await client.query(
-        `INSERT INTO fivea_assist_plans (user_id, quit_date, triggers) VALUES ($1, $2, $3) RETURNING id, quit_date, triggers, created_at, updated_at`,
+        `INSERT INTO fivea_assist_plans (user_id, quit_date, triggers) VALUES ($1::integer, $2::date, $3) RETURNING id, quit_date, triggers, created_at, updated_at`,
         [userId, quitDate || null, triggers || null]
       );
       planId = insertRes.rows[0].id;
@@ -201,7 +201,7 @@ export async function createOrUpdateUserAssistPlan(userId, { quitDate, triggers,
     // Also update the quit_date in the users table
     if (quitDate) {
       await client.query(
-        'UPDATE users SET quit_date = $1, updated_at = NOW() WHERE id = $2',
+        'UPDATE users SET quit_date = $1::date, updated_at = NOW() WHERE id = $2::integer',
         [quitDate, userId]
       );
     }
