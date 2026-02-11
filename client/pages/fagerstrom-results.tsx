@@ -7,11 +7,12 @@ import { Download, AlertTriangle } from 'lucide-react';
 interface FagerstromResultsProps {
     score: number;
     sessionId: string;
+    maxScore?: number;
 }
 
 export default function FagerstromResultsPage() {
     const router = useRouter();
-    const { score } = router.query;
+    const { score, maxScore } = router.query;
     const [userName, setUserName] = useState('User');
     const [tobaccoType, setTobaccoType] = useState<TestType>('smoked');
     const [loading, setLoading] = useState(true);
@@ -37,6 +38,7 @@ export default function FagerstromResultsPage() {
     }, []);
 
     const scoreNum = parseInt(score as string) || 0;
+    const maxScoreNum = parseInt(maxScore as string) || 12; 
     const interpretation = getInterpretation(scoreNum, tobaccoType);
     const therapy = getTherapyGuidelines(scoreNum, tobaccoType);
 
@@ -116,7 +118,7 @@ export default function FagerstromResultsPage() {
                         >
                             {scoreNum}
                         </div>
-                        <p className="text-xs text-gray-500 mb-4">out of 10</p>
+                        <p className="text-xs text-gray-500 mb-4">out of {maxScoreNum}</p>
 
                         <div
                             className="inline-block px-6 py-2 rounded-full text-sm font-medium mb-4"

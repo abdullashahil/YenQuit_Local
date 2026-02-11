@@ -277,6 +277,28 @@ export async function upsertUserNotifications(userId, notifications) {
   }
 }
 
+// Get user notification preferences from fivea_history
+export async function getUserNotificationPreferences(userId) {
+  if (!userId) {
+    throw new Error('User ID is required');
+  }
+
+  const res = await query(
+    `SELECT history_data->'notifications' as notifications
+     FROM fivea_history
+     WHERE user_id = $1 AND stage = 'assist'
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [userId]
+  );
+
+  if (!res.rows[0] || !res.rows[0].notifications) {
+    return [];
+  }
+
+  return res.rows[0].notifications;
+}
+
 // Complete Assist (snapshot to history)
 export async function completeAssistPlan(userId) {
   const client = await getClient();

@@ -6,9 +6,10 @@ import { FagerstromTest } from '../src/components/features/fagerstrom/Fagerstrom
 export default function FagerstromTestPage() {
     const router = useRouter();
 
-    const handleComplete = async (score: number, sessionId: string) => {
-        // Navigate to results page with score
-        router.push(`/fagerstrom-results?score=${score}&sessionId=${sessionId}`);
+    const handleComplete = async (score: number, sessionId: string, maxScore?: number) => {
+        // Navigate to results page with score and maxScore
+        const maxScoreParam = maxScore !== undefined ? `&maxScore=${maxScore}` : '';
+        router.push(`/fagerstrom-results?score=${score}&sessionId=${sessionId}${maxScoreParam}`);
     };
 
     const handleCancel = () => {
