@@ -15,6 +15,7 @@ router.post('/users/me/assist/complete', authenticateJWT, assistController.compl
 
 router.get('/users/me/notifications', authenticateJWT, assistController.getUserNotifications);
 router.post('/users/me/notifications', authenticateJWT, assistController.upsertUserNotifications);
+router.get('/users/me/notification-preferences', authenticateJWT, assistController.getUserNotificationPreferences);
 
 // Admin Routes
 router.post('/admin/assist/strategies', authenticateJWT, assistController.createCopingStrategy);

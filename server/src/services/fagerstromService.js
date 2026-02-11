@@ -174,16 +174,21 @@ export async function saveFagerstromAnswers(userId, answers) {
     let score = 0;
     for (const answer of answers) {
       const { question_id, answer_text } = answer;
-      score += calculateAnswerScore(question_id, answer_text);
+      const answerScore = await calculateAnswerScore(question_id, answer_text);
+      score += answerScore;
     }
 
+    // 1b. Calculate Maximum Possible Score
+    const questionIds = answers.map(a => a.question_id);
+    const maxScore = await calculateMaxScore(questionIds);
+
     // 2. Save Session Record (History of attempts) -> NOW USING fivea_history
-    // We store stage='fagerstrom' and history_data={ score: score }
+    // We store stage='fagerstrom' and history_data={ score: score, maxScore: maxScore }
     const sessionResult = await client.query(
       `INSERT INTO fivea_history (user_id, stage, history_data, created_at) 
        VALUES ($1, 'fagerstrom', $2, NOW()) 
        RETURNING id`,
-      [userId, JSON.stringify({ score })]
+      [userId, JSON.stringify({ score, maxScore })]
     );
     const sessionId = sessionResult.rows[0].id;
 
@@ -208,7 +213,7 @@ export async function saveFagerstromAnswers(userId, answers) {
     );
 
     await client.query('COMMIT');
-    return { success: true, sessionId, score };
+    return { success: true, sessionId, score, maxScore };
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
@@ -217,36 +222,65 @@ export async function saveFagerstromAnswers(userId, answers) {
   }
 }
 
-// Fixed Scoring Map for new ID assignments (Need to be carefully checked against real DB IDs if possible)
-// Assuming standard order was preserved during migration 1..N
-function calculateAnswerScore(questionId, answerText) {
-  // Mapping based on standard Fagerstrom logic. 
-  // IMPORTANT: This depends on the specific wording/ID in the DB.
-  // Ideally this logic should drive from DB metatada, but for now hardcoded was used.
-  // We leave specific ID mapping logic as previously defined or generic pattern matching if possible.
+// Dynamic scoring function that fetches scores from the database
+async function calculateAnswerScore(questionId, answerText) {
+  try {
+    // Fetch the question's options from the database
+    const res = await query(
+      'SELECT options FROM assessment_questions WHERE id = $1',
+      [questionId]
+    );
 
-  // Previous code had IDs 2,3,4,5,6,7. 
-  // If IDs shifted during consolidation, this might be broken.
-  // However, I preserved ID order in previous migration steps or re-mapped them.
-  // Let's assume for now IDs are consistent with previous logic or rely on text matching if needed.
-  // Given I cannot see the DB content right now, I will keep the previous map but warn 
-  // that IDs must align. The user said "everything works fine" before, so IDs were likely correct.
+    if (!res.rows[0] || !res.rows[0].options) {
+      console.warn(`No options found for question ID ${questionId}`);
+      return 0;
+    }
 
-  const scoringMap = {
-    // If IDs shifted, these keys need update. 
-    // Usually "How soon after you wake up..." is high value.
-    // I will trust the previous file's mapping for now.
-    2: { 'Within 5 minutes': 3, '6-30 minutes': 2, '31-60 minutes': 1, 'After 60 minutes': 0 },
-    3: { 'Yes': 1, 'No': 0 },
-    4: { 'The first one in the morning': 1, 'Any other': 0 },
-    5: { '10 or less': 0, '11-20': 1, '21-30': 2, '31 or more': 3 },
-    6: { 'Yes': 1, 'No': 0 },
-    7: { 'Yes': 1, 'No': 0 }
-  };
+    // Parse the options JSONB data
+    const options = res.rows[0].options;
 
-  const questionScoring = scoringMap[questionId];
-  if (!questionScoring) return 0;
-  return questionScoring[answerText] || 0;
+    // Find the matching option by text and return its score
+    const matchingOption = options.find(opt => opt.text === answerText);
+
+    if (matchingOption && matchingOption.score !== undefined) {
+      return parseInt(matchingOption.score) || 0;
+    }
+
+    console.warn(`No matching option found for question ID ${questionId} with answer "${answerText}"`);
+    return 0;
+  } catch (error) {
+    console.error(`Error calculating score for question ${questionId}:`, error);
+    return 0;
+  }
+}
+
+// Calculate the maximum possible score from a set of questions
+async function calculateMaxScore(questionIds) {
+  try {
+    if (!questionIds || questionIds.length === 0) {
+      return 0;
+    }
+
+    // Fetch all questions' options in one query
+    const res = await query(
+      'SELECT id, options FROM assessment_questions WHERE id = ANY($1)',
+      [questionIds]
+    );
+
+    let maxScore = 0;
+    for (const row of res.rows) {
+      if (row.options && Array.isArray(row.options)) {
+        // Find the maximum score among all options for this question
+        const questionMaxScore = Math.max(...row.options.map(opt => parseInt(opt.score) || 0));
+        maxScore += questionMaxScore;
+      }
+    }
+
+    return maxScore;
+  } catch (error) {
+    console.error('Error calculating max score:', error);
+    return 0;
+  }
 }
 
 export async function getFagerstromSessionHistory(userId) {

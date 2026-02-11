@@ -5,7 +5,7 @@ import { RadioGroup, RadioGroupItem } from '../../ui/radio-group';
 import { getFagerstromQuestions, FagerstromQuestion } from '../../../services/fagerstromService';
 
 interface FagerstromTestProps {
-    onComplete: (score: number, sessionId: string) => void;
+    onComplete: (score: number, sessionId: string, maxScore?: number) => void;
     onCancel?: () => void;
     showCancelButton?: boolean;
     title?: string;
@@ -76,7 +76,7 @@ export function FagerstromTest({
             }
 
             const result = await response.json();
-            onComplete(result.score, result.sessionId);
+            onComplete(result.score, result.sessionId, result.maxScore);
         } catch (e: any) {
             setError(e.message || 'Failed to submit answers');
         } finally {
