@@ -2,15 +2,26 @@ import { query, getClient } from '../db/index.js';
 import { createUserIdWhereClause, createUserIdValuesClause } from '../utils/userIdHelper.js';
 
 // Coping Strategies (Now in app_resources)
-export async function getCopingStrategies(isActiveOnly = true) {
+export async function getCopingStrategies(page = 1, limit = 50, isActiveOnly = true) {
+  const offset = (page - 1) * limit;
   const whereClause = isActiveOnly ? "AND is_active = TRUE" : "";
   const res = await query(
     `SELECT id, title as name, description, is_active, created_at, updated_at
        FROM app_resources
        WHERE type = 'coping_strategy' ${whereClause}
-       ORDER BY is_active DESC, id ASC`
+       ORDER BY is_active DESC, id ASC
+       LIMIT $1 OFFSET $2`,
+    [limit, offset]
   );
   return res.rows;
+}
+
+export async function getCopingStrategyCount(isActiveOnly = true) {
+  const whereClause = isActiveOnly ? "AND is_active = TRUE" : "";
+  const res = await query(
+    `SELECT COUNT(*) as count FROM app_resources WHERE type = 'coping_strategy' ${whereClause}`
+  );
+  return parseInt(res.rows[0].count, 10);
 }
 
 export async function getCopingStrategyById(id) {

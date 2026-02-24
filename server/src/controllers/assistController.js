@@ -10,7 +10,8 @@ export async function getCopingStrategies(req, res, next) {
     const strategies = await assistService.getCopingStrategies(page, limit, isActiveOnly);
     const total = await assistService.getCopingStrategyCount(isActiveOnly);
     res.json({
-      strategies,
+      success: true,
+      data: strategies,
       pagination: { page, limit, total, pages: Math.ceil(total / limit) }
     });
   } catch (err) {
@@ -22,8 +23,8 @@ export async function getCopingStrategyById(req, res, next) {
   try {
     const { id } = req.params;
     const strategy = await assistService.getCopingStrategyById(id);
-    if (!strategy) return res.status(404).json({ error: 'Coping strategy not found' });
-    res.json(strategy);
+    if (!strategy) return res.status(404).json({ success: false, error: 'Coping strategy not found' });
+    res.json({ success: true, data: strategy });
   } catch (err) {
     next(err);
   }
@@ -36,7 +37,7 @@ export async function createCopingStrategy(req, res, next) {
       return res.status(400).json({ error: 'name is required' });
     }
     const created = await assistService.createCopingStrategy({ name, description });
-    res.status(201).json(created);
+    res.status(201).json({ success: true, data: created });
   } catch (err) {
     next(err);
   }
@@ -47,8 +48,8 @@ export async function updateCopingStrategy(req, res, next) {
     const { id } = req.params;
     const payload = req.body;
     const updated = await assistService.updateCopingStrategy(id, payload);
-    if (!updated) return res.status(404).json({ error: 'Coping strategy not found' });
-    res.json(updated);
+    if (!updated) return res.status(404).json({ success: false, error: 'Coping strategy not found' });
+    res.json({ success: true, data: updated });
   } catch (err) {
     next(err);
   }
@@ -58,8 +59,8 @@ export async function softDeleteCopingStrategy(req, res, next) {
   try {
     const { id } = req.params;
     const deleted = await assistService.softDeleteCopingStrategy(id);
-    if (!deleted) return res.status(404).json({ error: 'Coping strategy not found' });
-    res.json({ message: 'Coping strategy soft-deleted', id: deleted.id, is_active: deleted.is_active });
+    if (!deleted) return res.status(404).json({ success: false, error: 'Coping strategy not found' });
+    res.json({ success: true, message: 'Coping strategy soft-deleted', id: deleted.id, is_active: deleted.is_active });
   } catch (err) {
     next(err);
   }
@@ -70,7 +71,7 @@ export async function getNotificationTemplates(req, res, next) {
   try {
     const isActiveOnly = req.query.active !== 'false';
     const templates = await assistService.getNotificationTemplates(isActiveOnly);
-    res.json({ templates });
+    res.json({ success: true, data: templates });
   } catch (err) {
     next(err);
   }
@@ -125,7 +126,7 @@ export async function getUserNotificationPreferences(req, res, next) {
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const preferences = await assistService.getUserNotificationPreferences(userId);
-    res.json({ notifications: preferences });
+    res.json({ success: true, data: preferences });
   } catch (err) {
     next(err);
   }
@@ -190,7 +191,7 @@ export async function createNotificationTemplate(req, res, next) {
     }
 
     const created = await assistService.createNotificationTemplate({ key, title, default_time });
-    res.status(201).json(created);
+    res.status(201).json({ success: true, data: created });
   } catch (err) {
     next(err);
   }
@@ -207,8 +208,8 @@ export async function updateNotificationTemplate(req, res, next) {
     }
 
     const updated = await assistService.updateNotificationTemplate(id, payload);
-    if (!updated) return res.status(404).json({ error: 'Notification template not found' });
-    res.json(updated);
+    if (!updated) return res.status(404).json({ success: false, error: 'Notification template not found' });
+    res.json({ success: true, data: updated });
   } catch (err) {
     next(err);
   }
@@ -218,8 +219,8 @@ export async function softDeleteNotificationTemplate(req, res, next) {
   try {
     const { id } = req.params;
     const deleted = await assistService.softDeleteNotificationTemplate(id);
-    if (!deleted) return res.status(404).json({ error: 'Notification template not found' });
-    res.json({ message: 'Notification template soft-deleted', id: deleted.id, is_active: deleted.is_active });
+    if (!deleted) return res.status(404).json({ success: false, error: 'Notification template not found' });
+    res.json({ success: true, message: 'Notification template soft-deleted', id: deleted.id, is_active: deleted.is_active });
   } catch (err) {
     next(err);
   }
@@ -232,7 +233,7 @@ export async function getAssistHistory(req, res, next) {
     const limit = Math.min(Math.max(parseInt(req.query.limit) || 50, 1), 200);
 
     const result = await assistService.getAssistHistory(page, limit);
-    res.json(result);
+    res.json({ success: true, data: result });
   } catch (err) {
     next(err);
   }

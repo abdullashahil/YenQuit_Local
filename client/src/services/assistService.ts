@@ -194,5 +194,5 @@ export const softDeleteNotificationTemplate = async (id: number) => {
 
 export const getAssistHistory = async (page = 1, limit = 50) => {
   const response = await apiRequest(`/assist/admin/assist/history?page=${page}&limit=${limit}`);
-  return response;
+  return response.data;
 };
