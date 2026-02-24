@@ -1,5 +1,7 @@
 # 🚭 YenQuit: Tobacco Cessation & Motivation Platform
 
+🌐 **Live Website:** [quitwithyen.com](https://quitwithyen.com)
+
 **YenQuit** is a scientifically-backed digital health platform designed to assist users in quitting tobacco use and overcoming bad habits. By utilizing the clinically validated **5 A's (Ask, Advise, Assess, Assist, Arrange)** and **5 R's (Relevance, Risks, Rewards, Roadblocks, Repetition)** counseling models, the application provides personalized guidance, assessment, motivational tools, and structured planning resources.
 
 ## 🚀 Key Features
