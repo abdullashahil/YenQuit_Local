@@ -3,7 +3,6 @@ import { Button } from '../../ui/button';
 import { OnboardingProgressBar } from '../flow-shared/OnboardingProgressBar';
 import { HesitationLink } from '../flow-shared/HesitationLink';
 import { BackToHomeButton } from '../../shared/BackToHomeButton';
-import { Play } from 'lucide-react';
 import { FiveA_AdviseProps } from '../../../types/fiveAFlow';
 import { userService } from '../../../services/userService';
 
@@ -74,38 +73,16 @@ export function FiveA_Advise({ onNext, userData = {}, video, quote, ai_message, 
               boxShadow: '0 4px 12px rgba(28, 59, 94, 0.15)'
             }}
           >
-            {video ? (
-              <div className="w-full h-full">
-                {video.includes('youtube.com') || video.includes('youtu.be') ? (
-                  <iframe
-                    src={video.includes('youtube.com') ? video.replace('watch?v=', 'embed/') : video.replace('youtu.be/', 'www.youtube.com/embed/')}
-                    className="w-full h-full"
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    title="Advise Video"
-                  />
-                ) : (
-                  <video controls className="w-full h-full">
-                    <source src={video} type="video/mp4" />
-                    Your browser does not support the video tag.
-                  </video>
-                )}
-              </div>
-            ) : (
-              <div className="text-center" style={{ color: '#FFFFFF' }}>
-                <div
-                  className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 transition-transform duration-200 hover:scale-110 cursor-pointer"
-                  style={{ backgroundColor: '#20B2AA' }}
-                >
-                  <Play size={32} fill="white" />
-                </div>
-                <p className="mb-2">Short Video Message from Doctor/Dentist</p>
-                <p style={{ fontSize: '0.875rem', opacity: 0.75 }}>
-                  Expert advice tailored to your needs
-                </p>
-              </div>
-            )}
+            <div className="w-full h-full">
+              <iframe
+                src="https://www.youtube.com/embed/4UTDNbXvDC4?si=avu1ReISXdecfpl7"
+                className="w-full h-full"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                title="Advise Video"
+              />
+            </div>
           </div>
 
           {/* Motivational Message */}
