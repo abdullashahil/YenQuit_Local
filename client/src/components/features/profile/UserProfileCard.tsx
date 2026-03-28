@@ -139,18 +139,18 @@ export function UserProfileCard() {
           </div>
 
           {/* User Info */}
-          <div className="flex-1 w-full mt-4 sm:mt-0">
-            <h2 className="text-2xl sm:text-2xl mb-2" style={{ color: "#1C3B5E" }}>
+          <div className="flex-1 w-full mt-4 sm:mt-0 min-w-0 overflow-hidden">
+            <h2 className="text-2xl sm:text-2xl mb-2 break-words" style={{ color: "#1C3B5E" }}>
               {profile?.full_name || "User"}
             </h2>
 
             <div className="mb-4">
               {/* Email */}
               <div className="flex flex-wrap sm:flex-nowrap justify-center sm:justify-start items-center gap-2 mb-2">
-                <span className="text-sm" style={{ color: "#333333", opacity: 0.7 }}>
+                <span className="text-sm shrink-0" style={{ color: "#333333", opacity: 0.7 }}>
                   Email:
                 </span>
-                <span className="text-sm" style={{ color: "#333333" }}>
+                <span className="text-sm break-all" style={{ color: "#333333" }}>
                   {profile?.email || "N/A"}
                 </span>
               </div>
@@ -158,10 +158,10 @@ export function UserProfileCard() {
               {/* Phone */}
               {profile?.phone && (
                 <div className="flex flex-wrap sm:flex-nowrap justify-center sm:justify-start items-center gap-2 mb-2">
-                  <span className="text-sm" style={{ color: "#333333", opacity: 0.7 }}>
+                  <span className="text-sm shrink-0" style={{ color: "#333333", opacity: 0.7 }}>
                     Phone:
                   </span>
-                  <span className="text-sm" style={{ color: "#333333" }}>
+                  <span className="text-sm break-all" style={{ color: "#333333" }}>
                     {profile.phone}
                   </span>
                 </div>

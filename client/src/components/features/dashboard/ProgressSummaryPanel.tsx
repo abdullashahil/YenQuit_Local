@@ -27,10 +27,10 @@ export function ProgressSummaryPanel() {
   const fetchProgress = async () => {
     try {
       setIsLoading(true);
-      
+
       const progressData = await quitTrackerService.getProgress();
       setProgress(progressData);
-      
+
       // Calculate longest streak from logs
       if (progressData.logs && progressData.logs.length > 0) {
         const streak = calculateLongestStreak(progressData.logs);
@@ -46,24 +46,24 @@ export function ProgressSummaryPanel() {
   // Calculate longest streak from logs
   const calculateLongestStreak = (logs: any[]) => {
     if (!logs || logs.length === 0) return 0;
-    
+
     // Sort logs by date (oldest first)
-    const sortedLogs = [...logs].sort((a, b) => 
+    const sortedLogs = [...logs].sort((a, b) =>
       new Date(a.log_date).getTime() - new Date(b.log_date).getTime()
     );
-    
+
     let currentStreak = 0;
     let maxStreak = 0;
     let previousDate: Date | null = null;
-    
+
     for (const log of sortedLogs) {
       const logDate = new Date(log.log_date);
       logDate.setHours(0, 0, 0, 0); // Normalize to start of day
-      
+
       if (!log.smoked) {
         if (previousDate) {
           const daysDiff = Math.floor((logDate.getTime() - previousDate.getTime()) / (24 * 60 * 60 * 1000));
-          
+
           if (daysDiff === 1) {
             // Consecutive day
             currentStreak++;
@@ -76,7 +76,7 @@ export function ProgressSummaryPanel() {
           // First smoke-free day
           currentStreak = 1;
         }
-        
+
         maxStreak = Math.max(maxStreak, currentStreak);
         previousDate = logDate;
       } else {
@@ -85,7 +85,7 @@ export function ProgressSummaryPanel() {
         previousDate = null;
       }
     }
-    
+
     return maxStreak;
   };
 
@@ -101,7 +101,7 @@ export function ProgressSummaryPanel() {
         <h3 className="text-lg" style={{ color: "#1C3B5E" }}>
           Progress Summary
         </h3>
-        
+
         <div className="grid grid-cols-1 gap-4">
           {[1, 2].map((index) => (
             <Card key={index} className="rounded-2xl border-0 p-5 shadow-md">
@@ -145,17 +145,16 @@ export function ProgressSummaryPanel() {
       <h3 className="text-lg" style={{ color: "#1C3B5E" }}>
         Progress Summary
       </h3>
-      
+
       <div className="grid grid-cols-1 gap-4">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
-          
+
           return (
             <Card
               key={index}
-              className={`rounded-2xl border-0 p-5 transition-all hover:shadow-lg ${
-                stat.highlight ? "shadow-lg" : "shadow-md"
-              }`}
+              className={`rounded-2xl border-0 p-5 transition-all hover:shadow-lg ${stat.highlight ? "shadow-lg" : "shadow-md"
+                }`}
               style={
                 stat.highlight
                   ? { borderLeft: `4px solid #20B2AA` }
@@ -169,13 +168,13 @@ export function ProgressSummaryPanel() {
                 >
                   <Icon className="w-6 h-6" style={{ color: stat.iconColor }} />
                 </div>
-                
-                <div className="flex-1">
-                  <p className="text-sm mb-1" style={{ color: "#333333", opacity: 0.7 }}>
+
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm mb-1 break-words" style={{ color: "#333333", opacity: 0.7 }}>
                     {stat.label}
                   </p>
                   <p
-                    className="text-2xl"
+                    className="text-2xl break-words"
                     style={{ color: stat.highlight ? "#20B2AA" : "#1C3B5E" }}
                   >
                     {stat.value}
